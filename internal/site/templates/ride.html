@@ -1,0 +1,66 @@
+{{define "content"}}
+{{with .Ride}}
+<article class="ride wrap">
+  <p class="back"><a href="{{$.Root}}index.html">&larr; Toutes les sorties</a></p>
+  <h1>{{.Title}}</h1>
+
+  <ul class="ride-stats ride-stats--big">
+    {{if .DateRaw}}<li>{{.DateRaw}}</li>{{end}}
+    {{if gt .DistanceKm 0.0}}<li>{{printf "%.0f" .DistanceKm}} km</li>{{end}}
+    {{if gt .ElevationM 0}}<li>+{{.ElevationM}} m D+</li>{{end}}
+    {{if .Difficulty}}<li>{{.Difficulty}}</li>{{end}}
+    {{if .Departure}}<li>Départ : {{.Departure}}</li>{{end}}
+  </ul>
+
+  {{if .Tags}}
+  <div class="ride-tags">
+    {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
+  </div>
+  {{end}}
+
+  {{if .HasGPX}}
+  <div id="map" class="ride-map"></div>
+  <p class="gpx-download"><a href="{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}" download>Télécharger la trace GPX</a></p>
+  {{end}}
+
+  <div class="ride-body">
+    {{.Body}}
+  </div>
+
+  {{if .Photos}}
+  <div class="gallery">
+    {{range .Photos}}
+    <a class="gallery-item" href="{{$.Root}}rides/{{$.Ride.Slug}}/{{.}}" data-lightbox>
+      <img src="{{$.Root}}rides/{{$.Ride.Slug}}/{{.}}" alt="{{$.Ride.Title}}" loading="lazy">
+    </a>
+    {{end}}
+  </div>
+  {{end}}
+</article>
+
+{{if .HasGPX}}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/gpx.min.js"></script>
+<script>
+  var map = L.map('map');
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(map);
+
+  new L.GPX('{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}', {
+    async: true,
+    marker_options: {
+      startIconUrl: null,
+      endIconUrl: null,
+      shadowUrl: null
+    },
+    polyline_options: { color: '#b8562f', weight: 4, opacity: 0.9 }
+  }).on('loaded', function (e) {
+    map.fitBounds(e.target.getBounds());
+  }).addTo(map);
+</script>
+{{end}}
+{{end}}
+{{end}}

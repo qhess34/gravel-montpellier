@@ -1,0 +1,40 @@
+{{define "content"}}
+<section class="hero">
+  <div class="wrap">
+    <h1>Sorties gravel autour de Montpellier</h1>
+    <p class="hero-sub">Traces, photos et bons souvenirs des routes blanches et sentiers du secteur.</p>
+  </div>
+</section>
+
+<section class="wrap">
+  {{if not .Rides}}
+    <p class="empty">Aucune sortie pour le moment. Ajoutez un dossier dans <code>rides/</code> pour commencer.</p>
+  {{else}}
+  <div class="ride-grid">
+    {{range .Rides}}
+    <a class="ride-card" href="{{$.Root}}rides/{{.Slug}}/index.html">
+      {{if .Photos}}
+        <div class="ride-card-photo" style="background-image:url('{{$.Root}}rides/{{.Slug}}/{{index .Photos 0}}')"></div>
+      {{else}}
+        <div class="ride-card-photo ride-card-photo--placeholder">⛰</div>
+      {{end}}
+      <div class="ride-card-body">
+        <h2>{{.Title}}</h2>
+        {{if .DateRaw}}<p class="ride-card-date">{{.DateRaw}}</p>{{end}}
+        <ul class="ride-stats">
+          {{if gt .DistanceKm 0.0}}<li>{{printf "%.0f" .DistanceKm}} km</li>{{end}}
+          {{if gt .ElevationM 0}}<li>+{{.ElevationM}} m D+</li>{{end}}
+          {{if .Difficulty}}<li>{{.Difficulty}}</li>{{end}}
+        </ul>
+        {{if .Tags}}
+        <div class="ride-tags">
+          {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
+        </div>
+        {{end}}
+      </div>
+    </a>
+    {{end}}
+  </div>
+  {{end}}
+</section>
+{{end}}

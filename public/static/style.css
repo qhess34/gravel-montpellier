@@ -1,0 +1,198 @@
+:root {
+  --cream: #f7f2ea;
+  --paper: #fffdf9;
+  --ink: #2b2620;
+  --ink-soft: #6b6053;
+  --terracotta: #b8562f;
+  --terracotta-dark: #93411f;
+  --olive: #6b7a4f;
+  --line: #e6ddce;
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+h1, h2, h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0 0 0.4em;
+}
+
+a { color: var(--terracotta-dark); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Header */
+.site-header {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--ink);
+}
+.brand:hover { text-decoration: none; }
+.brand-mark { color: var(--terracotta); font-size: 1.4rem; }
+.site-header nav a {
+  color: var(--ink-soft);
+  font-weight: 500;
+  margin-left: 20px;
+}
+
+/* Hero */
+.hero {
+  background: linear-gradient(135deg, #e9dcc8, var(--cream));
+  padding: 64px 0 48px;
+  border-bottom: 1px solid var(--line);
+}
+.hero h1 { font-size: 2.4rem; max-width: 720px; }
+.hero-sub { color: var(--ink-soft); font-size: 1.1rem; max-width: 560px; }
+
+.empty { color: var(--ink-soft); padding: 48px 0; }
+
+/* Ride grid / cards */
+.ride-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 48px 0;
+}
+.ride-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.ride-card:hover {
+  text-decoration: none;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(43, 38, 32, 0.08);
+}
+.ride-card-photo {
+  height: 170px;
+  background-size: cover;
+  background-position: center;
+  background-color: #ddd2bd;
+}
+.ride-card-photo--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  color: var(--olive);
+}
+.ride-card-body { padding: 18px 20px 22px; }
+.ride-card-body h2 { font-size: 1.2rem; }
+.ride-card-date { color: var(--ink-soft); font-size: 0.9rem; margin: 0 0 10px; }
+
+.ride-stats {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0 0 10px;
+  padding: 0;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+.ride-stats li:not(:last-child)::after {
+  content: '·';
+  margin-left: 14px;
+  color: var(--line);
+}
+.ride-stats--big {
+  font-size: 1.05rem;
+  margin: 14px 0 6px;
+}
+
+.ride-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.tag {
+  background: #efe6d4;
+  color: var(--terracotta-dark);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Ride detail */
+.ride { padding: 48px 0 64px; }
+.back { margin-bottom: 8px; }
+.back a { color: var(--ink-soft); font-size: 0.92rem; }
+.ride h1 { font-size: 2.1rem; margin-top: 4px; }
+
+.ride-map {
+  height: 420px;
+  border-radius: var(--radius);
+  margin: 24px 0;
+  border: 1px solid var(--line);
+}
+
+.gpx-download { margin-top: -10px; }
+
+.ride-body { max-width: 720px; margin-top: 24px; }
+.ride-body h2 { font-size: 1.4rem; margin-top: 1.4em; }
+.ride-body p { margin: 0 0 1em; }
+.ride-body ul { padding-left: 1.2em; }
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 32px;
+}
+.gallery-item img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  display: block;
+}
+
+/* Footer */
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding: 32px 0 48px;
+  margin-top: 32px;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.site-footer a { color: var(--ink-soft); text-decoration: underline; }
+.site-footer p { margin: 0 0 0.6em; }
+
+@media (max-width: 600px) {
+  .hero { padding: 44px 0 32px; }
+  .hero h1 { font-size: 1.8rem; }
+  .ride-map { height: 300px; }
+}

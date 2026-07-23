@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tour du Pic Saint-Loup · Gravel Montpellier</title>
+  <link rel="stylesheet" href="../../static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="../../index.html">
+        <span class="brand-mark">⛰</span>
+        <span>Gravel Montpellier</span>
+      </a>
+      <nav>
+        <a href="../../index.html">Sorties</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    
+
+<article class="ride wrap">
+  <p class="back"><a href="../../index.html">&larr; Toutes les sorties</a></p>
+  <h1>Tour du Pic Saint-Loup</h1>
+
+  <ul class="ride-stats ride-stats--big">
+    <li>15 juin 2026</li>
+    <li>35 km</li>
+    <li>+613 m D+</li>
+    <li>Difficile</li>
+    <li>Départ : Montpellier - Place Zeus</li>
+  </ul>
+
+  
+  <div class="ride-tags">
+    <span class="tag">calcaire</span><span class="tag">single</span><span class="tag">ravitaillement à Saint-Mathieu</span>
+  </div>
+  
+
+  
+  <div id="map" class="ride-map"></div>
+  <p class="gpx-download"><a href="../../rides/exemple-pic-saint-loup/gpx/track.gpx" download>Télécharger la trace GPX</a></p>
+  
+
+  <div class="ride-body">
+    <p>Une classique du secteur, entre garrigue et petites routes blanches, avec<br>
+la silhouette du Pic Saint-Loup qui ne vous quitte jamais des yeux.</p>
+<h2>Le parcours</h2>
+<p>Départ tranquille par les pistes de la plaine avant d&#39;attaquer les premiers<br>
+faux-plats vers <strong>Saint-Mathieu-de-Tréviers</strong>. La montée principale est<br>
+roulante mais demande un bon braquet de secours.</p>
+<ul>
+  <li>Km 0-18 : plaine et petites routes, mise en jambe</li>
+  <li>Km 18-32 : montée principale, gravier compact</li>
+  <li>Km 32-45 : single technique en descente, prudence sur les passages rocheux</li>
+  <li>Km 45-58 : retour par les chemins viticoles</li>
+</ul>
+<h2>Ravitaillement</h2>
+<p>Point d&#39;eau fiable à Saint-Mathieu-de-Tréviers (km 22). Pas de commerce<br>
+ouvert le dimanche après-midi, prévoir de quoi tenir jusqu&#39;au retour.</p>
+<p>*Sortie testée par temps sec — après pluie, le single du km 32 devient<br>
+glissant et certains passages calcaires peuvent être impraticables.*</p>
+
+  </div>
+
+  
+  <div class="gallery">
+    
+    <a class="gallery-item" href="../../rides/exemple-pic-saint-loup/photos/PXL_20260721_191048596.MP.jpg" data-lightbox>
+      <img src="../../rides/exemple-pic-saint-loup/photos/PXL_20260721_191048596.MP.jpg" alt="Tour du Pic Saint-Loup" loading="lazy">
+    </a>
+    
+  </div>
+  
+</article>
+
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/gpx.min.js"></script>
+<script>
+  var map = L.map('map');
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(map);
+
+  new L.GPX('..\/..\/rides/exemple-pic-saint-loup/gpx\/track.gpx', {
+    async: true,
+    marker_options: {
+      startIconUrl: null,
+      endIconUrl: null,
+      shadowUrl: null
+    },
+    polyline_options: { color: '#b8562f', weight: 4, opacity: 0.9 }
+  }).on('loaded', function (e) {
+    map.fitBounds(e.target.getBounds());
+  }).addTo(map);
+</script>
+
+
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Site créé et maintenu par l&#39;équipe Gravel Montpellier.</p>
+<p>Une trace mal indiquée, une sortie à ajouter ? Ouvrez une <a href="https://github.com/" target="_blank" rel="noopener">issue sur GitHub</a>.</p>
+<p>© 2026 Gravel Montpellier</p>
+
+    </div>
+  </footer>
+</body>
+</html>

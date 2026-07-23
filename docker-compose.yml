@@ -1,0 +1,18 @@
+services:
+  # Régénère le site dans ./public à partir de rides/ et content/footer.md.
+  # Usage : docker compose run --rm generate
+  generate:
+    image: golang:1.22-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: go run ./cmd/generator -rides ./rides -footer ./content/footer.md -out ./public
+
+  # Sert le contenu de ./public sur http://localhost:8080
+  # Usage : docker compose up serve
+  serve:
+    image: nginx:alpine
+    volumes:
+      - ./public:/usr/share/nginx/html:ro
+    ports:
+      - "8080:80"
