@@ -63,7 +63,58 @@ Un seul fichier `.gpx` par dossier de sortie. S'il est présent :
 
 Toutes les images (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`) placées dans
 ce dossier sont listées en galerie sur la page de la sortie. La première
-(ordre alphabétique) sert de vignette sur la page d'accueil.
+(ordre alphabétique) sert de vignette sur la page d'accueil. Cliquer sur
+une photo de la galerie l'ouvre en grand (lightbox).
+
+### points.md — POI, photos géolocalisées et points Panoramax
+
+Fichier optionnel pour ajouter des marqueurs cliquables sur la carte :
+un ravitaillement, une photo géolocalisée, ou une vue à 360° via
+[Panoramax](https://panoramax.fr/). Un bloc par point, séparés par une
+ligne `---` :
+
+```
+type: poi
+icon: food
+lat: 43.7950
+lon: 3.8300
+label: Ravitaillement
+note: Point d'eau à Saint-Mathieu-de-Tréviers
+
+---
+
+type: photo
+lat: 43.8200
+lon: 3.8400
+photo: single-technique.jpg
+caption: Le passage technique du single
+
+---
+
+type: panoramax
+lat: 43.8450
+lon: 3.8100
+picture: cafb0ec8-51dd-43ac-836c-8cd1f7cb8725
+sequence: 11111111-2222-3333-4444-555555555555
+label: Vue à 360° depuis le sommet
+```
+
+Champs communs à tous les types : `type` (obligatoire), `lat`/`lon`
+(obligatoires, coordonnées GPS décimales), `label`.
+
+| `type`      | Champs spécifiques                                                                 | Comportement au clic                              |
+|-------------|--------------------------------------------------------------------------------------|-----------------------------------------------------|
+| `poi`       | `label` (obligatoire), `note`, `icon` (`water`, `food`, `danger`, `viewpoint`, ou `generic` par défaut) | Ouvre une popup avec le label et la note            |
+| `photo`     | `photo` (obligatoire — nom de fichier présent dans `photos/`), `caption`             | Ouvre la photo en grand (lightbox)                   |
+| `panoramax` | `picture` (obligatoire — identifiant de la photo sur Panoramax), `sequence` (recommandé), `endpoint` (optionnel, instance publique par défaut) | Ouvre la visionneuse Panoramax intégrée en superposition |
+
+> L'identifiant `picture` (et `sequence`) d'une photo Panoramax se
+> récupère depuis son visionneur : bouton en haut à gauche de l'image
+> → onglet *Résumé* → *Copier l'identifiant*.
+
+Une sortie sans trace GPX peut quand même afficher une carte si elle
+contient des points dans `points.md` — la carte se cadre alors
+automatiquement sur ces points.
 
 ## Le footer
 

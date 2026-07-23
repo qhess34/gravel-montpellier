@@ -196,3 +196,94 @@ a:hover { text-decoration: underline; }
   .hero h1 { font-size: 1.8rem; }
   .ride-map { height: 300px; }
 }
+
+/* Marqueurs carte (POI, photo, panoramax) */
+.gm-marker {
+  width: 28px;
+  height: 28px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid var(--paper);
+  box-shadow: 0 2px 6px rgba(43, 38, 32, 0.35);
+  background: var(--terracotta);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gm-marker::after {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+}
+.gm-marker--generic { background: var(--terracotta); }
+.gm-marker--water    { background: #3d7ea6; }
+.gm-marker--food     { background: #b8562f; }
+.gm-marker--danger   { background: #b5342a; }
+.gm-marker--viewpoint{ background: var(--olive); }
+.gm-marker--photo    { background: #4a4238; }
+.gm-marker--panoramax{ background: #6b3fa0; }
+
+/* Modale générique (photo / panoramax) */
+.gm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+}
+.gm-modal--open { display: block; }
+.gm-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 17, 13, 0.82);
+}
+.gm-modal-body {
+  position: relative;
+  z-index: 1;
+  max-width: min(920px, 92vw);
+  max-height: 88vh;
+  margin: 6vh auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gm-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  z-index: 2;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+body.gm-modal-lock { overflow: hidden; }
+
+.gm-lightbox { text-align: center; }
+.gm-lightbox img {
+  max-width: 92vw;
+  max-height: 78vh;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+}
+.gm-lightbox-caption {
+  color: #f2ece0;
+  margin-top: 12px;
+  font-size: 0.95rem;
+}
+
+.gm-panoramax {
+  width: min(880px, 90vw);
+  height: min(560px, 70vh);
+}
+.gm-panoramax pnx-photo-viewer {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+}

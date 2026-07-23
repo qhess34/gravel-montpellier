@@ -30,6 +30,9 @@ type Ride struct {
 
 	Photos []string // chemins relatifs des photos copiées (ex: photos/1.jpg)
 
+	Points       []Point // POI, photos géolocalisées et points panoramax (points.md)
+	HasPanoramax bool    // true si au moins un Point de type panoramax
+
 	OutDir string // nom du dossier de sortie, ex: rides/<slug>/
 }
 

@@ -121,6 +121,7 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 
 	// Photos : tout fichier image dans dir/photos/, trié par nom.
 	photosDir := filepath.Join(dir, "photos")
+	validPhotoNames := map[string]bool{}
 	if entries, err := os.ReadDir(photosDir); err == nil {
 		var names []string
 		for _, e := range entries {
@@ -134,6 +135,20 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 		sort.Strings(names)
 		for _, n := range names {
 			ride.Photos = append(ride.Photos, "photos/"+n)
+			validPhotoNames[n] = true
+		}
+	}
+
+	// Points de carte (POI, photos géolocalisées, panoramax) : fichier optionnel points.md
+	points, err := LoadPoints(dir, validPhotoNames)
+	if err != nil {
+		return nil, err
+	}
+	ride.Points = points
+	for _, p := range points {
+		if p.Type == PointPanoramax {
+			ride.HasPanoramax = true
+			break
 		}
 	}
 
