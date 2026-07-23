@@ -63,7 +63,11 @@
   // Ouvre la visionneuse Panoramax (composant web officiel @panoramax/web-viewer)
   // pointant sur une photo précise.
   window.gmOpenPanoramax = function (endpoint, sequence, picture) {
-    history.replaceState(null, "", window.location.pathname);
+    const url = new URL(window.location);
+    url.searchParams.delete("pic");
+    url.searchParams.delete("seq");
+    url.searchParams.delete("xyz");
+    history.replaceState(null, "", url);
     var wrap = document.createElement("div");
     wrap.className = "gm-panoramax";
     var el = document.createElement("pnx-photo-viewer");
