@@ -111,14 +111,14 @@
   }).addTo(map);
 
   {{if .IsLoop}}
-  L.marker([{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], { icon: windown.gmIcon('start-finish') })
+  L.marker([{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], { icon: window.gmIcon('start-finish') })
     .bindPopup('Départ / Arrivée')
     .addTo(map);
   {{else}}
-  L.marker([{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], { icon: windown.gmIcon('start') })
+  L.marker([{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], { icon: window.gmIcon('start') })
     .bindPopup('Départ')
     .addTo(map);
-  L.marker([{{.EndPoint.Lat}}, {{.EndPoint.Lon}}], { icon: windown.gmIcon('finish') })
+  L.marker([{{.EndPoint.Lat}}, {{.EndPoint.Lon}}], { icon: window.gmIcon('finish') })
     .bindPopup('Arrivée')
     .addTo(map);
   {{end}}
@@ -127,19 +127,19 @@
   {{range .Points}}
   {{if eq .Type "poi"}}
   gmMarkers.push(
-    L.marker([{{.Lat}}, {{.Lon}}], { icon: windown.gmIcon('{{.Icon}}') })
+    L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('{{.Icon}}') })
       .bindPopup(gmPoiPopup('{{.Label}}', '{{.Note}}'))
       .addTo(map)
   );
   {{else if eq .Type "photo"}}
   gmMarkers.push(
-    L.marker([{{.Lat}}, {{.Lon}}], { icon: windown.gmIcon('photo') })
+    L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('photo') })
       .on('click', function () { gmOpenPhoto('{{$.Root}}rides/{{$.Ride.Slug}}/{{.PhotoRel}}', '{{.Caption}}'); })
       .addTo(map)
   );
   {{else if eq .Type "panoramax"}}
   gmMarkers.push(
-    L.marker([{{.Lat}}, {{.Lon}}], { icon: windown.gmIcon('panoramax') })
+    L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('panoramax') })
       .bindPopup(gmPoiPopup('{{.Label}}', '360° · cliquez le marqueur pour ouvrir la visionneuse'))
       .on('click', function () { gmOpenPanoramax('{{.Endpoint}}', '{{.Sequence}}', '{{.Picture}}'); })
       .addTo(map)
