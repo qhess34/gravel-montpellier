@@ -28,6 +28,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
+  <script src="{{.Root}}static/script.js"></script>
+
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="{{.Root}}index.html">
@@ -39,7 +41,6 @@
       </nav>
     </div>
   </header>
-  <script src="{{.Root}}static/script.js"></script>
 
   <main>
     {{template "content" .}}
@@ -53,7 +54,6 @@
       </nav>
     </div>
   </footer>
-
 </body>
 </html>
 {{end}}

@@ -141,6 +141,39 @@ Une sortie sans trace GPX peut quand même afficher une carte si elle
 contient des points dans `points.md` — la carte se cadre alors
 automatiquement sur ces points.
 
+### Trouver automatiquement les points d'eau et boulangeries
+
+`tools/find_supplies.py` interroge OpenStreetMap (API Overpass) le long
+de la trace GPX d'une sortie, vous propose un par un les points d'eau et
+boulangeries trouvés (nom, distance à la trace, PK), et génère les blocs
+à coller dans `points.md` pour ceux que vous validez — plus besoin de
+chercher les coordonnées à la main.
+
+Ne dépend que de Python 3.8+ (bibliothèque standard uniquement, rien à
+installer) ; nécessite un accès réseau.
+
+```bash
+python3 tools/find_supplies.py rides/tour-du-pic-saint-loup
+```
+
+Pour chaque point trouvé, répondez `o` (ajouter), `n` (ignorer), `e`
+(éditer le label/note avant d'ajouter) ou `q` (arrêter la sélection). À
+la fin, le script propose d'ajouter directement les points validés à
+`points.md` (ou affiche juste le texte à copier avec `--dry-run`).
+
+Options utiles :
+
+```bash
+# Rayon de recherche autour de la trace (défaut : 150 m)
+python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --radius 250
+
+# Un seul type de point
+python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --only water
+
+# Afficher le résultat sans rien écrire
+python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --dry-run
+```
+
 ## Le footer
 
 Le contenu de `content/footer.md` (markdown simple, pas de frontmatter)
@@ -272,6 +305,7 @@ rides/                  une sortie = un dossier
 .github/workflows/     CI de build + déploiement GitHub Pages
 Dockerfile              build + service du site via nginx (voir ci-dessus)
 docker-compose.yml      boucle de dev : régénération + aperçu local
+tools/find_supplies.py  recherche interactive de points d'eau/boulangeries (OSM)
 ```
 
 Vous n'avez normalement besoin de toucher qu'à `rides/`,

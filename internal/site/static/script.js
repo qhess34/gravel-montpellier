@@ -63,11 +63,13 @@
   // Ouvre la visionneuse Panoramax (composant web officiel @panoramax/web-viewer)
   // pointant sur une photo précise.
   window.gmOpenPanoramax = function (endpoint, sequence, picture) {
-    const url = new URL(window.location);
-    url.searchParams.delete("pic");
-    url.searchParams.delete("seq");
-    url.searchParams.delete("xyz");
-    history.replaceState(null, "", url);
+    // Le composant se base sur la query string de la page (ex: ?focus=pic&pic=...)
+    // avant l'attribut "picture" si elle est présente. On la vide pour être
+    // certain qu'il utilise bien la photo qu'on lui demande.
+    if (window.location.search) {
+      window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+    }
+
     var wrap = document.createElement("div");
     wrap.className = "gm-panoramax";
 

@@ -79,22 +79,6 @@ lon: 3.88091
 picture: 04a147d9-baaa-4143-804c-8acf1da9a8d6
 label: Mediathèque de Clapiers
 
----
-type: poi
-icon: water
-lat: 43.711925
-lon: 4.005147
-label: Ravitaillement
-note: Point d'eau à Sussargues
-
----
-type: poi   
-icon: food
-lat: 43.712760
-lon: 4.004557
-label: Ravitaillement
-note: Maison Husson
-
 ---  
 type: poi
 icon: food
@@ -120,3 +104,119 @@ label: Ravitaillement
 note: Le Midi-Teyrannais
 
 
+
+
+---
+
+type: poi
+icon: water
+lat: 43.654346
+lon: 3.881348
+label: Point d'eau
+
+---
+
+type: poi
+icon: water
+lat: 43.654011
+lon: 3.890020
+label: Point d'eau
+
+---
+
+type: poi
+icon: food
+lat: 43.659122
+lon: 3.913073
+label: La Belle Meunière
+note: Horaires : 06:30-19:30
+
+---
+
+type: poi
+icon: food
+lat: 43.660005
+lon: 3.931726
+label: Banette
+
+---
+
+type: poi
+icon: water
+lat: 43.660811
+lon: 3.973654
+label: Point d'eau
+
+---
+
+type: poi
+icon: water
+lat: 43.760974
+lon: 4.081210
+label: Point d'eau
+
+---
+
+type: poi
+icon: food
+lat: 43.782000
+lon: 4.087618
+label: Boulangerie
+
+---
+
+type: poi
+icon: water
+lat: 43.711928
+lon: 4.005151
+label: Point d'eau
+
+---
+
+type: poi
+icon: food
+lat: 43.681062
+lon: 3.921172
+label: Boulangerie AH
+note: Horaires : Mo-Sa 06:00-19:30; Su 06:00-12:30
+
+---
+
+type: poi
+icon: water
+lat: 43.664128
+lon: 3.903417
+label: Point d'eau
+
+---
+
+type: poi
+icon: food
+lat: 43.663094
+lon: 3.903240
+label: Paul
+note: Horaires : Mo-Sa 07:00-20:00; Su 08:00-13:00
+
+---
+
+type: poi
+icon: food
+lat: 43.657632
+lon: 3.887608
+label: Maison Waucheul
+
+---
+
+type: poi
+icon: water
+lat: 43.657220
+lon: 3.886113
+label: Point d'eau
+
+---
+
+type: poi
+icon: water
+lat: 43.656235
+lon: 3.883438
+label: Point d'eau

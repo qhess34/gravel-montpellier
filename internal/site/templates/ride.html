@@ -87,7 +87,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 {{if .HasGPX}}<script src="https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/gpx.min.js"></script>{{end}}
-{{if .HasPanoramax}}<script type="module" src="https://cdn.jsdelivr.net/npm/@panoramax/web-viewer@5.0.0-develop-025b014a/build/cjs/index.js"></script>{{end}}
+{{if .HasPanoramax}}<script src="https://cdn.jsdelivr.net/npm/@panoramax/web-viewer@5.0.0-develop-025b014a/build/cjs/index.js"></script>{{end}}
 <script>
   var map = L.map('map');
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -128,20 +128,20 @@
   {{if eq .Type "poi"}}
   gmMarkers.push(
     L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('{{.Icon}}') })
-      .bindPopup(gmPoiPopup('{{.Label}}', '{{.Note}}'))
+      .bindPopup(window.gmPoiPopup('{{.Label}}', '{{.Note}}'))
       .addTo(map)
   );
   {{else if eq .Type "photo"}}
   gmMarkers.push(
     L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('photo') })
-      .on('click', function () { gmOpenPhoto('{{$.Root}}rides/{{$.Ride.Slug}}/{{.PhotoRel}}', '{{.Caption}}'); })
+      .on('click', function () { window.gmOpenPhoto('{{$.Root}}rides/{{$.Ride.Slug}}/{{.PhotoRel}}', '{{.Caption}}'); })
       .addTo(map)
   );
   {{else if eq .Type "panoramax"}}
   gmMarkers.push(
     L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('panoramax') })
-      .bindPopup(gmPoiPopup('{{.Label}}', '360° · cliquez le marqueur pour ouvrir la visionneuse'))
-      .on('click', function () { gmOpenPanoramax('{{.Endpoint}}', '{{.Sequence}}', '{{.Picture}}'); })
+      .bindPopup(window.gmPoiPopup('{{.Label}}', '360° · cliquez le marqueur pour ouvrir la visionneuse'))
+      .on('click', function () { window.gmOpenPanoramax('{{.Endpoint}}', '{{.Sequence}}', '{{.Picture}}'); })
       .addTo(map)
   );
   {{end}}
