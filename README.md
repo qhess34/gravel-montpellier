@@ -55,7 +55,6 @@ Champs du frontmatter (toutes optionnelles sauf `title`) :
 
 Un seul fichier `.gpx` par dossier de sortie. S'il est présent :
 - il est affiché sur une carte (OpenStreetMap + Leaflet) sur la page de la sortie,
-- un **profil altimétrique** est généré automatiquement (SVG, sans JavaScript) sous la carte, avec les points d'eau/boulangeries repérés au bon endroit (survol pour le détail),
 - il est proposé au téléchargement,
 - la distance et le dénivelé sont calculés automatiquement si vous ne les
   avez pas renseignés dans `description.md`.
@@ -67,25 +66,10 @@ ce dossier sont listées en galerie sur la page de la sortie. La première
 (ordre alphabétique) sert de vignette sur la page d'accueil. Cliquer sur
 une photo de la galerie l'ouvre en grand (lightbox).
 
-**Géolocalisation automatique :** si une photo `.jpg`/`.jpeg` contient des
-coordonnées GPS dans ses métadonnées EXIF (cas courant pour une photo prise
-au smartphone ou avec un appareil GPS activé), un marqueur est
-automatiquement ajouté sur la carte — sans rien à faire dans `points.md`.
-Une photo recadrée/exportée depuis un réseau social a souvent perdu ses
-EXIF ; dans ce cas, ajoutez-la manuellement dans `points.md` (voir
-ci-dessous) avec ses coordonnées.
-
-### Départ et arrivée
-
-Si la sortie a une trace GPX, les marqueurs de départ et d'arrivée sont
-ajoutés automatiquement sur la carte, à partir du premier et du dernier
-point de la trace — rien à configurer. Si départ et arrivée sont au même
-endroit (à 50 m près), un seul marqueur « Départ / Arrivée » est affiché.
-
 ### points.md — POI, photos géolocalisées et points Panoramax
 
 Fichier optionnel pour ajouter des marqueurs cliquables sur la carte :
-un ravitaillement, une photo géolocalisée précise, ou une vue à 360° via
+un ravitaillement, une photo géolocalisée, ou une vue à 360° via
 [Panoramax](https://panoramax.fr/). Un bloc par point, séparés par une
 ligne `---` :
 
@@ -100,42 +84,33 @@ note: Point d'eau à Saint-Mathieu-de-Tréviers
 ---
 
 type: photo
+lat: 43.8200
+lon: 3.8400
 photo: single-technique.jpg
 caption: Le passage technique du single
 
 ---
 
 type: panoramax
+lat: 43.8450
+lon: 3.8100
 picture: cafb0ec8-51dd-43ac-836c-8cd1f7cb8725
 sequence: 11111111-2222-3333-4444-555555555555
 label: Vue à 360° depuis le sommet
 ```
 
-Champs communs : `type` (obligatoire), `label`. `lat`/`lon` sont
-**optionnels selon le type** :
+Champs communs à tous les types : `type` (obligatoire), `lat`/`lon`
+(obligatoires, coordonnées GPS décimales), `label`.
 
-| `type`      | Champs spécifiques                                                                 | `lat`/`lon`                                                                 | Comportement au clic                              |
-|-------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|-------------------------------------------------------|
-| `poi`       | `label` (obligatoire), `note`, `icon` (`water`, `food`, `danger`, `viewpoint`, ou `generic` par défaut) | **obligatoires**, aucune source automatique                                    | Ouvre une popup avec le label et la note              |
-| `photo`     | `photo` (obligatoire — nom de fichier présent dans `photos/`), `caption`             | facultatifs : si absents, lus depuis les **EXIF GPS** de la photo (photo ignorée avec avertissement si la photo n'a pas d'EXIF GPS) | Ouvre la photo en grand (lightbox)                     |
-| `panoramax` | `picture` (obligatoire — identifiant de la photo sur Panoramax), `sequence` (recommandé), `endpoint` (optionnel, instance publique par défaut) | facultatifs : si absents, **résolus automatiquement via l'API Panoramax** au moment du build (nécessite un accès réseau ; point ignoré avec avertissement si l'API ne répond pas) | Ouvre la visionneuse Panoramax intégrée en superposition |
+| `type`      | Champs spécifiques                                                                 | Comportement au clic                              |
+|-------------|--------------------------------------------------------------------------------------|-----------------------------------------------------|
+| `poi`       | `label` (obligatoire), `note`, `icon` (`water`, `food`, `danger`, `viewpoint`, ou `generic` par défaut) | Ouvre une popup avec le label et la note            |
+| `photo`     | `photo` (obligatoire — nom de fichier présent dans `photos/`), `caption`             | Ouvre la photo en grand (lightbox)                   |
+| `panoramax` | `picture` (obligatoire — identifiant de la photo sur Panoramax), `sequence` (recommandé), `endpoint` (optionnel, instance publique par défaut) | Ouvre la visionneuse Panoramax intégrée en superposition |
 
 > L'identifiant `picture` (et `sequence`) d'une photo Panoramax se
 > récupère depuis son visionneur : bouton en haut à gauche de l'image
 > → onglet *Résumé* → *Copier l'identifiant*.
-
-Chaque type de point (POI par icône, photo, panoramax, départ/arrivée)
-a son propre pictogramme sur la carte pour rester reconnaissable en un
-coup d'œil.
-
-**Synthèse ravitaillement :** pour une sortie avec trace GPX, tout point
-`type: poi` avec `icon: water` ou `icon: food` est automatiquement
-projeté sur la trace pour en déduire son point kilométrique (PK), et
-listé dans un encadré « Points d'eau et boulangeries sur le parcours »
-sous la description — rien à écrire en plus, ça vient uniquement de ce
-que vous avez déjà mis dans `points.md`. Un point à plus de 3 km de la
-trace n'est pas considéré comme « sur le parcours » et n'apparaît pas
-dans cette synthèse (il reste affiché sur la carte).
 
 Une sortie sans trace GPX peut quand même afficher une carte si elle
 contient des points dans `points.md` — la carte se cadre alors
@@ -145,48 +120,6 @@ automatiquement sur ces points.
 
 Le contenu de `content/footer.md` (markdown simple, pas de frontmatter)
 est affiché sur toutes les pages du site. Modifiez ce fichier librement.
-
-## Mentions légales
-
-Le contenu de `content/mentions-legales.md` (markdown simple) est publié
-sur une page dédiée (`mentions-legales.html`), reliée par un lien fixe en
-bas de chaque page — ce lien est toujours présent, indépendamment de ce
-que vous mettez dans `content/footer.md`.
-
-Un fichier de départ est fourni, couvrant l'absence de garantie sur
-l'état du terrain, les passages sur des voies privées, et la limitation
-de responsabilité de l'auteur. Adaptez-le à votre situation ; ce n'est
-pas un avis juridique, faites-le relire par un professionnel si vous
-voulez une protection solide.
-
-Chaque page de sortie affiche en plus, automatiquement (ce bandeau n'est
-pas éditable par sortie, il vient du gabarit) un court rappel — terrain
-qui peut avoir changé, passage éventuel sur propriété privée, pratique
-sous sa propre responsabilité — avec un lien vers la page complète.
-
-## Partage (Facebook, WhatsApp, X, e-mail) et aperçu d'image
-
-Chaque page de sortie affiche automatiquement des boutons de partage —
-rien à faire dans `description.md`. Pour que ça fonctionne (liens
-valides *et* aperçu avec image sur Facebook/WhatsApp/etc.), le
-générateur a besoin de connaître l'URL publique du site, via `-site-url` :
-
-```bash
-go run ./cmd/generator -site-url "https://votre-compte.github.io/gravel-montpellier"
-```
-
-Sans cette option, les boutons de partage et les balises Open Graph
-(aperçu d'image) sont simplement omis — le reste du site fonctionne
-normalement. En CI, l'URL est calculée automatiquement à partir du dépôt
-(`https://<compte>.github.io/<dépôt>`) ; si votre site est publié à une
-autre adresse (domaine personnalisé, dépôt `<compte>.github.io`...),
-définissez une variable de dépôt **`SITE_URL`** dans *Settings → Secrets
-and variables → Actions → Variables* avec l'URL exacte — elle prend le
-pas sur le calcul automatique.
-
-L'image d'aperçu utilisée est la première photo (ordre alphabétique) du
-dossier `photos/` de la sortie ; sans photo, seuls le titre et un court
-résumé (distance, dénivelé, difficulté) sont utilisés dans l'aperçu.
 
 ## Générer le site localement
 
@@ -202,7 +135,7 @@ navigateur (certains navigateurs bloquent les requêtes `fetch` en
 Options disponibles :
 
 ```bash
-go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -site-url "https://votre-compte.github.io/gravel-montpellier" -out ./public -title "Gravel Montpellier"
+go run ./cmd/generator -rides ./rides -footer ./content/footer.md -out ./public -title "Gravel Montpellier"
 ```
 
 ## Générer et prévisualiser avec Docker
@@ -267,13 +200,11 @@ internal/site/         logique du générateur (frontmatter, markdown, gpx, buil
 internal/site/templates/  gabarits HTML (mise en forme, à ne modifier que si besoin)
 internal/site/static/     CSS du site
 content/footer.md      pied de page, modifiable
-content/mentions-legales.md  page mentions légales, modifiable
 rides/                  une sortie = un dossier
 .github/workflows/     CI de build + déploiement GitHub Pages
 Dockerfile              build + service du site via nginx (voir ci-dessus)
 docker-compose.yml      boucle de dev : régénération + aperçu local
 ```
 
-Vous n'avez normalement besoin de toucher qu'à `rides/`,
-`content/footer.md` et `content/mentions-legales.md` — le reste s'occupe
-de la mise en forme.
+Vous n'avez normalement besoin de toucher qu'à `rides/` et
+`content/footer.md` — le reste s'occupe de la mise en forme.

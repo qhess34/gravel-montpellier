@@ -160,34 +160,6 @@ a:hover { text-decoration: underline; }
 
 .gpx-download { margin-top: -10px; }
 
-/* Profil altimétrique */
-.elevation-wrap { margin: 24px 0; }
-.elevation-title { font-size: 1.1rem; margin-bottom: 10px; }
-.elevation-profile {
-  width: 100%;
-  height: auto;
-  display: block;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-.elevation-axis { stroke: var(--line); stroke-width: 1; }
-.elevation-area { fill: rgba(184, 86, 47, 0.16); }
-.elevation-line { stroke: var(--terracotta); stroke-width: 2; }
-.elevation-label {
-  font-size: 10px;
-  fill: var(--ink-soft);
-  font-family: 'Inter', system-ui, sans-serif;
-}
-.elevation-label--km { text-anchor: middle; }
-.elevation-label--end { text-anchor: end; }
-.elevation-marker { stroke: var(--paper); stroke-width: 1.5; cursor: pointer; }
-.elevation-marker--water     { fill: #3d7ea6; }
-.elevation-marker--food      { fill: #b8562f; }
-.elevation-marker--danger    { fill: #b5342a; }
-.elevation-marker--viewpoint { fill: var(--olive); }
-.elevation-marker--generic   { fill: var(--terracotta); }
-
 .ride-body { max-width: 720px; margin-top: 24px; }
 .ride-body h2 { font-size: 1.4rem; margin-top: 1.4em; }
 .ride-body p { margin: 0 0 1em; }
@@ -218,108 +190,6 @@ a:hover { text-decoration: underline; }
 }
 .site-footer a { color: var(--ink-soft); text-decoration: underline; }
 .site-footer p { margin: 0 0 0.6em; }
-.footer-legal-nav {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-  font-size: 0.85rem;
-}
-
-/* Bandeau d'avertissement sur les pages de sortie */
-.disclaimer {
-  background: #fbf1de;
-  border: 1px solid #e7cd9a;
-  color: #6b4e1f;
-  border-radius: 10px;
-  padding: 14px 18px;
-  font-size: 0.9rem;
-  margin: 20px 0;
-}
-.disclaimer a { color: #6b4e1f; text-decoration: underline; }
-
-/* Bloc de partage */
-.share-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 18px 0;
-}
-.share-label {
-  color: var(--ink-soft);
-  font-size: 0.88rem;
-  margin-right: 4px;
-}
-.share-btn {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  font-family: inherit;
-  color: var(--ink);
-  background: var(--paper);
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-.share-btn:hover { text-decoration: none; }
-.share-btn--fb:hover   { background: #1877f2; border-color: #1877f2; color: #fff; }
-.share-btn--wa:hover   { background: #25d366; border-color: #25d366; color: #fff; }
-.share-btn--x:hover    { background: #14171a; border-color: #14171a; color: #fff; }
-.share-btn--mail:hover { background: var(--olive); border-color: var(--olive); color: #fff; }
-.share-btn--copy:hover { background: var(--terracotta); border-color: var(--terracotta); color: #fff; }
-.share-btn--copied     { background: var(--olive); border-color: var(--olive); color: #fff; }
-
-/* Page Mentions légales */
-.legal { padding: 48px 0 64px; max-width: 760px; }
-.legal-body h2 { font-size: 1.3rem; margin-top: 1.6em; }
-.legal-body p { margin: 0 0 1em; }
-.legal-body ul { padding-left: 1.2em; }
-.legal-body li { margin-bottom: 0.4em; }
-
-/* Synthèse ravitaillement (points d'eau / boulangeries) */
-.supplies {
-  max-width: 720px;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--line);
-}
-.supplies h2 { font-size: 1.25rem; }
-.supplies-list {
-  list-style: none;
-  padding: 0;
-  margin: 12px 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.supplies-item {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 8px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 0.92rem;
-}
-.supplies-icon::before { font-size: 1rem; }
-.supplies-item--water .supplies-icon::before { content: '💧'; }
-.supplies-item--food  .supplies-icon::before { content: '🥐'; }
-.supplies-km {
-  font-weight: 600;
-  color: var(--terracotta-dark);
-  white-space: nowrap;
-}
-.supplies-label { font-weight: 500; }
-.supplies-note {
-  color: var(--ink-soft);
-  font-size: 0.88rem;
-  flex-basis: 100%;
-}
 
 @media (max-width: 600px) {
   .hero { padding: 44px 0 32px; }
@@ -341,31 +211,19 @@ a:hover { text-decoration: underline; }
   justify-content: center;
 }
 .gm-marker::after {
-  content: '📍';
+  content: '';
   display: block;
-  font-size: 13px;
-  line-height: 1;
+  width: 10px;
+  height: 10px;
   transform: rotate(45deg);
 }
 .gm-marker--generic { background: var(--terracotta); }
 .gm-marker--water    { background: #3d7ea6; }
-.gm-marker--water::after     { content: '💧'; }
 .gm-marker--food     { background: #b8562f; }
-.gm-marker--food::after      { content: '🥐'; }
 .gm-marker--danger   { background: #b5342a; }
-.gm-marker--danger::after    { content: '⚠️'; }
 .gm-marker--viewpoint{ background: var(--olive); }
-.gm-marker--viewpoint::after { content: '👁️'; }
 .gm-marker--photo    { background: #4a4238; }
-.gm-marker--photo::after     { content: '📷'; }
 .gm-marker--panoramax{ background: #6b3fa0; }
-.gm-marker--panoramax::after { content: '🧭'; }
-.gm-marker--start        { background: #3f8f4f; }
-.gm-marker--start::after     { content: '🚩'; }
-.gm-marker--finish       { background: #b5342a; }
-.gm-marker--finish::after    { content: '🏁'; }
-.gm-marker--start-finish { background: #3f8f4f; }
-.gm-marker--start-finish::after { content: '🚩'; }
 
 /* Modale générique (photo / panoramax) */
 .gm-modal {

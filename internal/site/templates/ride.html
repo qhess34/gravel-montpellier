@@ -18,17 +18,6 @@
   </div>
   {{end}}
 
-  {{if $.MetaURL}}
-  <div class="share-bar">
-    <span class="share-label">Partager :</span>
-    <a class="share-btn share-btn--fb" href="{{$.ShareFacebook}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur Facebook">Facebook</a>
-    <a class="share-btn share-btn--wa" href="{{$.ShareWhatsApp}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur WhatsApp">WhatsApp</a>
-    <a class="share-btn share-btn--x" href="{{$.ShareTwitter}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur X">X</a>
-    <a class="share-btn share-btn--mail" href="{{$.ShareEmail}}" aria-label="Partager par e-mail">E-mail</a>
-    <button type="button" class="share-btn share-btn--copy" data-copy-link="{{$.MetaURL}}">Copier le lien</button>
-  </div>
-  {{end}}
-
   {{if or .HasGPX .Points}}
   <div id="map" class="ride-map"></div>
   {{end}}
@@ -36,41 +25,9 @@
   <p class="gpx-download"><a href="{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}" download>Télécharger la trace GPX</a></p>
   {{end}}
 
-  {{if .HasElevationProfile}}
-  <div class="elevation-wrap">
-    <h2 class="elevation-title">Profil altimétrique</h2>
-    {{.ElevationProfileSVG}}
-  </div>
-  {{end}}
-
-  <p class="disclaimer">
-    ⚠ Trace fournie à titre indicatif : le terrain peut avoir changé depuis
-    la reconnaissance (obstacles, travaux, balisage), certains passages
-    peuvent traverser des propriétés privées sans autorisation garantie, et
-    des dangers peuvent ne pas être signalés. Vous empruntez cet itinéraire
-    sous votre propre responsabilité —
-    <a href="{{$.Root}}mentions-legales.html">mentions légales</a>.
-  </p>
-
   <div class="ride-body">
     {{.Body}}
   </div>
-
-  {{if .Supplies}}
-  <div class="supplies">
-    <h2>Points d'eau et boulangeries sur le parcours</h2>
-    <ul class="supplies-list">
-      {{range .Supplies}}
-      <li class="supplies-item supplies-item--{{.Icon}}">
-        <span class="supplies-icon" aria-hidden="true"></span>
-        <span class="supplies-km">PK {{printf "%.0f" .KmMark}}</span>
-        <span class="supplies-label">{{.Label}}</span>
-        {{if .Note}}<span class="supplies-note">{{.Note}}</span>{{end}}
-      </li>
-      {{end}}
-    </ul>
-  </div>
-  {{end}}
 
   {{if .Photos}}
   <div class="gallery">
@@ -87,7 +44,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 {{if .HasGPX}}<script src="https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/gpx.min.js"></script>{{end}}
-{{if .HasPanoramax}}<script type="module" src="https://cdn.jsdelivr.net/npm/@panoramax/web-viewer@5.0.0-develop-025b014a/build/cjs/index.js"></script>{{end}}
+{{if .HasPanoramax}}<script src="https://cdn.jsdelivr.net/npm/@panoramax/web-viewer@5.0.0-develop-025b014a/build/cjs/index.js"></script>{{end}}
 <script>
   var map = L.map('map');
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -109,19 +66,6 @@
   }).on('loaded', function (e) {
     map.fitBounds(e.target.getBounds());
   }).addTo(map);
-
-  {{if .IsLoop}}
-  L.marker([{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], { icon: window.gmIcon('start-finish') })
-    .bindPopup('Départ / Arrivée')
-    .addTo(map);
-  {{else}}
-  L.marker([{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], { icon: window.gmIcon('start') })
-    .bindPopup('Départ')
-    .addTo(map);
-  L.marker([{{.EndPoint.Lat}}, {{.EndPoint.Lon}}], { icon: window.gmIcon('finish') })
-    .bindPopup('Arrivée')
-    .addTo(map);
-  {{end}}
   {{end}}
 
   {{range .Points}}
@@ -140,8 +84,13 @@
   {{else if eq .Type "panoramax"}}
   gmMarkers.push(
     L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('panoramax') })
-      .bindPopup(gmPoiPopup('{{.Label}}', '360° · cliquez le marqueur pour ouvrir la visionneuse'))
-      .on('click', function () { gmOpenPanoramax('{{.Endpoint}}', '{{.Sequence}}', '{{.Picture}}'); })
+      .bindPopup(`
+       <strong>{{.Label}}</strong><br>
+       360°<br>
+       <button onclick="gmOpenPanoramax('{{.Endpoint}}', '{{.Sequence}}', '{{.Picture}}')">
+       Ouvrir la visionneuse
+       </button>
+       `)
       .addTo(map)
   );
   {{end}}

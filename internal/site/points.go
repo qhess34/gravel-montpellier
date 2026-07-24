@@ -1,7 +1,6 @@
 package site
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -33,17 +32,9 @@ type Point struct {
 	Picture  string // panoramax uniquement : identifiant de la photo
 	Sequence string // panoramax uniquement : identifiant de séquence (optionnel)
 	Endpoint string // panoramax uniquement : URL de l'API (optionnel)
-
-	KmMark    float64 // point kilométrique sur la trace (si HasKmMark)
-	HasKmMark bool    // true si le point est assez proche de la trace GPX pour qu'un PK ait du sens
 }
 
 const defaultPanoramaxEndpoint = "https://api.panoramax.xyz/api"
-
-// errSkipPoint signale un point à ignorer silencieusement (un avertissement
-// a déjà été affiché) plutôt qu'une erreur qui interromprait tout le build —
-// par exemple une photo sans GPS EXIF ou une API Panoramax injoignable.
-var errSkipPoint = errors.New("point ignoré")
 
 // LoadPoints lit le fichier points.md optionnel d'une sortie et renvoie la
 // liste des points à afficher sur la carte. validPhotos permet de vérifier
@@ -58,19 +49,14 @@ func LoadPoints(dir string, validPhotos map[string]bool) ([]Point, error) {
 		return nil, err
 	}
 
-	photosDir := filepath.Join(dir, "photos")
-
 	var points []Point
 	for i, block := range splitPointBlocks(string(data)) {
 		fields := parseKeyValues(block)
 		if len(fields) == 0 {
 			continue
 		}
-		p, err := buildPoint(fields, validPhotos, photosDir)
+		p, err := buildPoint(fields, validPhotos)
 		if err != nil {
-			if errors.Is(err, errSkipPoint) {
-				continue
-			}
 			return nil, fmt.Errorf("point #%d de points.md : %w", i+1, err)
 		}
 		points = append(points, p)
@@ -126,37 +112,35 @@ func parseKeyValues(block string) map[string]string {
 	return fields
 }
 
-func buildPoint(fields map[string]string, validPhotos map[string]bool, photosDir string) (Point, error) {
+func buildPoint(fields map[string]string, validPhotos map[string]bool) (Point, error) {
 	t := PointType(strings.ToLower(strings.TrimSpace(fields["type"])))
 	if t == "" {
 		return Point{}, fmt.Errorf("champ 'type' manquant (poi, photo ou panoramax)")
 	}
 
+	if fields["lat"] == "" || fields["lon"] == "" {
+		return Point{}, fmt.Errorf("champs 'lat' et 'lon' requis")
+	}
+	lat, err := strconv.ParseFloat(fields["lat"], 64)
+	if err != nil {
+		return Point{}, fmt.Errorf("lat invalide : %w", err)
+	}
+	lon, err := strconv.ParseFloat(fields["lon"], 64)
+	if err != nil {
+		return Point{}, fmt.Errorf("lon invalide : %w", err)
+	}
+
 	p := Point{
 		Type:  t,
+		Lat:   lat,
+		Lon:   lon,
 		Label: fields["label"],
 		Note:  fields["note"],
 		Icon:  firstNonEmpty(fields["icon"], "generic"),
 	}
 
-	hasLatLon := fields["lat"] != "" && fields["lon"] != ""
-	if hasLatLon {
-		lat, err := strconv.ParseFloat(fields["lat"], 64)
-		if err != nil {
-			return Point{}, fmt.Errorf("lat invalide : %w", err)
-		}
-		lon, err := strconv.ParseFloat(fields["lon"], 64)
-		if err != nil {
-			return Point{}, fmt.Errorf("lon invalide : %w", err)
-		}
-		p.Lat, p.Lon = lat, lon
-	}
-
 	switch t {
 	case PointPOI:
-		if !hasLatLon {
-			return Point{}, fmt.Errorf("un point de type 'poi' nécessite 'lat' et 'lon'")
-		}
 		if p.Label == "" {
 			return Point{}, fmt.Errorf("un point de type 'poi' nécessite un champ 'label'")
 		}
@@ -172,15 +156,6 @@ func buildPoint(fields map[string]string, validPhotos map[string]bool, photosDir
 		p.PhotoRel = "photos/" + photo
 		p.Caption = fields["caption"]
 
-		if !hasLatLon {
-			lat, lon, ok := PhotoGPS(filepath.Join(photosDir, photo))
-			if !ok {
-				fmt.Fprintf(os.Stderr, "⚠ points.md : pas de coordonnées GPS EXIF pour %q, point ignoré (précisez 'lat'/'lon')\n", photo)
-				return Point{}, errSkipPoint
-			}
-			p.Lat, p.Lon = lat, lon
-		}
-
 	case PointPanoramax:
 		picture := fields["picture"]
 		if picture == "" {
@@ -191,15 +166,6 @@ func buildPoint(fields map[string]string, validPhotos map[string]bool, photosDir
 		p.Endpoint = firstNonEmpty(fields["endpoint"], defaultPanoramaxEndpoint)
 		if p.Label == "" {
 			p.Label = "Vue 360°"
-		}
-
-		if !hasLatLon {
-			lat, lon, err := FetchPanoramaxLocation(p.Endpoint, picture)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "⚠ points.md : localisation Panoramax introuvable pour %q (%v), point ignoré\n", picture, err)
-				return Point{}, errSkipPoint
-			}
-			p.Lat, p.Lon = lat, lon
 		}
 
 	default:

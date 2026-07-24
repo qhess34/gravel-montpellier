@@ -28,18 +28,10 @@ type Ride struct {
 	GPXPoints []GPXPoint
 	GPXFile   string // chemin relatif du fichier gpx copié dans la sortie (ex: gpx/track.gpx)
 
-	StartPoint GPXPoint // premier point de la trace (départ)
-	EndPoint   GPXPoint // dernier point de la trace (arrivée)
-	IsLoop     bool     // true si départ et arrivée sont au même endroit (à ~50 m près)
-
-	ElevationProfileSVG template.HTML // profil altimétrique, rendu en SVG
-	HasElevationProfile bool
-
 	Photos []string // chemins relatifs des photos copiées (ex: photos/1.jpg)
 
 	Points       []Point // POI, photos géolocalisées et points panoramax (points.md)
 	HasPanoramax bool    // true si au moins un Point de type panoramax
-	Supplies     []Point // points d'eau et boulangeries (icon water/food), triés par PK croissant
 
 	OutDir string // nom du dossier de sortie, ex: rides/<slug>/
 }
