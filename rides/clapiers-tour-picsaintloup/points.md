@@ -120,3 +120,20 @@ lat: 43.693686
 lon: 3.861978
 label: Clément Boursiquot
 note: Horaires : Tu-Sa 08:00-12:30,15:00-19:00; Su 08:00-12:30
+
+
+---
+
+type: poi
+icon: water
+lat: 43.769935
+lon: 3.868033
+label: Point d'eau
+
+---
+
+type: poi
+icon: water
+lat: 43.715170
+lon: 3.861944
+label: Point d'eau
