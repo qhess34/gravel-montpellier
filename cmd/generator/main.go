@@ -1,4 +1,4 @@
-// Commande generator : construit le site statique "Gravel Montpellier"
+// Commande generator : construit le site statique 
 // à partir du contenu du dossier rides/ et du fichier content/footer.md.
 //
 // Usage :
@@ -20,7 +20,7 @@ func main() {
 	footer := flag.String("footer", "content/footer.md", "fichier markdown du pied de page")
 	legal := flag.String("legal", "content/mentions-legales.md", "fichier markdown de la page Mentions légales")
 	outDir := flag.String("out", "public", "dossier de sortie du site généré")
-	title := flag.String("title", "Gravel Montpellier", "titre du site")
+	title := flag.String("title", "CycloExplore Montpellier", "titre du site")
 	siteURL := flag.String("site-url", "", "URL publique du site (ex: https://user.github.io/repo) — nécessaire pour les boutons de partage et l'aperçu d'image")
 	flag.Parse()
 
