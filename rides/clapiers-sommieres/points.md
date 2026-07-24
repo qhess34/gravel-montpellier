@@ -79,3 +79,44 @@ lon: 3.88091
 picture: 04a147d9-baaa-4143-804c-8acf1da9a8d6
 label: Mediathèque de Clapiers
 
+---
+type: poi
+icon: water
+lat: 43.711925
+lon: 4.005147
+label: Ravitaillement
+note: Point d'eau à Sussargues
+
+---
+type: poi   
+icon: food
+lat: 43.712760
+lon: 4.004557
+label: Ravitaillement
+note: Maison Husson
+
+---  
+type: poi
+icon: food
+lat: 43.7848929
+lon: 4.0876186
+label: Ravitaillement
+note: L'Esplanade
+
+---
+type: poi   
+icon: water
+lat: 43.778376
+lon: 4.081963
+label: Ravitaillement
+note: Cimetière Sommières
+
+---   
+type: poi
+icon: food
+lat: 43,6820073
+lon: 3,9224952
+label: Ravitaillement
+note: Le Midi-Teyrannais
+
+

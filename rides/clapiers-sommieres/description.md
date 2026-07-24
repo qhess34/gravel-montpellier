@@ -20,19 +20,4 @@ Le retour est plus sauvage et plus ludique. Il alterne pistes, singles en sous-b
 
 Après de fortes pluies, certaines portions peuvent être inondées (avec peu de profondeur) ou particulièrement boueuses. Des pneus à crampons sont vivement recommandés, ainsi que des chaussures offrant une bonne adhérence pour les éventuels portages.
 
-## Ravitaillement
 
-### Sommières 
-
-* Boulangeries
-* Restaurants
-* Eau en libre service
-
-### Sussargues
-
-* Boulangerie
-* Eau en libre service
-
-### Teyran
-
-* Restaurants
