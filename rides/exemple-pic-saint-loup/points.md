@@ -19,5 +19,5 @@ note: Single rocailleux en descente, prudence après la pluie
 type: panoramax
 lat: 43.8450
 lon: 3.8100
-picture: e7ce0662-0d63-4727-8638-6f3f3eea51b1
+picture: REMPLACEZ_PAR_UN_IDENTIFIANT_PANORAMAX
 label: Vue à 360° depuis le sommet

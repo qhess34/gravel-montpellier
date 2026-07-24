@@ -13,6 +13,11 @@ var imageExts = map[string]bool{
 	".jpg": true, ".jpeg": true, ".png": true, ".webp": true, ".gif": true,
 }
 
+// maxPointToTrackKm : au-delà de cette distance (km) entre un point et la
+// trace la plus proche, on considère qu'il n'est pas "sur le parcours" et
+// on ne lui attribue pas de point kilométrique.
+const maxPointToTrackKm = 3.0
+
 // LoadRides parcourt ridesDir (un sous-dossier par sortie) et construit
 // la liste des sorties, triée par date décroissante (les plus récentes en premier).
 //
@@ -96,6 +101,7 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 	}
 
 	// Trace GPX : on prend le premier fichier .gpx trouvé dans le dossier.
+	var trackPoints []GPXPoint
 	gpxPath, err := findFirstGPX(dir)
 	if err != nil {
 		return nil, err
@@ -109,6 +115,7 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 			ride.HasGPX = true
 			ride.GPXPoints = SimplifyForMap(points, 800)
 			ride.GPXFile = "gpx/" + filepath.Base(gpxPath)
+			trackPoints = points
 
 			if ride.DistanceKm == 0 {
 				ride.DistanceKm = DistanceKm(points)
@@ -116,6 +123,10 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 			if ride.ElevationM == 0 {
 				ride.ElevationM = ElevationGainM(points)
 			}
+
+			ride.StartPoint = points[0]
+			ride.EndPoint = points[len(points)-1]
+			ride.IsLoop = PointDistanceKm(ride.StartPoint, ride.EndPoint) < 0.05 // < 50 m : boucle
 		}
 	}
 
@@ -144,11 +155,66 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Photos géolocalisées automatiquement : toute photo du dossier photos/
+	// pas déjà référencée manuellement dans points.md, et dont les données
+	// EXIF contiennent une position GPS, devient un point sur la carte.
+	alreadyReferenced := map[string]bool{}
+	for _, p := range points {
+		if p.Type == PointPhoto {
+			alreadyReferenced[filepath.Base(p.PhotoRel)] = true
+		}
+	}
+	for _, rel := range ride.Photos {
+		name := filepath.Base(rel)
+		if alreadyReferenced[name] {
+			continue
+		}
+		ext := strings.ToLower(filepath.Ext(name))
+		if ext != ".jpg" && ext != ".jpeg" {
+			continue // seul le JPEG est pris en charge pour la lecture EXIF
+		}
+		if lat, lon, ok := PhotoGPS(filepath.Join(photosDir, name)); ok {
+			points = append(points, Point{
+				Type:     PointPhoto,
+				Lat:      lat,
+				Lon:      lon,
+				PhotoRel: rel,
+			})
+		}
+	}
+
+	// Point kilométrique : pour chaque point assez proche de la trace,
+	// on calcule sa position (km depuis le départ) en le projetant sur le
+	// point de trace le plus proche.
+	if len(trackPoints) > 0 {
+		for i := range points {
+			km, dist := NearestKm(trackPoints, GPXPoint{Lat: points[i].Lat, Lon: points[i].Lon})
+			if dist >= 0 && dist <= maxPointToTrackKm {
+				points[i].KmMark = km
+				points[i].HasKmMark = true
+			}
+		}
+	}
+
 	ride.Points = points
 	for _, p := range points {
 		if p.Type == PointPanoramax {
 			ride.HasPanoramax = true
-			break
+		}
+		if p.Type == PointPOI && p.HasKmMark && (p.Icon == "water" || p.Icon == "food") {
+			ride.Supplies = append(ride.Supplies, p)
+		}
+	}
+	sort.Slice(ride.Supplies, func(i, j int) bool {
+		return ride.Supplies[i].KmMark < ride.Supplies[j].KmMark
+	})
+
+	if len(trackPoints) > 0 {
+		profile := buildElevationProfile(trackPoints, 200)
+		if svg := renderElevationProfileSVG(profile, ride.Supplies); svg != "" {
+			ride.ElevationProfileSVG = svg
+			ride.HasElevationProfile = true
 		}
 	}
 

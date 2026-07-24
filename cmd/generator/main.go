@@ -18,15 +18,19 @@ import (
 func main() {
 	ridesDir := flag.String("rides", "rides", "dossier contenant un sous-dossier par sortie")
 	footer := flag.String("footer", "content/footer.md", "fichier markdown du pied de page")
+	legal := flag.String("legal", "content/mentions-legales.md", "fichier markdown de la page Mentions légales")
 	outDir := flag.String("out", "public", "dossier de sortie du site généré")
 	title := flag.String("title", "Gravel Montpellier", "titre du site")
+	siteURL := flag.String("site-url", "", "URL publique du site (ex: https://user.github.io/repo) — nécessaire pour les boutons de partage et l'aperçu d'image")
 	flag.Parse()
 
 	err := site.Build(site.Options{
 		RidesDir:   *ridesDir,
 		FooterPath: *footer,
+		LegalPath:  *legal,
 		OutDir:     *outDir,
 		SiteTitle:  *title,
+		SiteURL:    *siteURL,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Erreur :", err)

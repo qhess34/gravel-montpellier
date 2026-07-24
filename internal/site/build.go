@@ -5,24 +5,41 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Options contrôle la génération du site.
 type Options struct {
 	RidesDir   string // dossier contenant un sous-dossier par sortie
 	FooterPath string // fichier markdown pour le pied de page
+	LegalPath  string // fichier markdown pour la page "Mentions légales"
 	OutDir     string // dossier de sortie (site statique généré)
 	SiteTitle  string
+	SiteURL    string // URL publique du site (ex: https://user.github.io/repo), sans / final
+	// nécessaire pour générer des liens de partage et un aperçu d'image
+	// valides (Facebook/WhatsApp/etc. exigent des URLs absolues) ; si
+	// vide, les boutons de partage et les balises Open Graph sont omis.
 }
 
 type pageData struct {
 	PageTitle string
 	Root      string
 	Footer    template.HTML
+	Legal     template.HTML
 	Rides     []*Ride
 	Ride      *Ride
+
+	MetaURL         string // URL absolue de la page (canonical / og:url)
+	MetaImage       string // URL absolue de l'image d'aperçu (og:image)
+	MetaDescription string // court résumé (meta description / og:description)
+
+	ShareFacebook string
+	ShareWhatsApp string
+	ShareTwitter  string
+	ShareEmail    string
 }
 
 // Build génère l'intégralité du site statique dans opts.OutDir.
@@ -35,9 +52,14 @@ func Build(opts Options) error {
 		return fmt.Errorf("nettoyage du dossier de sortie : %w", err)
 	}
 
-	footerHTML, err := loadFooter(opts.FooterPath)
+	footerHTML, err := loadMarkdownFile(opts.FooterPath)
 	if err != nil {
 		return fmt.Errorf("footer : %w", err)
+	}
+
+	legalHTML, err := loadMarkdownFile(opts.LegalPath)
+	if err != nil {
+		return fmt.Errorf("mentions légales : %w", err)
 	}
 
 	rides, err := LoadRides(opts.RidesDir)
@@ -45,6 +67,11 @@ func Build(opts Options) error {
 		return fmt.Errorf("lecture des sorties : %w", err)
 	}
 	fmt.Printf("→ %d sortie(s) trouvée(s)\n", len(rides))
+
+	baseURL := strings.TrimRight(opts.SiteURL, "/")
+	if baseURL == "" {
+		fmt.Println("⚠ -site-url non renseigné : boutons de partage et aperçu d'image (Open Graph) non générés — voir le README")
+	}
 
 	if err := copyStatic(opts.OutDir); err != nil {
 		return fmt.Errorf("copie des assets statiques : %w", err)
@@ -58,6 +85,10 @@ func Build(opts Options) error {
 	if err != nil {
 		return fmt.Errorf("parsing template ride : %w", err)
 	}
+	legalTmpl, err := template.ParseFS(TemplatesFS, "templates/base.html", "templates/legal.html")
+	if err != nil {
+		return fmt.Errorf("parsing template légal : %w", err)
+	}
 
 	// Page d'accueil
 	if err := renderToFile(indexTmpl, filepath.Join(opts.OutDir, "index.html"), pageData{
@@ -67,6 +98,16 @@ func Build(opts Options) error {
 		Rides:     rides,
 	}); err != nil {
 		return fmt.Errorf("génération index.html : %w", err)
+	}
+
+	// Page "Mentions légales"
+	if err := renderToFile(legalTmpl, filepath.Join(opts.OutDir, "mentions-legales.html"), pageData{
+		PageTitle: "Mentions légales",
+		Root:      "",
+		Footer:    footerHTML,
+		Legal:     legalHTML,
+	}); err != nil {
+		return fmt.Errorf("génération mentions-legales.html : %w", err)
 	}
 
 	// Une page + assets par sortie
@@ -104,12 +145,26 @@ func Build(opts Options) error {
 			}
 		}
 
-		if err := renderToFile(rideTmpl, filepath.Join(outRideDir, "index.html"), pageData{
+		pd := pageData{
 			PageTitle: ride.Title,
 			Root:      "../../",
 			Footer:    footerHTML,
 			Ride:      ride,
-		}); err != nil {
+		}
+		if baseURL != "" {
+			pageURL := baseURL + "/rides/" + ride.Slug + "/"
+			pd.MetaURL = pageURL
+			pd.MetaDescription = shareDescription(ride)
+			if len(ride.Photos) > 0 {
+				pd.MetaImage = baseURL + "/rides/" + ride.Slug + "/" + ride.Photos[0]
+			}
+			pd.ShareFacebook = "https://www.facebook.com/sharer/sharer.php?u=" + escapeURLComponent(pageURL)
+			pd.ShareWhatsApp = "https://wa.me/?text=" + escapeURLComponent(ride.Title+" "+pageURL)
+			pd.ShareTwitter = "https://twitter.com/intent/tweet?url=" + escapeURLComponent(pageURL) + "&text=" + escapeURLComponent(ride.Title)
+			pd.ShareEmail = "mailto:?subject=" + escapeURLComponent(ride.Title) + "&body=" + escapeURLComponent(ride.Title+"\n\n"+pageURL)
+		}
+
+		if err := renderToFile(rideTmpl, filepath.Join(outRideDir, "index.html"), pd); err != nil {
 			return fmt.Errorf("génération page sortie (%s) : %w", ride.Slug, err)
 		}
 
@@ -138,7 +193,33 @@ func cleanDir(dir string) error {
 	return nil
 }
 
-func loadFooter(path string) (template.HTML, error) {
+// shareDescription construit un court résumé texte (sans HTML) utilisé
+// comme description de partage et meta description.
+func shareDescription(ride *Ride) string {
+	var parts []string
+	if ride.DistanceKm > 0 {
+		parts = append(parts, fmt.Sprintf("%.0f km", ride.DistanceKm))
+	}
+	if ride.ElevationM > 0 {
+		parts = append(parts, fmt.Sprintf("+%d m D+", ride.ElevationM))
+	}
+	if ride.Difficulty != "" {
+		parts = append(parts, ride.Difficulty)
+	}
+	if len(parts) == 0 {
+		return "Sortie gravel autour de Montpellier."
+	}
+	return "Sortie gravel — " + strings.Join(parts, " · ")
+}
+
+// escapeURLComponent encode une valeur pour l'insérer dans une query string,
+// en utilisant %20 plutôt que + pour les espaces (plus largement compatible,
+// notamment avec les liens mailto:).
+func escapeURLComponent(s string) string {
+	return strings.ReplaceAll(url.QueryEscape(s), "+", "%20")
+}
+
+func loadMarkdownFile(path string) (template.HTML, error) {
 	if path == "" {
 		return "", nil
 	}

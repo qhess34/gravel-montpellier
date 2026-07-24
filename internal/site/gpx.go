@@ -65,23 +65,57 @@ func LoadGPX(path string) ([]GPXPoint, error) {
 // DistanceKm calcule la distance totale (km) parcourue le long des points,
 // via la formule de haversine entre points consécutifs.
 func DistanceKm(points []GPXPoint) float64 {
-	const earthRadiusKm = 6371.0
 	total := 0.0
 	for i := 1; i < len(points); i++ {
-		a, b := points[i-1], points[i]
-		lat1, lon1 := degToRad(a.Lat), degToRad(a.Lon)
-		lat2, lon2 := degToRad(b.Lat), degToRad(b.Lon)
-
-		dLat := lat2 - lat1
-		dLon := lon2 - lon1
-
-		h := math.Sin(dLat/2)*math.Sin(dLat/2) +
-			math.Cos(lat1)*math.Cos(lat2)*math.Sin(dLon/2)*math.Sin(dLon/2)
-		c := 2 * math.Atan2(math.Sqrt(h), math.Sqrt(1-h))
-
-		total += earthRadiusKm * c
+		total += PointDistanceKm(points[i-1], points[i])
 	}
 	return total
+}
+
+// PointDistanceKm calcule la distance (km) entre deux points isolés,
+// via la formule de haversine.
+func PointDistanceKm(a, b GPXPoint) float64 {
+	const earthRadiusKm = 6371.0
+
+	lat1, lon1 := degToRad(a.Lat), degToRad(a.Lon)
+	lat2, lon2 := degToRad(b.Lat), degToRad(b.Lon)
+
+	dLat := lat2 - lat1
+	dLon := lon2 - lon1
+
+	h := math.Sin(dLat/2)*math.Sin(dLat/2) +
+		math.Cos(lat1)*math.Cos(lat2)*math.Sin(dLon/2)*math.Sin(dLon/2)
+	c := 2 * math.Atan2(math.Sqrt(h), math.Sqrt(1-h))
+
+	return earthRadiusKm * c
+}
+
+// NearestKm cherche, le long de track, le point le plus proche de target,
+// et renvoie la distance cumulée (km) depuis le départ jusqu'à ce point
+// (le "point kilométrique" de target sur la trace), ainsi que l'écart
+// (km) entre target et la trace — utile pour ignorer un point trop
+// éloigné du parcours pour qu'un PK ait du sens.
+func NearestKm(track []GPXPoint, target GPXPoint) (km float64, distanceToTrack float64) {
+	if len(track) == 0 {
+		return 0, -1
+	}
+
+	bestIdx := 0
+	bestDist := PointDistanceKm(track[0], target)
+	for i := 1; i < len(track); i++ {
+		d := PointDistanceKm(track[i], target)
+		if d < bestDist {
+			bestDist = d
+			bestIdx = i
+		}
+	}
+
+	cum := 0.0
+	for i := 1; i <= bestIdx; i++ {
+		cum += PointDistanceKm(track[i-1], track[i])
+	}
+
+	return cum, bestDist
 }
 
 // ElevationGainM additionne les montées positives entre points consécutifs (mètres).
