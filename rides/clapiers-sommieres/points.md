@@ -114,8 +114,8 @@ note: Cimetière Sommières
 ---   
 type: poi
 icon: food
-lat: 43,6820073
-lon: 3,9224952
+lat: 43.6820073
+lon: 3.9224952
 label: Ravitaillement
 note: Le Midi-Teyrannais
 
