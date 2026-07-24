@@ -135,3 +135,38 @@ label: Traversée dans les vignes
 type: panoramax
 picture: a75d8b18-2b8e-441b-b922-9e2b043eb06f
 label: Jolie vue sur Montpellier et la mer
+
+
+---
+
+type: poi
+icon: food
+lat: 43.683248
+lon: 3.925415
+label: Boulangerie du Bonheur
+
+
+---
+
+type: poi
+icon: food
+lat: 43.658594
+lon: 3.902163
+label: Boulangerie 1860
+
+---
+
+type: poi
+icon: water
+lat: 43.667596
+lon: 3.911098
+label: Point d'eau
+
+
+---
+
+type: poi
+icon: water
+lat: 43.656235
+lon: 3.883438
+label: Point d'eau
