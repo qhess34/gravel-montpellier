@@ -220,3 +220,13 @@ icon: water
 lat: 43.656235
 lon: 3.883438
 label: Point d'eau
+
+
+---
+
+type: poi
+icon: food
+lat: 43.712798
+lon: 4.004532
+label: Maison Husson
+note: Horaires : Tu-Su 07:00-13:00,16:30-19:30
