@@ -2,7 +2,7 @@
 FROM golang:1.22-alpine AS build
 WORKDIR /app
 COPY . .
-RUN go run ./cmd/generator -rides ./rides -footer ./content/footer.md -out ./public
+RUN go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -out ./public
 
 # Étape 2 : image légère qui sert uniquement le site statique généré
 FROM nginx:alpine AS serve

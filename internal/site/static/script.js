@@ -70,6 +70,7 @@
     history.replaceState(null, "", url);
     var wrap = document.createElement("div");
     wrap.className = "gm-panoramax";
+
     var el = document.createElement("pnx-photo-viewer");
     el.setAttribute("endpoint", endpoint);
     if (sequence) el.setAttribute("sequence", sequence);
@@ -114,5 +115,31 @@
       trigger.getAttribute("href") || (img && img.src),
       trigger.getAttribute("data-caption") || (img && img.alt)
     );
+  });
+
+  // Bouton "Copier le lien" du bloc de partage.
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-copy-link]");
+    if (!btn) return;
+    var link = btn.getAttribute("data-copy-link");
+    if (!link) return;
+
+    var reset = btn.textContent;
+    var done = function () {
+      btn.textContent = "Lien copié !";
+      btn.classList.add("share-btn--copied");
+      setTimeout(function () {
+        btn.textContent = reset;
+        btn.classList.remove("share-btn--copied");
+      }, 1800);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(done).catch(function () {
+        window.prompt("Copiez ce lien :", link);
+      });
+    } else {
+      window.prompt("Copiez ce lien :", link);
+    }
   });
 })();
