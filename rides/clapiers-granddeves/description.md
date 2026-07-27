@@ -3,7 +3,7 @@ title: Clapiers à la crête du Grand Devès (boucle)
 date: 24/07/2026
 difficulty: Moyenne
 departure: Clapiers - Médiathèque
-tags: vues panoramiques, gravel, pistes, vue mer
+tags: vues panoramiques, gravel, pistes, vue mer, 1 jour
 ---
 
 Un grand classique du nord de Montpellier. Le Grand Dévès est un massif emblématique dont les pistes de crête offrent des panoramas remarquables, donnant parfois l'impression de marquer la frontière entre la Méditerranée et les premiers reliefs des Cévennes.
