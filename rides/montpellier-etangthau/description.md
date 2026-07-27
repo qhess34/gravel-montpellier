@@ -3,7 +3,7 @@ title: Montpellier - Tour de l'étang de Thau (boucle)
 date: 27/07/2026
 difficulty: Moyenne
 departure: Montpellier - Hotel de ville
-tags: vues panoramiques, beaux villages, 2 jours, 3 jours, vue mer, en famille, itinérance, ville, petites routes
+tags: vues panoramiques, beaux villages, 2 jours, 3 jours, vue mer, en famille, itinérance, ville, petites routes, voie verte, baignade
 ---
 
 Une belle itinérance au départ de Montpellier, accessible aux familles, qui permet de découvrir les paysages variés de l'étang de Thau ainsi que le littoral méditerranéen, de Sète à Palavas-les-Flots. L'itinéraire peut être réalisé en deux ou trois jours selon le rythme souhaité et les nombreuses pauses possibles.
