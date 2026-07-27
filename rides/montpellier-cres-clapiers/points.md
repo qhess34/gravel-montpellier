@@ -254,3 +254,61 @@ icon: food
 lat: 43.612492
 lon: 3.894480
 label: Montpellier — Secrets de Pains
+
+---
+
+type: panoramax
+picture: 5c258a90-0698-4759-81ee-2a7e4d024bef
+label: Voie verte du Lez
+
+---
+
+type: panoramax
+picture: ea290859-8b92-4ed6-a11e-bc2cdc7227f4
+label: Avenue de la Pompignane
+
+---
+
+type: panoramax
+picture: 0050c7d8-5a40-4202-a476-353832aed92c
+label: Chemin de Verchant
+
+---
+
+type: panoramax
+picture: 7aaaa41d-05dd-44f2-b582-5325df682743
+label: Accès au Lac
+
+---
+
+type: panoramax
+picture: 8e7c26cd-275c-4612-beec-8ca2b4b5b389
+label: Plage du Lac
+
+---
+
+type: panoramax
+picture: b7c43201-9337-4d32-a551-7981f25272da
+label: Chemin de Naviteau
+
+---
+
+type: panoramax
+picture: 36b8a147-717a-46e9-8205-742cff617505
+label: Nouveau centre Jacou
+
+---
+
+type: panoramax
+picture: 7580ccad-dfa5-40f4-956a-6102411a9c06
+label: Eolienne de Clapiers
+
+---
+type: panoramax
+picture: 2229beb8-256b-4242-b31b-132862739ef7
+label: Le long du Verdanson
+
+
+
+
+
