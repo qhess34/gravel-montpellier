@@ -10,7 +10,7 @@ Une boucle idéale pour découvrir le littoral méditerranéen, de Carnon jusqu'
 
 Le parcours peut être réalisé en une journée, y compris en famille pour les plus habitués, ou sur deux jours afin de profiter pleinement des plages, des villages et des nombreuses possibilités de baignade qui jalonnent l'itinéraire.
 
-Le parcours
+## Le parcours
 
 Le départ se fait de Montpellier en empruntant la Véloligne 4A, qui longe la ligne 3 du tramway jusqu'à Carnon.
 
