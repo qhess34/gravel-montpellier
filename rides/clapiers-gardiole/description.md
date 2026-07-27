@@ -3,7 +3,7 @@ title: Clapiers à la Gardiole (boucle)
 date: 24/07/2026
 difficulty: Difficile
 departure: Clapiers - Médiathèque
-tags: voie verte, petites routes, vues panoramiques, vue mer, cassant, gravel
+tags: voie verte, petites routes, vues panoramiques, vue mer, gravel
 ---
 
 Cette boucle rejoint l'un des massifs incontournables de l'ouest montpelliérain pour le VTT et le gravel : le massif de la Gardiole. Culminant à environ 234 m d'altitude, il constitue le premier véritable relief en bordure de la Méditerranée et offre de superbes panoramas sur le littoral, les étangs et l'arrière-pays.

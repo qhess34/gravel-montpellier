@@ -3,7 +3,7 @@ title: Clapiers à Sommières (boucle)
 date: 23/07/2026
 difficulty: Moyenne
 departure: Clapiers - Médiathèque
-tags: passage à guë, single, voie verte, ville, fraicheur, gravel
+tags: passage à guë, single, voie verte, ville, gravel
 ---
 
 Une belle boucle gravel reliant Clapiers à Sommières, idéale pour découvrir les terrains variés du nord de Montpellier. Le parcours alterne voies vertes, pistes, chemins forestiers et quelques singles ludiques. Quelques passages techniques sont présents, mais ils restent accessibles : les moins à l'aise pourront facilement mettre pied à terre sur les sections les plus délicates.
