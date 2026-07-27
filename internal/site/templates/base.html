@@ -4,12 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{.PageTitle}} · CycloExplore Montpellier</title>
+  <title>{{.PageTitle}} · Cyclo Explore</title>
   {{if .MetaDescription}}<meta name="description" content="{{.MetaDescription}}">{{end}}
   {{if .MetaURL}}<link rel="canonical" href="{{.MetaURL}}">{{end}}
   {{if .MetaURL}}
-  <meta property="og:type" content="article">
-  <meta property="og:site_name" content="CycloExplore Montpellier">
+  <meta property="og:type" content="{{if .Ride}}article{{else}}website{{end}}">
+  <meta property="og:site_name" content="Cyclo Explore">
   <meta property="og:title" content="{{.PageTitle}}">
   <meta property="og:url" content="{{.MetaURL}}">
   {{if .MetaDescription}}<meta property="og:description" content="{{.MetaDescription}}">{{end}}
@@ -23,6 +23,9 @@
   <meta name="twitter:title" content="{{.PageTitle}}">
   {{if .MetaDescription}}<meta name="twitter:description" content="{{.MetaDescription}}">{{end}}
   {{end}}
+  {{if .StructuredDataJSON}}
+  <script type="application/ld+json">{{.StructuredDataJSON}}</script>
+  {{end}}
   <link rel="stylesheet" href="{{.Root}}static/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -34,7 +37,7 @@
     <div class="wrap">
       <a class="brand" href="{{.Root}}index.html">
         <span class="brand-mark">⛰</span>
-        <span>CycloExplore Montpellier</span>
+        <span>Cyclo Explore</span>
       </a>
       <nav>
         <a href="{{.Root}}index.html">Sorties</a>

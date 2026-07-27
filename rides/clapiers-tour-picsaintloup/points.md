@@ -62,13 +62,22 @@ picture: beeedbd6-61cf-4f02-8b72-a543717a3138
 label: Traversée de Restinclières
 
 
+
+---
+
+type: poi
+icon: water
+lat: 43.654346
+lon: 3.881348
+label: Clapiers — Point d'eau
+
 ---
 
 type: poi
 icon: water
 lat: 43.752179
 lon: 3.835008
-label: Point d'eau
+label: Saint-Jean-de-Cuculles — Point d'eau
 
 ---
 
@@ -76,7 +85,7 @@ type: poi
 icon: water
 lat: 43.752699
 lon: 3.834794
-label: Point d'eau
+label: Saint-Jean-de-Cuculles — Point d'eau
 
 ---
 
@@ -84,7 +93,7 @@ type: poi
 icon: water
 lat: 43.769409
 lon: 3.787752
-label: Point d'eau
+label: Cazevieille — Point d'eau
 
 ---
 
@@ -92,7 +101,7 @@ type: poi
 icon: water
 lat: 43.784131
 lon: 3.756529
-label: Point d'eau
+label: Mas-de-Londres — Point d'eau
 
 ---
 
@@ -100,8 +109,32 @@ type: poi
 icon: food
 lat: 43.770073
 lon: 3.868004
-label: Maison Chabanol
+label: Saint-Mathieu-de-Tréviers — Maison Chabanol
 note: Horaires : Mo-Su 06:30-13:00,16:30-20:00; Tu off
+
+---
+
+type: poi
+icon: water
+lat: 43.769935
+lon: 3.868033
+label: Saint-Mathieu-de-Tréviers — Point d'eau
+
+---
+
+type: poi
+icon: water
+lat: 43.715170
+lon: 3.861944
+label: Prades-le-Lez — Point d'eau
+
+---
+
+type: poi
+icon: water
+lat: 43.698921
+lon: 3.862249
+label: Prades-le-Lez — Point d'eau
 
 ---
 
@@ -109,7 +142,7 @@ type: poi
 icon: food
 lat: 43.697306
 lon: 3.862740
-label: Maison Bonnet-Madin
+label: Prades-le-Lez — Maison Bonnet-Madin
 note: Horaires : Mo-Su 06:00-20:00
 
 ---
@@ -118,22 +151,5 @@ type: poi
 icon: food
 lat: 43.693686
 lon: 3.861978
-label: Clément Boursiquot
+label: Prades-le-Lez — Clément Boursiquot
 note: Horaires : Tu-Sa 08:00-12:30,15:00-19:00; Su 08:00-12:30
-
-
----
-
-type: poi
-icon: water
-lat: 43.769935
-lon: 3.868033
-label: Point d'eau
-
----
-
-type: poi
-icon: water
-lat: 43.715170
-lon: 3.861944
-label: Point d'eau

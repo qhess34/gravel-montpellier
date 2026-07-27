@@ -1,10 +1,10 @@
-# Gravel Montpellier
+# Cyclo Explore — Montpellier
 
 Générateur de site statique en Go qui liste les sorties gravel autour de
-Montpellier. La mise en forme est entièrement automatique : vous n'avez
-qu'à déposer le contenu de chaque sortie dans `rides/`, la CI GitHub
-Actions génère le site et le publie sur GitHub Pages à chaque `push` sur
-`main`.
+Montpellier, publié sur **montpellier.cycloexplore.fr**. La mise en forme
+est entièrement automatique : vous n'avez qu'à déposer le contenu de
+chaque sortie dans `rides/`, la CI GitHub Actions génère le site et le
+publie sur GitHub Pages à chaque `push` sur `main`.
 
 ## Ajouter une sortie
 
@@ -51,11 +51,20 @@ Champs du frontmatter (toutes optionnelles sauf `title`) :
 > `date: 2026-06-15` (les sorties sont triées par ordre alphabétique
 > décroissant de ce champ).
 
+**Filtre par tags sur l'accueil :** dès qu'au moins une sortie a des
+`tags`, une barre de filtre apparaît automatiquement sur la page
+d'accueil (aucune configuration à faire). Cliquer sur un ou plusieurs
+tags affiche uniquement les sorties qui les ont tous (filtrage cumulatif,
+pas de rechargement de page) ; « Toutes les sorties » réinitialise. Le
+filtre actif est mémorisé dans l'URL (`#tags=...`), donc partageable ou
+rechargeable tel quel.
+
 ### track.gpx
 
 Un seul fichier `.gpx` par dossier de sortie. S'il est présent :
-- il est affiché sur une carte (OpenStreetMap + Leaflet) sur la page de la sortie,
-- un **profil altimétrique** est généré automatiquement (SVG, sans JavaScript) sous la carte, avec les points d'eau/boulangeries repérés au bon endroit (survol pour le détail),
+- il est affiché tel quel sur une carte (OpenStreetMap + Leaflet) sur la page de la sortie,
+- une **estimation du revêtement** (route/piste cyclable vs chemin/sentier) est calculée automatiquement au moment du build, en comparant la trace aux données OpenStreetMap (API Overpass), et affichée sous forme de barre + pourcentages sous la carte. Purement informatif : n'affecte jamais l'affichage de la trace elle-même. Si l'API n'est pas joignable (pas de réseau, indisponibilité), ce bloc est simplement omis, sans bloquer le reste du build,
+- un **profil altimétrique** est généré automatiquement (SVG, sans JavaScript) sous la carte, avec les points d'eau/boulangeries repérés au bon endroit ; survoler la carte ou le profil affiche le point correspondant sur l'autre (et inversement),
 - il est proposé au téléchargement,
 - la distance et le dénivelé sont calculés automatiquement si vous ne les
   avez pas renseignés dans `description.md`.
@@ -145,9 +154,14 @@ automatiquement sur ces points.
 
 `tools/find_supplies.py` interroge OpenStreetMap (API Overpass) le long
 de la trace GPX d'une sortie, vous propose un par un les points d'eau et
-boulangeries trouvés (nom, distance à la trace, PK), et génère les blocs
-à coller dans `points.md` pour ceux que vous validez — plus besoin de
-chercher les coordonnées à la main.
+boulangeries trouvés (commune, nom, distance à la trace, PK), et génère
+les blocs à coller dans `points.md` pour ceux que vous validez — plus
+besoin de chercher les coordonnées à la main. La commune est déterminée
+par géocodage inverse (Nominatim) et préfixée au label par défaut (ex :
+« Saint-Mathieu-de-Tréviers — Fontaine du village »), modifiable avec `e`
+avant validation. Les points déjà présents dans `points.md` (à moins de
+20 m d'un point existant) ne sont pas reproposés d'une exécution à
+l'autre.
 
 Ne dépend que de Python 3.8+ (bibliothèque standard uniquement, rien à
 installer) ; nécessite un accès réseau.
@@ -169,6 +183,9 @@ python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --radius 250
 
 # Un seul type de point
 python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --only water
+
+# Revoir aussi les points déjà présents dans points.md
+python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --include-existing
 
 # Afficher le résultat sans rien écrire
 python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --dry-run
@@ -200,22 +217,27 @@ sous sa propre responsabilité — avec un lien vers la page complète.
 ## Partage (Facebook, WhatsApp, X, e-mail) et aperçu d'image
 
 Chaque page de sortie affiche automatiquement des boutons de partage —
-rien à faire dans `description.md`. Pour que ça fonctionne (liens
-valides *et* aperçu avec image sur Facebook/WhatsApp/etc.), le
-générateur a besoin de connaître l'URL publique du site, via `-site-url` :
+rien à faire dans `description.md`. Ça repose sur l'URL publique du
+site, connue via `-site-url` — par défaut déjà réglée sur
+`https://montpellier.cycloexplore.fr` (inutile d'y toucher sauf pour
+tester ailleurs) :
 
 ```bash
-go run ./cmd/generator -site-url "https://votre-compte.github.io/gravel-montpellier"
+go run ./cmd/generator -site-url "https://montpellier.cycloexplore.fr"
 ```
 
-Sans cette option, les boutons de partage et les balises Open Graph
-(aperçu d'image) sont simplement omis — le reste du site fonctionne
-normalement. En CI, l'URL est calculée automatiquement à partir du dépôt
-(`https://<compte>.github.io/<dépôt>`) ; si votre site est publié à une
-autre adresse (domaine personnalisé, dépôt `<compte>.github.io`...),
-définissez une variable de dépôt **`SITE_URL`** dans *Settings → Secrets
-and variables → Actions → Variables* avec l'URL exacte — elle prend le
-pas sur le calcul automatique.
+En CI, cette même valeur est utilisée par défaut ; pour la changer sans
+modifier le workflow (test, environnement de staging...), définissez une
+variable de dépôt **`SITE_URL`** dans *Settings → Secrets and variables →
+Actions → Variables* — elle prend le pas sur la valeur par défaut.
+
+Quand `-site-url` pointe vers un domaine personnalisé (comme ici, pas un
+sous-domaine `*.github.io`), un fichier `CNAME` contenant ce domaine est
+généré automatiquement dans `public/` — c'est ce dont GitHub Pages a
+besoin pour servir le site sur `montpellier.cycloexplore.fr`. Il faut
+par ailleurs configurer une fois le DNS (enregistrement CNAME de
+`montpellier` vers `<compte>.github.io`) et déclarer le domaine dans
+*Settings → Pages* du dépôt.
 
 L'image d'aperçu utilisée est la première photo (ordre alphabétique) du
 dossier `photos/` de la sortie ; sans photo, seuls le titre et un court
@@ -235,7 +257,7 @@ navigateur (certains navigateurs bloquent les requêtes `fetch` en
 Options disponibles :
 
 ```bash
-go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -site-url "https://votre-compte.github.io/gravel-montpellier" -out ./public -title "Gravel Montpellier"
+go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -site-url "https://montpellier.cycloexplore.fr" -out ./public -title "Cyclo Explore"
 ```
 
 ## Générer et prévisualiser avec Docker
@@ -286,8 +308,13 @@ seule fois puis réutilise le cache.
 1. Poussez ce dépôt sur GitHub.
 2. Dans **Settings → Pages**, réglez la section *Build and deployment*
    sur **Source: GitHub Actions**.
-3. Poussez sur `main` (ou lancez le workflow manuellement depuis l'onglet
-   **Actions**) : le site est construit puis publié automatiquement.
+3. Toujours dans **Settings → Pages**, section *Custom domain*, entrez
+   `montpellier.cycloexplore.fr` et validez (GitHub vérifie le DNS).
+4. Chez votre fournisseur DNS, ajoutez un enregistrement **CNAME** pour
+   `montpellier.cycloexplore.fr` pointant vers `<compte>.github.io`.
+5. Poussez sur `main` (ou lancez le workflow manuellement depuis l'onglet
+   **Actions**) : le site est construit (avec son fichier `CNAME`, généré
+   automatiquement — voir la section partage ci-dessus) puis publié.
 
 Aucun token à configurer : le workflow utilise les permissions
 `pages`/`id-token` fournies automatiquement par GitHub Actions.

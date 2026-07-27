@@ -4,9 +4,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gravel Montpellier · Gravel Montpellier</title>
+  <title>Cyclo Explore · Cyclo Explore</title>
+  <meta name="description" content="Sorties gravel autour de Montpellier : traces GPX, photos et itinéraires.">
+  <link rel="canonical" href="https://montpellier.cycloexplore.fr/">
+  
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Cyclo Explore">
+  <meta property="og:title" content="Cyclo Explore">
+  <meta property="og:url" content="https://montpellier.cycloexplore.fr/">
+  <meta property="og:description" content="Sorties gravel autour de Montpellier : traces GPX, photos et itinéraires.">
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Cyclo Explore">
+  <meta name="twitter:description" content="Sorties gravel autour de Montpellier : traces GPX, photos et itinéraires.">
   
   
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Cyclo Explore","url":"https://montpellier.cycloexplore.fr/"}</script>
   
   <link rel="stylesheet" href="static/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,7 +33,7 @@
     <div class="wrap">
       <a class="brand" href="index.html">
         <span class="brand-mark">⛰</span>
-        <span>Gravel Montpellier</span>
+        <span>Cyclo Explore</span>
       </a>
       <nav>
         <a href="index.html">Sorties</a>
@@ -38,9 +52,70 @@
 
 <section class="wrap">
   
+  
+  <div class="tag-filter" data-tag-filter>
+    <button type="button" class="tag-filter-btn tag-filter-btn--all is-active" data-tag-all>Toutes les sorties</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="ascensions">ascensions</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="beaux villages">beaux villages</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="calcaire">calcaire</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="cassant">cassant</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="fraicheur">fraicheur</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="gravel">gravel</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="gravel race">gravel race</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="montagnes russes">montagnes russes</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="passage à guë">passage à guë</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="petites routes">petites routes</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="pistes forestières">pistes forestières</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="ravitaillement à saint-mathieu">ravitaillement à saint-mathieu</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="single">single</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="ville">ville</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="voie verte">voie verte</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="vue mer">vue mer</button>
+    
+    <button type="button" class="tag-filter-btn" data-tag="vues panoramiques">vues panoramiques</button>
+    
+  </div>
+  
+
   <div class="ride-grid">
     
-    <a class="ride-card" href="rides/clapiers-granddeves/index.html">
+    <a class="ride-card" data-tags="voie verte,petites routes,vues panoramiques,vue mer,cassant,gravel" href="rides/clapiers-gardiole/index.html">
+      
+        <div class="ride-card-photo" style="background-image:url('rides/clapiers-gardiole/photos/IMG_20221120_095459.jpg')"></div>
+      
+      <div class="ride-card-body">
+        <h2>Clapiers à la Gardiole (boucle)</h2>
+        <p class="ride-card-date">24/07/2026</p>
+        <ul class="ride-stats">
+          <li>70 km</li>
+          <li>+801 m D+</li>
+          <li>Difficile</li>
+        </ul>
+        
+        <div class="ride-tags">
+          <span class="tag">voie verte</span><span class="tag">petites routes</span><span class="tag">vues panoramiques</span><span class="tag">vue mer</span><span class="tag">cassant</span><span class="tag">gravel</span>
+        </div>
+        
+      </div>
+    </a>
+    
+    <a class="ride-card" data-tags="montagnes russes,single,vues panoramiques,gravel race,gravel" href="rides/clapiers-granddeves/index.html">
       
         <div class="ride-card-photo" style="background-image:url('rides/clapiers-granddeves/photos/PXL_20230326_071713373.jpg')"></div>
       
@@ -60,7 +135,7 @@
       </div>
     </a>
     
-    <a class="ride-card" href="rides/clapiers-tour-picsaintloup/index.html">
+    <a class="ride-card" data-tags="pistes forestières,vues panoramiques,ascensions,beaux villages,gravel" href="rides/clapiers-tour-picsaintloup/index.html">
       
         <div class="ride-card-photo" style="background-image:url('rides/clapiers-tour-picsaintloup/photos/PXL_20241019_070126155.jpg')"></div>
       
@@ -80,7 +155,7 @@
       </div>
     </a>
     
-    <a class="ride-card" href="rides/clapiers-sommieres/index.html">
+    <a class="ride-card" data-tags="passage à guë,single,voie verte,ville,fraicheur,gravel" href="rides/clapiers-sommieres/index.html">
       
         <div class="ride-card-photo" style="background-image:url('rides/clapiers-sommieres/photos/0.jpg')"></div>
       
@@ -100,7 +175,7 @@
       </div>
     </a>
     
-    <a class="ride-card" href="rides/exemple-pic-saint-loup/index.html">
+    <a class="ride-card" data-tags="calcaire,single,ravitaillement à saint-mathieu" href="rides/exemple-pic-saint-loup/index.html">
       
         <div class="ride-card-photo ride-card-photo--placeholder">⛰</div>
       
@@ -121,6 +196,7 @@
     </a>
     
   </div>
+  <p class="tag-filter-empty" data-tag-empty>Aucune sortie ne correspond à ces tags.</p>
   
 </section>
 
@@ -128,9 +204,9 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <p>Site créé et maintenu par l&#39;équipe Gravel Montpellier.</p>
+      <p>Site créé et maintenu par l&#39;équipe Cyclo Explore.</p>
 <p>Une trace mal indiquée, une sortie à ajouter ? Ouvrez une <a href="https://github.com/" target="_blank" rel="noopener">issue sur GitHub</a>.</p>
-<p>© 2026 Gravel Montpellier</p>
+<p>© 2026 Cyclo Explore</p>
 
       <nav class="footer-legal-nav">
         <a href="mentions-legales.html">Mentions légales</a>

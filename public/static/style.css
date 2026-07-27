@@ -76,6 +76,38 @@ a:hover { text-decoration: underline; }
 
 .empty { color: var(--ink-soft); padding: 48px 0; }
 
+/* Filtre par tags (accueil) */
+.tag-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 28px 0 0;
+}
+.tag-filter-btn {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.tag-filter-btn:hover { border-color: var(--terracotta); }
+.tag-filter-btn.is-active {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+  color: #fff;
+}
+.tag-filter-btn--all { font-weight: 600; }
+.tag-filter-empty {
+  display: none;
+  color: var(--ink-soft);
+  padding: 24px 0 48px;
+}
+
 /* Ride grid / cards */
 .ride-grid {
   display: grid;
@@ -160,6 +192,43 @@ a:hover { text-decoration: underline; }
 
 .gpx-download { margin-top: -10px; }
 
+/* Statistiques de revêtement (route/piste cyclable vs chemin/sentier) */
+.surface-stats { margin: 20px 0; max-width: 480px; }
+.surface-stats-title { font-size: 1.1rem; margin-bottom: 10px; }
+.surface-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--line);
+}
+.surface-bar-seg { display: block; height: 100%; }
+.surface-bar-seg--paved   { background: #3d7ea6; }
+.surface-bar-seg--unpaved { background: #b8562f; }
+.surface-bar-seg--unknown { background: #ccc3b1; }
+
+.surface-legend {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.surface-legend li { display: flex; align-items: center; gap: 8px; }
+.surface-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.surface-swatch--paved   { background: #3d7ea6; }
+.surface-swatch--unpaved { background: #b8562f; }
+.surface-swatch--unknown { background: #ccc3b1; }
+
 /* Profil altimétrique */
 .elevation-wrap { margin: 24px 0; }
 .elevation-title { font-size: 1.1rem; margin-bottom: 10px; }
@@ -187,6 +256,25 @@ a:hover { text-decoration: underline; }
 .elevation-marker--danger    { fill: #b5342a; }
 .elevation-marker--viewpoint { fill: var(--olive); }
 .elevation-marker--generic   { fill: var(--terracotta); }
+
+.elevation-profile { cursor: crosshair; }
+.elevation-hover-line {
+  stroke: var(--ink);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  pointer-events: none;
+}
+.elevation-hover-dot {
+  fill: var(--terracotta);
+  stroke: var(--paper);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+.gm-hover-marker {
+  fill: var(--terracotta);
+  stroke: var(--paper);
+  stroke-width: 2;
+}
 
 .ride-body { max-width: 720px; margin-top: 24px; }
 .ride-body h2 { font-size: 1.4rem; margin-top: 1.4em; }

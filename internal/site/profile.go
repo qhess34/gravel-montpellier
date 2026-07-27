@@ -1,6 +1,7 @@
 package site
 
 import (
+	"encoding/json"
 	"fmt"
 	"html"
 	"html/template"
@@ -11,6 +12,8 @@ import (
 type profilePoint struct {
 	Km  float64
 	Ele float64
+	Lat float64
+	Lon float64
 }
 
 // buildElevationProfile ré-échantillonne la trace complète en au plus
@@ -27,10 +30,15 @@ func buildElevationProfile(track []GPXPoint, maxPoints int) []profilePoint {
 		cum[i] = cum[i-1] + PointDistanceKm(track[i-1], track[i])
 	}
 
+	build := func(idx int) profilePoint {
+		p := track[idx]
+		return profilePoint{Km: cum[idx], Ele: p.Ele, Lat: p.Lat, Lon: p.Lon}
+	}
+
 	if len(track) <= maxPoints || maxPoints < 2 {
 		profile := make([]profilePoint, len(track))
-		for i, p := range track {
-			profile[i] = profilePoint{Km: cum[i], Ele: p.Ele}
+		for i := range track {
+			profile[i] = build(i)
 		}
 		return profile
 	}
@@ -42,7 +50,7 @@ func buildElevationProfile(track []GPXPoint, maxPoints int) []profilePoint {
 		if idx >= len(track) {
 			idx = len(track) - 1
 		}
-		profile = append(profile, profilePoint{Km: cum[idx], Ele: track[idx].Ele})
+		profile = append(profile, build(idx))
 	}
 	return profile
 }
@@ -56,10 +64,11 @@ const (
 	profilePadBot = 26.0
 )
 
-// renderElevationProfileSVG construit le profil altimétrique en SVG pur
-// (aucun JavaScript ni dépendance externe), avec des repères pour les
-// points d'eau et boulangeries situés sur le parcours (survol = info-bulle
-// native via <title>).
+// renderElevationProfileSVG construit le profil altimétrique en SVG pur,
+// avec des repères pour les points d'eau/boulangeries (survol = info-bulle
+// native via <title>). Les dimensions et échelles du graphique sont
+// exposées en attributs data-* pour que le JS (survol synchronisé avec la
+// carte) puisse les réutiliser sans les dupliquer.
 func renderElevationProfileSVG(profile []profilePoint, supplies []Point) template.HTML {
 	if len(profile) < 2 {
 		return ""
@@ -107,7 +116,9 @@ func renderElevationProfileSVG(profile []profilePoint, supplies []Point) templat
 	areaPath := fmt.Sprintf("M%.1f,%.1f L%s L%.1f,%.1f Z", x(0), yBase, pointsStr, x(totalKm), yBase)
 
 	var b strings.Builder
-	fmt.Fprintf(&b, `<svg class="elevation-profile" viewBox="0 0 %.0f %.0f" preserveAspectRatio="none" role="img" aria-label="Profil altimétrique">`, profileWidth, profileHeight)
+	fmt.Fprintf(&b, `<svg class="elevation-profile" viewBox="0 0 %.0f %.0f" preserveAspectRatio="none" role="img" aria-label="Profil altimétrique, survolez pour repérer la position sur la carte"`, profileWidth, profileHeight)
+	fmt.Fprintf(&b, ` data-width="%.0f" data-height="%.0f" data-pad-l="%.0f" data-pad-r="%.0f" data-pad-top="%.0f" data-pad-bot="%.0f" data-min-ele="%.2f" data-max-ele="%.2f">`,
+		profileWidth, profileHeight, profilePadL, profilePadR, profilePadTop, profilePadBot, minEle, maxEle)
 
 	fmt.Fprintf(&b, `<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" class="elevation-axis"/>`, profilePadL, yBase, profileWidth-profilePadR, yBase)
 	fmt.Fprintf(&b, `<text x="4" y="%.1f" class="elevation-label">%.0f m</text>`, y(maxEle)+4, maxEle)
@@ -133,6 +144,11 @@ func renderElevationProfileSVG(profile []profilePoint, supplies []Point) templat
 		fmt.Fprintf(&b, `<circle cx="%.1f" cy="%.1f" r="4.5" class="elevation-marker elevation-marker--%s"><title>%s (PK %.0f)</title></circle>`,
 			cx, cy, s.Icon, label, s.KmMark)
 	}
+
+	// Ligne + point de survol, positionnés dynamiquement par script.js
+	// (gmInitProfileHover) ; masqués tant qu'aucun survol n'a eu lieu.
+	fmt.Fprintf(&b, `<line class="elevation-hover-line" y1="%.1f" y2="%.1f" style="display:none"/>`, profilePadTop, profileHeight-profilePadBot)
+	b.WriteString(`<circle class="elevation-hover-dot" r="5" style="display:none"/>`)
 
 	b.WriteString(`</svg>`)
 	return template.HTML(b.String())
@@ -173,4 +189,31 @@ func niceKmStep(totalKm float64) float64 {
 	default:
 		return 50
 	}
+}
+
+type profileDataPoint struct {
+	Km  float64 `json:"km"`
+	Ele float64 `json:"ele"`
+	Lat float64 `json:"lat"`
+	Lon float64 `json:"lon"`
+}
+
+// elevationProfileDataJSON sérialise le profil (km, altitude, position) en
+// JSON, pour que script.js puisse synchroniser le survol du graphique avec
+// un marqueur sur la carte (et inversement).
+func elevationProfileDataJSON(profile []profilePoint) template.JS {
+	data := make([]profileDataPoint, len(profile))
+	for i, p := range profile {
+		data[i] = profileDataPoint{
+			Km:  math.Round(p.Km*100) / 100,
+			Ele: math.Round(p.Ele),
+			Lat: math.Round(p.Lat*1e6) / 1e6,
+			Lon: math.Round(p.Lon*1e6) / 1e6,
+		}
+	}
+	b, err := json.Marshal(data)
+	if err != nil {
+		return "[]"
+	}
+	return template.JS(b)
 }

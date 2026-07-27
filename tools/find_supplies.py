@@ -26,12 +26,15 @@ import json
 import math
 import os
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
+NOMINATIM_MIN_INTERVAL = 1.1  # secondes entre deux appels (politique d'usage Nominatim : 1 req/s max)
 EARTH_RADIUS_KM = 6371.0
 USER_AGENT = "gravel-montpellier-find-supplies/1.0 (script interactif local)"
 
@@ -99,6 +102,52 @@ def find_gpx_in_dir(directory):
     return None
 
 
+# --- points.md existant (détection des doublons) --------------------------
+
+DUPLICATE_THRESHOLD_M = 20  # en dessous de cette distance, on considère que c'est le même point
+
+
+def parse_points_md_coords(path):
+    """Renvoie les coordonnées (lat, lon) de tous les points déjà présents
+    dans points.md, s'il existe (même format de blocs que le générateur Go :
+    des sections séparées par une ligne '---', en 'clé: valeur')."""
+    if not os.path.exists(path):
+        return []
+
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    blocks, current = [], []
+    for line in content.replace("\r\n", "\n").split("\n"):
+        if line.strip() == "---":
+            blocks.append(current)
+            current = []
+        else:
+            current.append(line)
+    blocks.append(current)
+
+    coords = []
+    for block in blocks:
+        fields = {}
+        for line in block:
+            line = line.strip()
+            if not line or line.startswith("#") or ":" not in line:
+                continue
+            key, _, value = line.partition(":")
+            fields[key.strip()] = value.strip().strip("\"'")
+        lat, lon = fields.get("lat"), fields.get("lon")
+        if lat and lon:
+            try:
+                coords.append((float(lat), float(lon)))
+            except ValueError:
+                pass
+    return coords
+
+
+def is_duplicate(lat, lon, existing_coords):
+    return any(haversine_km((lat, lon), (elat, elon)) * 1000 <= DUPLICATE_THRESHOLD_M for elat, elon in existing_coords)
+
+
 # --- Overpass ------------------------------------------------------------
 
 def build_query(buffer_points, radius_m, want_water, want_bakery):
@@ -106,8 +155,15 @@ def build_query(buffer_points, radius_m, want_water, want_bakery):
     around = f"around:{radius_m},{coords}"
     clauses = []
     if want_water:
+        # amenity=drinking_water / water_point couvrent la majorité des cas,
+        # mais pas mal de points d'eau (fontaines de village, robinets,
+        # sources, puits) sont tagués différemment sur OSM.
         clauses.append(f'  node({around})[amenity=drinking_water];')
         clauses.append(f'  node({around})[amenity=water_point];')
+        clauses.append(f'  node({around})[man_made=water_tap];')
+        clauses.append(f'  node({around})[amenity=fountain][drinking_water=yes];')
+        clauses.append(f'  node({around})[natural=spring][drinking_water=yes];')
+        clauses.append(f'  node({around})[man_made=water_well][drinking_water=yes];')
     if want_bakery:
         clauses.append(f'  node({around})[shop=bakery];')
         clauses.append(f'  node({around})[amenity=bakery];')
@@ -122,16 +178,58 @@ def query_overpass(query):
         return json.load(resp)
 
 
+# --- Géocodage inverse (nom de commune) ------------------------------------
+
+def reverse_city(lat, lon):
+    """Renvoie le nom de la commune/village au plus proche de (lat, lon) via
+    Nominatim, ou None en cas d'échec (pas d'accès réseau, pas de résultat...).
+    """
+    params = {"format": "jsonv2", "lat": f"{lat:.6f}", "lon": f"{lon:.6f}", "zoom": "14", "addressdetails": "1"}
+    url = NOMINATIM_URL + "?" + urllib.parse.urlencode(params)
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.load(resp)
+    except Exception:
+        return None
+    addr = data.get("address", {})
+    return addr.get("city") or addr.get("town") or addr.get("village") or addr.get("municipality") or addr.get("hamlet")
+
+
+def add_cities(candidates):
+    """Renseigne candidates[i]['city'] pour chaque candidat, en respectant la
+    limite d'1 requête/seconde imposée par l'usage policy de Nominatim."""
+    if not candidates:
+        return
+    print(f"Recherche des communes pour {len(candidates)} point(s)...")
+    last_call = 0.0
+    for c in candidates:
+        wait = NOMINATIM_MIN_INTERVAL - (time.time() - last_call)
+        if wait > 0:
+            time.sleep(wait)
+        c["city"] = reverse_city(c["lat"], c["lon"])
+        last_call = time.time()
+
+
 def classify(tags):
     if tags.get("amenity") in ("drinking_water", "water_point"):
+        return "water"
+    if tags.get("man_made") == "water_tap":
+        return "water"
+    if tags.get("drinking_water") == "yes" and (
+        tags.get("amenity") == "fountain"
+        or tags.get("natural") == "spring"
+        or tags.get("man_made") == "water_well"
+    ):
         return "water"
     if tags.get("shop") == "bakery" or tags.get("amenity") == "bakery":
         return "food"
     return None
 
 
-def default_label(tags, kind):
-    return tags.get("name") or ("Point d'eau" if kind == "water" else "Boulangerie")
+def default_label(tags, kind, city=None):
+    name = tags.get("name") or ("Point d'eau" if kind == "water" else "Boulangerie")
+    return f"{city} — {name}" if city else name
 
 
 def default_note(tags):
@@ -150,7 +248,7 @@ def prompt_selection(candidates):
     print(f"\n{len(candidates)} point(s) trouvé(s) près de la trace.\n")
 
     for c in candidates:
-        label = default_label(c["tags"], c["kind"])
+        label = default_label(c["tags"], c["kind"], c.get("city"))
         note = default_note(c["tags"])
         kind_label = "point d'eau" if c["kind"] == "water" else "boulangerie"
 
@@ -222,6 +320,7 @@ def main():
     parser.add_argument("--radius", type=int, default=150, help="Rayon de recherche autour de la trace, en mètres (défaut : 150)")
     parser.add_argument("--only", choices=["water", "bakery", "both"], default="both", help="Type de points à chercher (défaut : both)")
     parser.add_argument("--out", help="Fichier points.md cible (défaut : points.md à côté du .gpx)")
+    parser.add_argument("--include-existing", action="store_true", help="Proposer aussi les points déjà présents dans points.md (par défaut, ils sont ignorés silencieusement)")
     parser.add_argument("--dry-run", action="store_true", help="N'écrit rien sur disque, affiche seulement le résultat")
     args = parser.parse_args()
 
@@ -278,7 +377,31 @@ def main():
         print("Aucun point trouvé dans le rayon indiqué. Essayez d'augmenter --radius.")
         return
 
-    ordered = sorted(candidates.values(), key=lambda c: c["km"])
+    skipped_duplicates = 0
+    if not args.include_existing:
+        existing_coords = parse_points_md_coords(out_path)
+        if existing_coords:
+            kept = {}
+            for cid, c in candidates.items():
+                if is_duplicate(c["lat"], c["lon"], existing_coords):
+                    skipped_duplicates += 1
+                else:
+                    kept[cid] = c
+            candidates = kept
+
+    if not candidates:
+        if skipped_duplicates:
+            print(f"Les {skipped_duplicates} point(s) trouvé(s) sont déjà présents dans {out_path} (relancez avec --include-existing pour les revoir).")
+        else:
+            print("Aucun point trouvé dans le rayon indiqué. Essayez d'augmenter --radius.")
+        return
+
+    if skipped_duplicates:
+        print(f"({skipped_duplicates} point(s) déjà présent(s) dans {out_path}, non proposés à nouveau — voir --include-existing)")
+
+    candidate_list = list(candidates.values())
+    add_cities(candidate_list)
+    ordered = sorted(candidate_list, key=lambda c: c["km"])
 
     try:
         selected = prompt_selection(ordered)

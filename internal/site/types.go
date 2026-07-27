@@ -21,6 +21,7 @@ type Ride struct {
 	Difficulty string
 	Departure  string
 	Tags       []string
+	TagsAttr   string // tags en minuscules, séparés par des virgules, pour le filtre côté client
 
 	Body template.HTML // description au format HTML (convertie depuis markdown)
 
@@ -32,8 +33,17 @@ type Ride struct {
 	EndPoint   GPXPoint // dernier point de la trace (arrivée)
 	IsLoop     bool     // true si départ et arrivée sont au même endroit (à ~50 m près)
 
-	ElevationProfileSVG template.HTML // profil altimétrique, rendu en SVG
-	HasElevationProfile bool
+	SurfacePavedKm    float64 // km estimés sur route/piste cyclable (revêtu)
+	SurfaceUnpavedKm  float64 // km estimés sur chemin/sentier (non revêtu)
+	SurfaceUnknownKm  float64 // km sans correspondance OSM fiable à proximité
+	SurfacePavedPct   int
+	SurfaceUnpavedPct int
+	SurfaceUnknownPct int
+	HasSurfaceStats   bool // true si la classification a produit un résultat exploitable
+
+	ElevationProfileSVG      template.HTML // profil altimétrique, rendu en SVG
+	ElevationProfileDataJSON template.JS   // [{km,ele,lat,lon}, ...] pour la synchro survol carte/profil
+	HasElevationProfile      bool
 
 	Photos []string // chemins relatifs des photos copiées (ex: photos/1.jpg)
 

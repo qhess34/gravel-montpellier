@@ -28,7 +28,7 @@ jobs:
 
       - name: Générer le site
         env:
-          SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://montpellier.cycloexplore.fr' }}
         run: go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -site-url "$SITE_URL" -out ./public
 
       - name: Uploader l'artefact Pages

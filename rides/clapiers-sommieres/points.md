@@ -85,23 +85,7 @@ icon: food
 lat: 43.7848929
 lon: 4.0876186
 label: Ravitaillement
-note: L'Esplanade
-
----
-type: poi   
-icon: water
-lat: 43.778376
-lon: 4.081963
-label: Ravitaillement
-note: Cimetière Sommières
-
----   
-type: poi
-icon: food
-lat: 43.6820073
-lon: 3.9224952
-label: Ravitaillement
-note: Le Midi-Teyrannais
+note: Sommières - L'Esplanade
 
 
 
@@ -112,7 +96,7 @@ type: poi
 icon: water
 lat: 43.654346
 lon: 3.881348
-label: Point d'eau
+label: Clapiers — Point d'eau
 
 ---
 
@@ -120,7 +104,31 @@ type: poi
 icon: water
 lat: 43.654011
 lon: 3.890020
-label: Point d'eau
+label: Clapiers — Point d'eau
+
+---
+
+type: poi
+icon: water
+lat: 43.654266
+lon: 3.889828
+label: Clapiers — Point d'eau
+
+---
+
+type: poi
+icon: food
+lat: 43.658594
+lon: 3.902163
+label: Jacou — Boulangerie 1860
+
+---
+
+type: poi
+icon: food
+lat: 43.660375
+lon: 3.903441
+label: Jacou — Boulangerie
 
 ---
 
@@ -128,7 +136,7 @@ type: poi
 icon: food
 lat: 43.659122
 lon: 3.913073
-label: La Belle Meunière
+label: Jacou — La Belle Meunière
 note: Horaires : 06:30-19:30
 
 ---
@@ -137,7 +145,7 @@ type: poi
 icon: food
 lat: 43.660005
 lon: 3.931726
-label: Banette
+label: Le Crès — Banette
 
 ---
 
@@ -145,7 +153,15 @@ type: poi
 icon: water
 lat: 43.660811
 lon: 3.973654
-label: Point d'eau
+label: Vendargues — Point d'eau
+
+---
+
+type: poi
+icon: water
+lat: 43.695390
+lon: 4.037244
+label: Saint-Geniès-des-Mourgues — Point d'eau
 
 ---
 
@@ -153,7 +169,16 @@ type: poi
 icon: water
 lat: 43.760974
 lon: 4.081210
-label: Point d'eau
+label: Boisseron — Point d'eau
+
+---
+
+type: poi
+icon: food
+lat: 43.760673
+lon: 4.081022
+label: Boisseron — Boulangerie Wailles
+note: Horaires : Tu-Sa 06:30-13:30, 15:30-18:30; Su-Mo 06:30-13:30
 
 ---
 
@@ -161,7 +186,7 @@ type: poi
 icon: food
 lat: 43.782000
 lon: 4.087618
-label: Boulangerie
+label: Sommières — Boulangerie
 
 ---
 
@@ -169,7 +194,16 @@ type: poi
 icon: water
 lat: 43.711928
 lon: 4.005151
-label: Point d'eau
+label: Sussargues — Point d'eau
+
+---
+
+type: poi
+icon: food
+lat: 43.712798
+lon: 4.004532
+label: Sussargues — Maison Husson
+note: Horaires : Tu-Su 07:00-13:00,16:30-19:30
 
 ---
 
@@ -177,8 +211,16 @@ type: poi
 icon: food
 lat: 43.681062
 lon: 3.921172
-label: Boulangerie AH
+label: Teyran — Boulangerie AH
 note: Horaires : Mo-Sa 06:00-19:30; Su 06:00-12:30
+
+---
+
+type: poi
+icon: water
+lat: 43.667596
+lon: 3.911098
+label: Jacou — Point d'eau
 
 ---
 
@@ -186,7 +228,7 @@ type: poi
 icon: water
 lat: 43.664128
 lon: 3.903417
-label: Point d'eau
+label: Jacou — Point d'eau
 
 ---
 
@@ -194,7 +236,7 @@ type: poi
 icon: food
 lat: 43.663094
 lon: 3.903240
-label: Paul
+label: Jacou — Paul
 note: Horaires : Mo-Sa 07:00-20:00; Su 08:00-13:00
 
 ---
@@ -203,7 +245,15 @@ type: poi
 icon: food
 lat: 43.657632
 lon: 3.887608
-label: Maison Waucheul
+label: Clapiers — Maison Waucheul
+
+---
+
+type: poi
+icon: food
+lat: 43.657070
+lon: 3.887453
+label: Clapiers — Miel et Chocolat
 
 ---
 
@@ -211,7 +261,7 @@ type: poi
 icon: water
 lat: 43.657220
 lon: 3.886113
-label: Point d'eau
+label: Clapiers — Point d'eau
 
 ---
 
@@ -219,14 +269,4 @@ type: poi
 icon: water
 lat: 43.656235
 lon: 3.883438
-label: Point d'eau
-
-
----
-
-type: poi
-icon: food
-lat: 43.712798
-lon: 4.004532
-label: Maison Husson
-note: Horaires : Tu-Su 07:00-13:00,16:30-19:30
+label: Clapiers — Point d'eau

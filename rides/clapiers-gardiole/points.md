@@ -1,99 +1,3 @@
-type: poi
-icon: water
-lat: 43.654346
-lon: 3.881348
-label: Point d'eau
-
----
-
-type: poi
-icon: water
-lat: 43.629130
-lon: 3.840730
-label: Point d'eau
-
----
-
-type: poi
-icon: food
-lat: 43.614467
-lon: 3.828271
-label: La Perlette
-
----
-
-type: poi
-icon: food
-lat: 43.501793
-lon: 3.714976
-label: Boulangerie
-
----
-
-type: poi
-icon: food
-lat: 43.550519
-lon: 3.776928
-label: L'Èpi d'Or
-
----
-
-type: poi
-icon: water
-lat: 43.551901
-lon: 3.776441
-label: Point d'eau
-
----
-
-type: poi
-icon: water
-lat: 43.584865
-lon: 3.801270
-label: Point d'eau
-
----
-
-type: poi
-icon: food
-lat: 43.584099
-lon: 3.804971
-label: La Ronde des Pains
-
----
-
-type: poi
-icon: food
-lat: 43.584850
-lon: 3.807439
-label: Pause Café
-
----
-
-type: poi
-icon: water
-lat: 43.613041
-lon: 3.831263
-label: Point d'eau
-note: Exploité par Ville de Montpellier
-
----
-
-type: poi
-icon: food
-lat: 43.614587
-lon: 3.829575
-label: Les Gourmandises
-
----
-
-type: poi
-icon: food
-lat: 43.614597
-lon: 3.831621
-label: La Fournée Gourmande
-note: Horaires : Mo-Su 06:00-20:00
-
 ---
 type: panoramax
 picture: 6f4ab080-f47c-482a-a261-4581208fad3b
@@ -135,3 +39,110 @@ picture: 90df4f79-20c2-49a6-be3b-62ee9fdec226
 label: Ancienne route sous les platanes
 
 
+
+
+---
+
+type: poi
+icon: water
+lat: 43.654346
+lon: 3.881348
+label: Clapiers — Point d'eau
+
+---
+
+type: poi
+icon: water
+lat: 43.629130
+lon: 3.840730
+label: Montpellier — Point d'eau
+
+---
+
+type: poi
+icon: food
+lat: 43.614467
+lon: 3.828271
+label: Montpellier — La Perlette
+
+---
+
+type: poi
+icon: food
+lat: 43.501793
+lon: 3.714976
+label: Gigean — Boulangerie
+
+---
+
+type: poi
+icon: food
+lat: 43.550519
+lon: 3.776928
+label: Fabrègues — L'Èpi d'Or
+
+---
+
+type: poi
+icon: water
+lat: 43.551901
+lon: 3.776441
+label: Fabrègues — Point d'eau
+
+---
+
+type: poi
+icon: water
+lat: 43.584865
+lon: 3.801270
+label: Lavérune — Point d'eau
+
+---
+
+type: poi
+icon: food
+lat: 43.584099
+lon: 3.804971
+label: Lavérune — La Ronde des Pains
+
+---
+
+type: poi
+icon: food
+lat: 43.584850
+lon: 3.807439
+label: Lavérune — Pause Café
+
+---
+
+type: poi
+icon: water
+lat: 43.613041
+lon: 3.831263
+label: Montpellier — Point d'eau
+note: Exploité par Ville de Montpellier
+
+---
+
+type: poi
+icon: water
+lat: 43.613673
+lon: 3.830727
+label: Montpellier — Point d'eau
+
+---
+
+type: poi
+icon: food
+lat: 43.614587
+lon: 3.829575
+label: Montpellier — Les Gourmandises
+
+---
+
+type: poi
+icon: food
+lat: 43.614597
+lon: 3.831621
+label: Montpellier — La Fournée Gourmande
+note: Horaires : Mo-Su 06:00-20:00

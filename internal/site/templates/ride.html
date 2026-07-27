@@ -36,6 +36,22 @@
   <p class="gpx-download"><a href="{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}" download>Télécharger la trace GPX</a></p>
   {{end}}
 
+  {{if .HasSurfaceStats}}
+  <div class="surface-stats">
+    <h2 class="surface-stats-title">Revêtement</h2>
+    <div class="surface-bar">
+      {{if gt .SurfacePavedKm 0.0}}<span class="surface-bar-seg surface-bar-seg--paved" style="width:{{.SurfacePavedPct}}%"></span>{{end}}
+      {{if gt .SurfaceUnpavedKm 0.0}}<span class="surface-bar-seg surface-bar-seg--unpaved" style="width:{{.SurfaceUnpavedPct}}%"></span>{{end}}
+      {{if gt .SurfaceUnknownKm 0.0}}<span class="surface-bar-seg surface-bar-seg--unknown" style="width:{{.SurfaceUnknownPct}}%"></span>{{end}}
+    </div>
+    <ul class="surface-legend">
+      {{if gt .SurfacePavedKm 0.0}}<li><span class="surface-swatch surface-swatch--paved"></span>Route / piste cyclable — {{printf "%.0f" .SurfacePavedKm}} km ({{.SurfacePavedPct}} %)</li>{{end}}
+      {{if gt .SurfaceUnpavedKm 0.0}}<li><span class="surface-swatch surface-swatch--unpaved"></span>Chemin / sentier — {{printf "%.0f" .SurfaceUnpavedKm}} km ({{.SurfaceUnpavedPct}} %)</li>{{end}}
+      {{if gt .SurfaceUnknownKm 0.0}}<li><span class="surface-swatch surface-swatch--unknown"></span>Indéterminé — {{printf "%.0f" .SurfaceUnknownKm}} km ({{.SurfaceUnknownPct}} %)</li>{{end}}
+    </ul>
+  </div>
+  {{end}}
+
   {{if .HasElevationProfile}}
   <div class="elevation-wrap">
     <h2 class="elevation-title">Profil altimétrique</h2>
@@ -108,6 +124,12 @@
     polyline_options: { color: '#b8562f', weight: 4, opacity: 0.9 }
   }).on('loaded', function (e) {
     map.fitBounds(e.target.getBounds());
+    e.target.eachLayer(function (layer) {
+      if (layer instanceof L.Polyline) {
+        layer.on('mousemove', function (ev) { map.fire('gm:track-hover', { latlng: ev.latlng }); });
+        layer.on('mouseout', function () { map.fire('gm:track-hover-end'); });
+      }
+    });
   }).addTo(map);
 
   {{if .IsLoop}}
@@ -151,6 +173,10 @@
   if (gmMarkers.length) {
     map.fitBounds(L.featureGroup(gmMarkers).getBounds(), { padding: [40, 40] });
   }
+  {{end}}
+
+  {{if .HasElevationProfile}}
+  window.gmInitProfileHover(document.querySelector('.elevation-profile'), map, {{.ElevationProfileDataJSON}});
   {{end}}
 </script>
 {{end}}

@@ -31,10 +31,12 @@ type pageData struct {
 	Legal     template.HTML
 	Rides     []*Ride
 	Ride      *Ride
+	AllTags   []string
 
 	MetaURL         string // URL absolue de la page (canonical / og:url)
 	MetaImage       string // URL absolue de l'image d'aperçu (og:image)
 	MetaDescription string // court résumé (meta description / og:description)
+	StructuredDataJSON template.JS // JSON-LD (schema.org), si baseURL configuré
 
 	ShareFacebook string
 	ShareWhatsApp string
@@ -77,6 +79,10 @@ func Build(opts Options) error {
 		return fmt.Errorf("copie des assets statiques : %w", err)
 	}
 
+	if err := writeCNAME(opts.OutDir, baseURL); err != nil {
+		return fmt.Errorf("écriture du fichier CNAME : %w", err)
+	}
+
 	indexTmpl, err := template.ParseFS(TemplatesFS, "templates/base.html", "templates/index.html")
 	if err != nil {
 		return fmt.Errorf("parsing template index : %w", err)
@@ -91,22 +97,34 @@ func Build(opts Options) error {
 	}
 
 	// Page d'accueil
-	if err := renderToFile(indexTmpl, filepath.Join(opts.OutDir, "index.html"), pageData{
+	indexData := pageData{
 		PageTitle: opts.SiteTitle,
 		Root:      "",
 		Footer:    footerHTML,
 		Rides:     rides,
-	}); err != nil {
+		AllTags:   collectTags(rides),
+	}
+	if baseURL != "" {
+		indexData.MetaURL = baseURL + "/"
+		indexData.MetaDescription = "Sorties gravel autour de Montpellier : traces GPX, photos et itinéraires."
+		indexData.StructuredDataJSON = websiteStructuredDataJSON(opts.SiteTitle, baseURL+"/")
+	}
+	if err := renderToFile(indexTmpl, filepath.Join(opts.OutDir, "index.html"), indexData); err != nil {
 		return fmt.Errorf("génération index.html : %w", err)
 	}
 
 	// Page "Mentions légales"
-	if err := renderToFile(legalTmpl, filepath.Join(opts.OutDir, "mentions-legales.html"), pageData{
+	legalData := pageData{
 		PageTitle: "Mentions légales",
 		Root:      "",
 		Footer:    footerHTML,
 		Legal:     legalHTML,
-	}); err != nil {
+	}
+	if baseURL != "" {
+		legalData.MetaURL = baseURL + "/mentions-legales.html"
+		legalData.MetaDescription = "Mentions légales de " + opts.SiteTitle + "."
+	}
+	if err := renderToFile(legalTmpl, filepath.Join(opts.OutDir, "mentions-legales.html"), legalData); err != nil {
 		return fmt.Errorf("génération mentions-legales.html : %w", err)
 	}
 
@@ -162,6 +180,7 @@ func Build(opts Options) error {
 			pd.ShareWhatsApp = "https://wa.me/?text=" + escapeURLComponent(ride.Title+" "+pageURL)
 			pd.ShareTwitter = "https://twitter.com/intent/tweet?url=" + escapeURLComponent(pageURL) + "&text=" + escapeURLComponent(ride.Title)
 			pd.ShareEmail = "mailto:?subject=" + escapeURLComponent(ride.Title) + "&body=" + escapeURLComponent(ride.Title+"\n\n"+pageURL)
+			pd.StructuredDataJSON = rideStructuredDataJSON(ride, pageURL, pd.MetaImage, pd.MetaDescription, baseURL+"/", opts.SiteTitle)
 		}
 
 		if err := renderToFile(rideTmpl, filepath.Join(outRideDir, "index.html"), pd); err != nil {
@@ -169,6 +188,16 @@ func Build(opts Options) error {
 		}
 
 		fmt.Printf("  ✓ %s (%s)\n", ride.Title, ride.Slug)
+	}
+
+	if err := writeRobotsTxt(opts.OutDir, baseURL); err != nil {
+		return fmt.Errorf("écriture de robots.txt : %w", err)
+	}
+	if err := writeSitemap(opts.OutDir, baseURL, rides); err != nil {
+		return fmt.Errorf("écriture de sitemap.xml : %w", err)
+	}
+	if baseURL == "" {
+		fmt.Println("⚠ sitemap.xml non généré (nécessite -site-url) — robots.txt généré sans référence au sitemap")
 	}
 
 	return nil
@@ -217,6 +246,24 @@ func shareDescription(ride *Ride) string {
 // notamment avec les liens mailto:).
 func escapeURLComponent(s string) string {
 	return strings.ReplaceAll(url.QueryEscape(s), "+", "%20")
+}
+
+// writeCNAME écrit un fichier CNAME à la racine du site quand baseURL
+// pointe vers un domaine personnalisé (pas un sous-domaine *.github.io) :
+// GitHub Pages en a besoin pour servir le site sur ce domaine. Sans
+// domaine personnalisé, ne fait rien.
+func writeCNAME(outDir, baseURL string) error {
+	if baseURL == "" {
+		return nil
+	}
+	u, err := url.Parse(baseURL)
+	if err != nil || u.Host == "" {
+		return nil
+	}
+	if strings.HasSuffix(u.Host, ".github.io") {
+		return nil // domaine github.io par défaut : pas de CNAME nécessaire
+	}
+	return os.WriteFile(filepath.Join(outDir, "CNAME"), []byte(u.Host+"\n"), 0o644)
 }
 
 func loadMarkdownFile(path string) (template.HTML, error) {

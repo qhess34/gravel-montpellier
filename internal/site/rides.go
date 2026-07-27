@@ -2,6 +2,7 @@ package site
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -99,6 +100,13 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 			}
 		}
 	}
+	if len(ride.Tags) > 0 {
+		normalized := make([]string, len(ride.Tags))
+		for i, t := range ride.Tags {
+			normalized[i] = strings.ToLower(t)
+		}
+		ride.TagsAttr = strings.Join(normalized, ",")
+	}
 
 	// Trace GPX : on prend le premier fichier .gpx trouvé dans le dossier.
 	var trackPoints []GPXPoint
@@ -127,6 +135,28 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 			ride.StartPoint = points[0]
 			ride.EndPoint = points[len(points)-1]
 			ride.IsLoop = PointDistanceKm(ride.StartPoint, ride.EndPoint) < 0.05 // < 50 m : boucle
+
+			// Statistiques de revêtement (route/piste cyclable vs chemin/sentier),
+			// par comparaison de la trace aux voies OSM alentour. Purement
+			// informatif : n'affecte jamais le rendu de la trace elle-même.
+			buffer := SimplifyForMap(points, 150)
+			statsTrack := SimplifyForMap(points, 1000)
+			ways, err := fetchWaySegments(buffer, 20)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "⚠ %s : statistiques de revêtement indisponibles (%v)\n", slug, err)
+			} else {
+				types := classifyTrackPoints(statsTrack, ways)
+				paved, unpaved, unknown := surfaceDistances(statsTrack, types)
+				if total := paved + unpaved + unknown; total > 0 {
+					ride.SurfacePavedKm = paved
+					ride.SurfaceUnpavedKm = unpaved
+					ride.SurfaceUnknownKm = unknown
+					ride.SurfacePavedPct = int(math.Round(paved / total * 100))
+					ride.SurfaceUnpavedPct = int(math.Round(unpaved / total * 100))
+					ride.SurfaceUnknownPct = 100 - ride.SurfacePavedPct - ride.SurfaceUnpavedPct
+					ride.HasSurfaceStats = paved > 0 || unpaved > 0
+				}
+			}
 		}
 	}
 
@@ -214,6 +244,7 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 		profile := buildElevationProfile(trackPoints, 200)
 		if svg := renderElevationProfileSVG(profile, ride.Supplies); svg != "" {
 			ride.ElevationProfileSVG = svg
+			ride.ElevationProfileDataJSON = elevationProfileDataJSON(profile)
 			ride.HasElevationProfile = true
 		}
 	}
@@ -241,4 +272,22 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+// collectTags renvoie la liste triée et dédupliquée (en minuscules) de tous
+// les tags présents parmi les sorties, pour la barre de filtre de l'accueil.
+func collectTags(rides []*Ride) []string {
+	seen := map[string]bool{}
+	var tags []string
+	for _, r := range rides {
+		for _, t := range r.Tags {
+			lt := strings.ToLower(t)
+			if !seen[lt] {
+				seen[lt] = true
+				tags = append(tags, lt)
+			}
+		}
+	}
+	sort.Strings(tags)
+	return tags
 }
