@@ -4,8 +4,8 @@ date: 23/07/2026
 difficulty: Moyenne
 departure: Clapiers - Médiathèque
 tags: passage à guë, single, voie verte, ville, gravel, 1 jour
-surface_paved_km: 29.2
-surface_unpaved_km: 34.2
+surface_paved_km: 31.9
+surface_unpaved_km: 31.4
 ---
 
 Une belle boucle gravel reliant Clapiers à Sommières, idéale pour découvrir les terrains variés du nord de Montpellier. Le parcours alterne voies vertes, pistes, chemins forestiers et quelques singles ludiques. Quelques passages techniques sont présents, mais ils restent accessibles : les moins à l'aise pourront facilement mettre pied à terre sur les sections les plus délicates.

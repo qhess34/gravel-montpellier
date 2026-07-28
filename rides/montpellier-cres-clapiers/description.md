@@ -4,8 +4,8 @@ date: 27/07/2026
 difficulty: Facile
 departure: Montpellier - Hotel de ville
 tags: 1 jour, en famille, ville, baignade
-surface_paved_km: 15.2
-surface_unpaved_km: 9.5
+surface_paved_km: 18.8
+surface_unpaved_km: 5.9
 ---
 
 Cette boucle permet de découvrir les villages situés au nord-est de Montpellier tout en empruntant des itinéraires cyclables sécurisés. C'est également l'occasion de découvrir le lac du Crès, le village de Jacou et Clapiers, point de départ de nombreuses randonnées à vélo et à pied.

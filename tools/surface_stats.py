@@ -37,9 +37,9 @@ PAVED_HIGHWAYS = {
     "motorway", "motorway_link", "trunk", "trunk_link",
     "primary", "primary_link", "secondary", "secondary_link",
     "tertiary", "tertiary_link", "unclassified", "residential",
-    "living_street", "service", "road",
+    "living_street", "service", "road", "footway", "pedestrian"
 }
-UNPAVED_HIGHWAYS = {"track", "path", "footway", "bridleway", "steps", "pedestrian"}
+UNPAVED_HIGHWAYS = {"track", "path", "bridleway", "steps"}
 
 
 # --- Géométrie -------------------------------------------------------------

@@ -4,8 +4,8 @@ date: 24/07/2026
 difficulty: Moyenne
 departure: Clapiers - Médiathèque
 tags: vues panoramiques, gravel, pistes, vue mer, 1 jour
-surface_paved_km: 12.1
-surface_unpaved_km: 30.4
+surface_paved_km: 12.7
+surface_unpaved_km: 29.9
 ---
 
 Un grand classique du nord de Montpellier. Le Grand Dévès est un massif emblématique dont les pistes de crête offrent des panoramas remarquables, donnant parfois l'impression de marquer la frontière entre la Méditerranée et les premiers reliefs des Cévennes.
