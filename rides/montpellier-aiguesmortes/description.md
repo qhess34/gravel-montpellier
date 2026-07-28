@@ -4,6 +4,8 @@ date: 27/07/2026
 difficulty: Moyenne
 departure: Montpellier - Hotel de ville
 tags: vues panoramiques, beaux villages, 1 jour, 2 jours, vue mer, en famille, itinérance, ville, baignade, voie verte
+surface_paved_km: 25.7
+surface_unpaved_km: 42.8
 ---
 
 Une boucle idéale pour découvrir le littoral méditerranéen, de Carnon jusqu'au Grau-du-Roi, tout en empruntant des itinéraires adaptés au vélo. C'est également une excellente occasion de visiter Aigues-Mortes sans voiture.

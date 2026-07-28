@@ -4,6 +4,8 @@ date: 24/07/2026
 difficulty: Moyenne
 departure: Clapiers - Médiathèque
 tags: pistes, vues panoramiques, ascensions, beaux villages, gravel, 1 jour
+surface_paved_km: 36.4
+surface_unpaved_km: 25.6
 ---
 
 Une belle boucle qui permet de découvrir les premiers reliefs au nord de Montpellier. L'itinéraire offre de superbes panoramas et permet de rouler au plus près du Pic Saint-Loup et de l'Hortus.

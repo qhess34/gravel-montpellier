@@ -92,6 +92,21 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 			ride.ElevationM = v
 		}
 	}
+
+	// Statistiques de revêtement (route/piste cyclable vs chemin/sentier) :
+	// calculées à part par tools/surface_stats.py (interroge OpenStreetMap)
+	// et simplement lues ici, sans appel réseau au moment du build.
+	paved, hasPaved := parseFloatField(fields, "surface_paved_km")
+	unpaved, hasUnpaved := parseFloatField(fields, "surface_unpaved_km")
+	if hasPaved || hasUnpaved {
+		ride.SurfacePavedKm = paved
+		ride.SurfaceUnpavedKm = unpaved
+		if total := paved + unpaved; total > 0 {
+			ride.SurfacePavedPct = int(math.Round(paved / total * 100))
+			ride.SurfaceUnpavedPct = 100 - ride.SurfacePavedPct
+			ride.HasSurfaceStats = true
+		}
+	}
 	if fields["tags"] != "" {
 		for _, t := range strings.Split(fields["tags"], ",") {
 			t = strings.TrimSpace(t)
@@ -135,28 +150,6 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 			ride.StartPoint = points[0]
 			ride.EndPoint = points[len(points)-1]
 			ride.IsLoop = PointDistanceKm(ride.StartPoint, ride.EndPoint) < 0.05 // < 50 m : boucle
-
-			// Statistiques de revêtement (route/piste cyclable vs chemin/sentier),
-			// par comparaison de la trace aux voies OSM alentour. Purement
-			// informatif : n'affecte jamais le rendu de la trace elle-même.
-			buffer := SimplifyForMap(points, 150)
-			statsTrack := SimplifyForMap(points, 1000)
-			ways, err := fetchWaySegments(buffer, 20)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "⚠ %s : statistiques de revêtement indisponibles (%v)\n", slug, err)
-			} else {
-				types := classifyTrackPoints(statsTrack, ways)
-				paved, unpaved, unknown := surfaceDistances(statsTrack, types)
-				if total := paved + unpaved + unknown; total > 0 {
-					ride.SurfacePavedKm = paved
-					ride.SurfaceUnpavedKm = unpaved
-					ride.SurfaceUnknownKm = unknown
-					ride.SurfacePavedPct = int(math.Round(paved / total * 100))
-					ride.SurfaceUnpavedPct = int(math.Round(unpaved / total * 100))
-					ride.SurfaceUnknownPct = 100 - ride.SurfacePavedPct - ride.SurfaceUnpavedPct
-					ride.HasSurfaceStats = paved > 0 || unpaved > 0
-				}
-			}
 		}
 	}
 
@@ -263,6 +256,19 @@ func findFirstGPX(dir string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+// parseFloatField lit un champ numérique optionnel du frontmatter.
+func parseFloatField(fields map[string]string, key string) (float64, bool) {
+	raw := fields[key]
+	if raw == "" {
+		return 0, false
+	}
+	v, err := strconv.ParseFloat(raw, 64)
+	if err != nil {
+		return 0, false
+	}
+	return v, true
 }
 
 func firstNonEmpty(values ...string) string {

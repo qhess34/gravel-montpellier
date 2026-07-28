@@ -46,6 +46,7 @@ Champs du frontmatter (toutes optionnelles sauf `title`) :
 | `difficulty`  | Ex : Facile / Modéré / Difficile                                   |
 | `departure`   | Lieu de départ                                                     |
 | `tags`        | Liste séparée par des virgules                                     |
+| `surface_paved_km` / `surface_unpaved_km` | Km revêtu/non revêtu — généralement pas saisis à la main, voir `tools/surface_stats.py` plus bas |
 
 > Astuce tri : pour un tri chronologique fiable, utilisez un format
 > `date: 2026-06-15` (les sorties sont triées par ordre alphabétique
@@ -63,7 +64,7 @@ rechargeable tel quel.
 
 Un seul fichier `.gpx` par dossier de sortie. S'il est présent :
 - il est affiché tel quel sur une carte (OpenStreetMap + Leaflet) sur la page de la sortie,
-- une **estimation du revêtement** (route/piste cyclable vs chemin/sentier) est calculée automatiquement au moment du build, en comparant la trace aux données OpenStreetMap (API Overpass), et affichée sous forme de barre + pourcentages sous la carte. Purement informatif : n'affecte jamais l'affichage de la trace elle-même. Si l'API n'est pas joignable (pas de réseau, indisponibilité), ce bloc est simplement omis, sans bloquer le reste du build,
+- une **estimation du revêtement** (route/piste cyclable vs chemin/sentier) peut être affichée sous forme de barre + pourcentages sous la carte, si `description.md` contient les champs `surface_paved_km`/`surface_unpaved_km` — voir `tools/surface_stats.py` ci-dessous pour les calculer automatiquement,
 - un **profil altimétrique** est généré automatiquement (SVG, sans JavaScript) sous la carte, avec les points d'eau/boulangeries repérés au bon endroit ; survoler la carte ou le profil affiche le point correspondant sur l'autre (et inversement),
 - il est proposé au téléchargement,
 - la distance et le dénivelé sont calculés automatiquement si vous ne les
@@ -190,6 +191,34 @@ python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --include-existing
 # Afficher le résultat sans rien écrire
 python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --dry-run
 ```
+
+### Estimer le revêtement (route/piste cyclable vs chemin/sentier)
+
+`tools/surface_stats.py` compare la trace GPX d'une sortie aux données
+OpenStreetMap (API Overpass) pour estimer la part de route/piste cyclable
+(revêtu) et de chemin/sentier (non revêtu), puis écrit le résultat dans
+`description.md` (`surface_paved_km` / `surface_unpaved_km`). Le
+générateur lit ensuite simplement ces deux champs pour afficher une barre
+de revêtement sur la page de la sortie — **aucun appel réseau au moment
+du build**, tout se joue quand vous lancez ce script.
+
+```bash
+python3 tools/surface_stats.py rides/tour-du-pic-saint-loup
+```
+
+Sans trace GPX ou si `description.md` est absent, le script s'arrête
+avec un message clair. Options utiles :
+
+```bash
+# Rayon de recherche des voies autour de la trace (défaut : 20 m)
+python3 tools/surface_stats.py rides/tour-du-pic-saint-loup --radius 30
+
+# Afficher le résultat sans modifier description.md
+python3 tools/surface_stats.py rides/tour-du-pic-saint-loup --dry-run
+```
+
+Relancer le script écrase simplement les valeurs précédentes (pas de
+doublon), par exemple après avoir mis à jour la trace d'une sortie.
 
 ## Le footer
 
@@ -333,6 +362,7 @@ rides/                  une sortie = un dossier
 Dockerfile              build + service du site via nginx (voir ci-dessus)
 docker-compose.yml      boucle de dev : régénération + aperçu local
 tools/find_supplies.py  recherche interactive de points d'eau/boulangeries (OSM)
+tools/surface_stats.py  estimation du revêtement, écrit dans description.md (OSM)
 ```
 
 Vous n'avez normalement besoin de toucher qu'à `rides/`,

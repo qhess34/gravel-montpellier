@@ -23,7 +23,6 @@ Usage :
 
 import argparse
 import json
-import math
 import os
 import sys
 import time
@@ -32,23 +31,14 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
+from _common import EARTH_RADIUS_KM, USER_AGENT, find_gpx_in_dir, haversine_km, load_gpx, resample
+
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
 NOMINATIM_MIN_INTERVAL = 1.1  # secondes entre deux appels (politique d'usage Nominatim : 1 req/s max)
-EARTH_RADIUS_KM = 6371.0
-USER_AGENT = "gravel-montpellier-find-supplies/1.0 (script interactif local)"
 
 
 # --- Géométrie -------------------------------------------------------------
-
-def haversine_km(a, b):
-    lat1, lon1 = math.radians(a[0]), math.radians(a[1])
-    lat2, lon2 = math.radians(b[0]), math.radians(b[1])
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    h = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
-    return EARTH_RADIUS_KM * 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h))
-
 
 def nearest_km(track, target):
     """Renvoie (km cumulés depuis le départ, distance à la trace en km)
@@ -64,43 +54,7 @@ def nearest_km(track, target):
     return cum, best_dist
 
 
-def resample(points, max_points):
-    """Échantillonne `points` pour n'en garder qu'au plus `max_points`,
-    répartis régulièrement (garde toujours le premier et le dernier)."""
-    if len(points) <= max_points:
-        return points
-    stride = (len(points) - 1) / (max_points - 1)
-    out, i = [], 0.0
-    while len(out) < max_points:
-        idx = min(int(round(i)), len(points) - 1)
-        out.append(points[idx])
-        i += stride
-    return out
-
-
 # --- GPX ---------------------------------------------------------------
-
-def load_gpx(path):
-    tree = ET.parse(path)
-    root = tree.getroot()
-    points = [
-        (float(pt.get("lat")), float(pt.get("lon")))
-        for pt in root.findall(".//{*}trkpt")
-    ]
-    if not points:
-        points = [
-            (float(pt.get("lat")), float(pt.get("lon")))
-            for pt in root.findall(".//{*}rtept")
-        ]
-    return points
-
-
-def find_gpx_in_dir(directory):
-    for name in sorted(os.listdir(directory)):
-        if name.lower().endswith(".gpx"):
-            return os.path.join(directory, name)
-    return None
-
 
 # --- points.md existant (détection des doublons) --------------------------
 
