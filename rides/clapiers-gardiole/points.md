@@ -146,3 +146,30 @@ lat: 43.614597
 lon: 3.831621
 label: Montpellier — La Fournée Gourmande
 note: Horaires : Mo-Su 06:00-20:00
+
+
+---
+
+type: poi
+icon: grocery
+lat: 43.543861
+lon: 3.792383
+label: Fabrègues — Casino Shop
+note: Horaires : Mo-Su,PH 00:00-00:00
+
+---
+
+type: poi
+icon: bike-repair
+lat: 43.551907
+lon: 3.776798
+label: Fabrègues — Maxycles
+
+---
+
+type: poi
+icon: grocery
+lat: 43.584808
+lon: 3.805735
+label: Lavérune — Vival
+note: Horaires : Mo-Sa 07:30-13:00,15:30-19:30; Su 08:30-13:00 · Exploité par Casino
