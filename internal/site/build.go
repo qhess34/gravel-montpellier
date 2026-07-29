@@ -109,7 +109,7 @@ func Build(opts Options) error {
 	}
 	if baseURL != "" {
 		indexData.MetaURL = baseURL + "/"
-		indexData.MetaDescription = "Sorties vélo et gravel autour de Montpellier : itinéraires, traces GPX et photos à explorer et partager."
+		indexData.MetaDescription = "Itinéraires, traces GPX et aventures à vélo autour de Montpellier."
 		indexData.StructuredDataJSON = websiteStructuredDataJSON(opts.SiteTitle, baseURL+"/")
 	}
 	if err := renderToFile(indexTmpl, filepath.Join(opts.OutDir, "index.html"), indexData); err != nil {

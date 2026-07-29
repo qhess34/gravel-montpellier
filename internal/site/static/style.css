@@ -45,8 +45,8 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 18px;
-  padding-bottom: 18px;
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 .brand {
   display: flex;
@@ -58,7 +58,7 @@ a:hover { text-decoration: underline; }
   color: var(--ink);
 }
 .brand:hover { text-decoration: none; }
-.brand-logo { display: block; height: 44px; width: 44px; }
+.brand-logo { display: block; height: 176px; width: 176px; }
 .site-header nav a {
   color: var(--ink-soft);
   font-weight: 500;
@@ -458,7 +458,7 @@ a:hover { text-decoration: underline; }
   .hero { padding: 44px 0 32px; }
   .hero h1 { font-size: 1.8rem; }
   .ride-map { height: 300px; }
-  .brand-logo { height: 34px; width: 34px; }
+  .brand-logo { height: 136px; width: 136px; }
 }
 
 /* Marqueurs carte (POI, photo, panoramax) */
