@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -36,6 +37,62 @@ type Point struct {
 
 	KmMark    float64 // point kilométrique sur la trace (si HasKmMark)
 	HasKmMark bool    // true si le point est assez proche de la trace GPX pour qu'un PK ait du sens
+}
+
+// poiKindOrder associe chaque icône reconnue à un libellé, dans l'ordre
+// d'affichage souhaité pour la barre de filtre carte/profil. Les icônes
+// hors de cette liste (valeur libre dans points.md) sont affichées avec
+// leur nom brut en libellé.
+var poiKindOrder = []POIKind{
+	{Icon: "water", Label: "Points d'eau"},
+	{Icon: "food", Label: "Boulangeries"},
+	{Icon: "grocery", Label: "Alimentation"},
+	{Icon: "bar", Label: "Bars"},
+	{Icon: "restaurant", Label: "Restaurants"},
+	{Icon: "camping", Label: "Campings"},
+	{Icon: "bike-repair", Label: "Réparateurs de vélo"},
+	{Icon: "viewpoint", Label: "Points de vue"},
+	{Icon: "danger", Label: "Dangers"},
+	{Icon: "generic", Label: "Autres POI"},
+	{Icon: "photo", Label: "Photos"},
+	{Icon: "panoramax", Label: "Vues 360°"},
+}
+
+// collectPOIKinds renvoie, dans l'ordre canonique ci-dessus, les types de
+// points réellement présents parmi points — pour n'afficher dans le filtre
+// que ce qui a du sens pour cette sortie.
+func collectPOIKinds(points []Point) []POIKind {
+	present := map[string]bool{}
+	for _, p := range points {
+		switch p.Type {
+		case PointPOI:
+			present[firstNonEmpty(p.Icon, "generic")] = true
+		case PointPhoto:
+			present["photo"] = true
+		case PointPanoramax:
+			present["panoramax"] = true
+		}
+	}
+
+	var kinds []POIKind
+	for _, k := range poiKindOrder {
+		if present[k.Icon] {
+			kinds = append(kinds, k)
+			delete(present, k.Icon)
+		}
+	}
+	// icônes libres non répertoriées ci-dessus : on les affiche quand même,
+	// avec l'icône elle-même en guise de libellé.
+	var extra []string
+	for icon := range present {
+		extra = append(extra, icon)
+	}
+	sort.Strings(extra)
+	for _, icon := range extra {
+		kinds = append(kinds, POIKind{Icon: icon, Label: icon})
+	}
+
+	return kinds
 }
 
 const defaultPanoramaxEndpoint = "https://api.panoramax.xyz/api"

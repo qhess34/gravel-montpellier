@@ -207,6 +207,35 @@
     map.on("gm:track-hover-end", hide);
   };
 
+  // Filtre par type de POI, appliqué à la fois aux marqueurs de la carte et
+  // aux repères du profil altimétrique. markersByKind est un objet
+  // { icone: [marqueurs Leaflet] } ; les repères du profil sont retrouvés
+  // par leur classe CSS elevation-marker--<icone>.
+  window.gmInitPOIFilter = function (filterBar, markersByKind, svg, map) {
+    if (!filterBar || !map) return;
+
+    var buttons = Array.prototype.slice.call(filterBar.querySelectorAll("[data-poi-kind]"));
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var kind = btn.getAttribute("data-poi-kind");
+        var active = btn.classList.toggle("is-active");
+
+        (markersByKind[kind] || []).forEach(function (m) {
+          if (active) {
+            if (!map.hasLayer(m)) m.addTo(map);
+          } else if (map.hasLayer(m)) {
+            map.removeLayer(m);
+          }
+        });
+
+        if (svg) {
+          var els = svg.querySelectorAll(".elevation-marker--" + kind);
+          els.forEach(function (el) { el.style.display = active ? "" : "none"; });
+        }
+      });
+    });
+  };
+
   // Active le lightbox sur toute image marquée data-lightbox (galerie photo).
   document.addEventListener("click", function (e) {
     var trigger = e.target.closest("[data-lightbox]");

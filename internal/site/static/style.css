@@ -367,47 +367,92 @@ a:hover { text-decoration: underline; }
 .legal-body ul { padding-left: 1.2em; }
 .legal-body li { margin-bottom: 0.4em; }
 
-/* Synthèse ravitaillement (points d'eau / boulangeries) */
-.supplies {
+/* Liste compacte des POI sur le parcours */
+.poi-summary-wrap {
   max-width: 720px;
   margin-top: 32px;
   padding-top: 24px;
   border-top: 1px solid var(--line);
 }
-.supplies h2 { font-size: 1.25rem; }
-.supplies-list {
+.poi-summary-title { font-size: 1.25rem; margin-bottom: 10px; }
+.poi-summary {
   list-style: none;
   padding: 0;
-  margin: 12px 0 0;
+  margin: 0;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.supplies-item {
-  display: flex;
-  align-items: baseline;
   flex-wrap: wrap;
   gap: 8px;
+}
+.poi-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 0.92rem;
+  border-radius: 999px;
+  padding: 5px 12px 5px 9px;
+  font-size: 0.85rem;
+  cursor: default;
 }
-.supplies-icon::before { font-size: 1rem; }
-.supplies-item--water .supplies-icon::before { content: '💧'; }
-.supplies-item--food  .supplies-icon::before { content: '🥐'; }
-.supplies-km {
-  font-weight: 600;
-  color: var(--terracotta-dark);
-  white-space: nowrap;
+.poi-chip-icon::before { font-size: 0.95rem; line-height: 1; }
+.poi-chip-km { font-weight: 600; color: var(--terracotta-dark); white-space: nowrap; }
+.poi-chip-label { color: var(--ink); }
+
+.poi-chip--water .poi-chip-icon::before        { content: '💧'; }
+.poi-chip--food  .poi-chip-icon::before        { content: '🥐'; }
+.poi-chip--grocery .poi-chip-icon::before      { content: '🛒'; }
+.poi-chip--camping .poi-chip-icon::before      { content: '🏕️'; }
+.poi-chip--bar .poi-chip-icon::before          { content: '🍺'; }
+.poi-chip--restaurant .poi-chip-icon::before   { content: '🍽️'; }
+.poi-chip--bike-repair .poi-chip-icon::before  { content: '🔧'; }
+.poi-chip--danger .poi-chip-icon::before       { content: '⚠️'; }
+.poi-chip--viewpoint .poi-chip-icon::before    { content: '👁️'; }
+.poi-chip--generic .poi-chip-icon::before      { content: '📍'; }
+
+/* Barre de filtre par type de POI (carte + profil altimétrique) */
+.poi-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0;
 }
-.supplies-label { font-weight: 500; }
-.supplies-note {
+.poi-filter-label { color: var(--ink-soft); font-size: 0.85rem; margin-right: 2px; }
+.poi-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--paper);
   color: var(--ink-soft);
-  font-size: 0.88rem;
-  flex-basis: 100%;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
 }
+.poi-filter-btn:hover { border-color: var(--terracotta); }
+.poi-filter-btn:not(.is-active) { opacity: 0.4; }
+.poi-filter-swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.poi-filter-swatch--water        { background: #3d7ea6; }
+.poi-filter-swatch--food         { background: #b8562f; }
+.poi-filter-swatch--grocery      { background: #5a8f3d; }
+.poi-filter-swatch--camping      { background: #2f8f6a; }
+.poi-filter-swatch--bar          { background: #c98a1f; }
+.poi-filter-swatch--restaurant   { background: #9c4f7a; }
+.poi-filter-swatch--bike-repair  { background: #55606b; }
+.poi-filter-swatch--danger       { background: #b5342a; }
+.poi-filter-swatch--viewpoint    { background: var(--olive); }
+.poi-filter-swatch--generic      { background: var(--terracotta); }
+.poi-filter-swatch--photo        { background: #4a4238; }
+.poi-filter-swatch--panoramax    { background: #6b3fa0; }
 
 @media (max-width: 600px) {
   .hero { padding: 44px 0 32px; }
@@ -440,6 +485,16 @@ a:hover { text-decoration: underline; }
 .gm-marker--water::after     { content: '💧'; }
 .gm-marker--food     { background: #b8562f; }
 .gm-marker--food::after      { content: '🥐'; }
+.gm-marker--grocery  { background: #5a8f3d; }
+.gm-marker--grocery::after   { content: '🛒'; }
+.gm-marker--camping  { background: #2f8f6a; }
+.gm-marker--camping::after   { content: '🏕️'; }
+.gm-marker--bar      { background: #c98a1f; }
+.gm-marker--bar::after       { content: '🍺'; }
+.gm-marker--restaurant { background: #9c4f7a; }
+.gm-marker--restaurant::after { content: '🍽️'; }
+.gm-marker--bike-repair { background: #55606b; }
+.gm-marker--bike-repair::after { content: '🔧'; }
 .gm-marker--danger   { background: #b5342a; }
 .gm-marker--danger::after    { content: '⚠️'; }
 .gm-marker--viewpoint{ background: var(--olive); }

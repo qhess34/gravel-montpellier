@@ -29,7 +29,8 @@ jobs:
       - name: Générer le site
         env:
           SITE_URL: ${{ vars.SITE_URL || 'https://montpellier.cycloexplore.fr' }}
-        run: go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -site-url "$SITE_URL" -out ./public
+          UMAMI_ID: ${{ vars.UMAMI_ID || '9e97164b-65cd-4fef-82f2-f08b105783d3' }}
+        run: go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -site-url "$SITE_URL" -umami-id "$UMAMI_ID" -out ./public
 
       - name: Uploader l'artefact Pages
         uses: actions/upload-pages-artifact@v3

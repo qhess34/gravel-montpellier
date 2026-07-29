@@ -1,18 +1,28 @@
 #!/usr/bin/env python3
 """
-Cherche les points d'eau et boulangeries proches d'une trace GPX (via les
-données OpenStreetMap, interrogées par l'API Overpass), les propose un par
-un de manière interactive (nom, distance à la trace, PK), et génère les
-blocs à ajouter dans points.md pour ceux que vous validez.
+Cherche des points d'intérêt utiles en gravel (points d'eau, boulangeries,
+campings, bars, restaurants, réparateurs de vélo) proches d'une trace GPX
+via les données OpenStreetMap (API Overpass), les propose un par un de
+manière interactive (nom, distance à la trace, PK), et génère les blocs à
+ajouter dans points.md pour ceux que vous validez.
 
 Ne dépend que de la bibliothèque standard Python (3.8+) : rien à installer.
 Nécessite un accès réseau (interroge https://overpass-api.de).
 
 Usage :
     python3 tools/find_supplies.py rides/tour-du-pic-saint-loup
-    python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --radius 200 --only water
+    python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --radius 200 --only water,bakery
     python3 tools/find_supplies.py chemin/vers/trace.gpx --out chemin/vers/points.md
     python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --dry-run
+
+Types disponibles (--only, séparés par des virgules, défaut : tous) :
+    water        points d'eau (fontaines, robinets, sources potables...)
+    bakery       boulangeries
+    grocery      magasins alimentaires (supérettes, supermarchés, primeurs)
+    camping      campings et aires de camping-car
+    bar          bars et pubs
+    restaurant   restaurants
+    bike_repair  magasins de vélo et bornes de réparation en libre-service
 
 À chaque point proposé, répondez :
     o (oui)      ajoute le point tel quel
@@ -23,6 +33,7 @@ Usage :
 
 import argparse
 import json
+import math
 import os
 import sys
 import time
@@ -31,14 +42,68 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
-from _common import EARTH_RADIUS_KM, USER_AGENT, find_gpx_in_dir, haversine_km, load_gpx, resample
-
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
 NOMINATIM_MIN_INTERVAL = 1.1  # secondes entre deux appels (politique d'usage Nominatim : 1 req/s max)
+EARTH_RADIUS_KM = 6371.0
+USER_AGENT = "gravel-montpellier-find-supplies/1.0 (script interactif local)"
+
+ALL_KINDS = ["water", "bakery", "grocery", "camping", "bar", "restaurant", "bike_repair"]
+
+# Icône à utiliser dans points.md (doit correspondre aux classes CSS gm-marker--*).
+KIND_ICON = {
+    "water": "water",
+    "bakery": "food",
+    "grocery": "grocery",
+    "camping": "camping",
+    "bar": "bar",
+    "restaurant": "restaurant",
+    "bike_repair": "bike-repair",
+}
+KIND_LABEL_FR = {
+    "water": "point d'eau",
+    "bakery": "boulangerie",
+    "grocery": "magasin alimentaire",
+    "camping": "camping",
+    "bar": "bar",
+    "restaurant": "restaurant",
+    "bike_repair": "réparateur de vélo",
+}
+KIND_DEFAULT_NAME = {
+    "water": "Point d'eau",
+    "bakery": "Boulangerie",
+    "grocery": "Magasin alimentaire",
+    "camping": "Camping",
+    "bar": "Bar",
+    "restaurant": "Restaurant",
+    "bike_repair": "Réparateur de vélo",
+}
 
 
 # --- Géométrie -------------------------------------------------------------
+
+def haversine_km(a, b):
+    lat1, lon1 = math.radians(a[0]), math.radians(a[1])
+    lat2, lon2 = math.radians(b[0]), math.radians(b[1])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    h = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    return EARTH_RADIUS_KM * 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h))
+
+
+def resample(points, max_points):
+    """Échantillonne `points` pour n'en garder qu'au plus `max_points`,
+    répartis régulièrement (garde toujours le premier et le dernier)."""
+    if len(points) <= max_points:
+        return points
+    stride = (len(points) - 1) / (max_points - 1)
+    out, i = [], 0.0
+    while len(out) < max_points:
+        idx = min(int(round(i)), len(points) - 1)
+        out.append(points[idx])
+        i += stride
+    return out
+
 
 def nearest_km(track, target):
     """Renvoie (km cumulés depuis le départ, distance à la trace en km)
@@ -55,6 +120,22 @@ def nearest_km(track, target):
 
 
 # --- GPX ---------------------------------------------------------------
+
+def load_gpx(path):
+    tree = ET.parse(path)
+    root = tree.getroot()
+    points = [(float(pt.get("lat")), float(pt.get("lon"))) for pt in root.findall(".//{*}trkpt")]
+    if not points:
+        points = [(float(pt.get("lat")), float(pt.get("lon"))) for pt in root.findall(".//{*}rtept")]
+    return points
+
+
+def find_gpx_in_dir(directory):
+    for name in sorted(os.listdir(directory)):
+        if name.lower().endswith(".gpx"):
+            return os.path.join(directory, name)
+    return None
+
 
 # --- points.md existant (détection des doublons) --------------------------
 
@@ -104,25 +185,57 @@ def is_duplicate(lat, lon, existing_coords):
 
 # --- Overpass ------------------------------------------------------------
 
-def build_query(buffer_points, radius_m, want_water, want_bakery):
+def build_query(buffer_points, radius_m, kinds):
     coords = ",".join(f"{lat:.6f},{lon:.6f}" for lat, lon in buffer_points)
     around = f"around:{radius_m},{coords}"
     clauses = []
-    if want_water:
+
+    if "water" in kinds:
         # amenity=drinking_water / water_point couvrent la majorité des cas,
         # mais pas mal de points d'eau (fontaines de village, robinets,
         # sources, puits) sont tagués différemment sur OSM.
-        clauses.append(f'  node({around})[amenity=drinking_water];')
-        clauses.append(f'  node({around})[amenity=water_point];')
-        clauses.append(f'  node({around})[man_made=water_tap];')
-        clauses.append(f'  node({around})[amenity=fountain][drinking_water=yes];')
-        clauses.append(f'  node({around})[natural=spring][drinking_water=yes];')
-        clauses.append(f'  node({around})[man_made=water_well][drinking_water=yes];')
-    if want_bakery:
-        clauses.append(f'  node({around})[shop=bakery];')
-        clauses.append(f'  node({around})[amenity=bakery];')
+        clauses += [
+            f'  node({around})[amenity=drinking_water];',
+            f'  node({around})[amenity=water_point];',
+            f'  node({around})[man_made=water_tap];',
+            f'  node({around})[amenity=fountain][drinking_water=yes];',
+            f'  node({around})[natural=spring][drinking_water=yes];',
+            f'  node({around})[man_made=water_well][drinking_water=yes];',
+        ]
+    if "bakery" in kinds:
+        clauses += [
+            f'  node({around})[shop=bakery];',
+            f'  node({around})[amenity=bakery];',
+        ]
+    if "grocery" in kinds:
+        clauses += [
+            f'  node({around})[shop=supermarket];',
+            f'  node({around})[shop=convenience];',
+            f'  node({around})[shop=grocery];',
+            f'  node({around})[shop=greengrocer];',
+        ]
+    if "camping" in kinds:
+        # les campings sont souvent cartographiés comme une zone (way) plutôt
+        # qu'un simple point : nwr + "out center" gère les deux cas.
+        clauses += [
+            f'  nwr({around})[tourism=camp_site];',
+            f'  nwr({around})[tourism=caravan_site];',
+        ]
+    if "bar" in kinds:
+        clauses += [
+            f'  node({around})[amenity=bar];',
+            f'  node({around})[amenity=pub];',
+        ]
+    if "restaurant" in kinds:
+        clauses.append(f'  node({around})[amenity=restaurant];')
+    if "bike_repair" in kinds:
+        clauses += [
+            f'  node({around})[shop=bicycle];',
+            f'  node({around})[amenity=bicycle_repair_station];',
+        ]
+
     body = "\n".join(clauses)
-    return f"[out:json][timeout:60];\n(\n{body}\n);\nout body;"
+    return f"[out:json][timeout:60];\n(\n{body}\n);\nout center;"
 
 
 def query_overpass(query):
@@ -177,12 +290,22 @@ def classify(tags):
     ):
         return "water"
     if tags.get("shop") == "bakery" or tags.get("amenity") == "bakery":
-        return "food"
+        return "bakery"
+    if tags.get("shop") in ("supermarket", "convenience", "grocery", "greengrocer"):
+        return "grocery"
+    if tags.get("tourism") in ("camp_site", "caravan_site"):
+        return "camping"
+    if tags.get("amenity") in ("bar", "pub"):
+        return "bar"
+    if tags.get("amenity") == "restaurant":
+        return "restaurant"
+    if tags.get("shop") == "bicycle" or tags.get("amenity") == "bicycle_repair_station":
+        return "bike_repair"
     return None
 
 
 def default_label(tags, kind, city=None):
-    name = tags.get("name") or ("Point d'eau" if kind == "water" else "Boulangerie")
+    name = tags.get("name") or KIND_DEFAULT_NAME.get(kind, kind)
     return f"{city} — {name}" if city else name
 
 
@@ -204,7 +327,8 @@ def prompt_selection(candidates):
     for c in candidates:
         label = default_label(c["tags"], c["kind"], c.get("city"))
         note = default_note(c["tags"])
-        kind_label = "point d'eau" if c["kind"] == "water" else "boulangerie"
+        kind_label = KIND_LABEL_FR.get(c["kind"], c["kind"])
+        icon = KIND_ICON.get(c["kind"], "generic")
 
         print(f"— {label} ({kind_label})")
         print(f"  PK {c['km']:.1f} km · à {c['dist_m']:.0f} m de la trace")
@@ -217,14 +341,14 @@ def prompt_selection(candidates):
             except EOFError:
                 choice = "q"
             if choice in ("", "o", "oui", "y", "yes"):
-                selected.append({"kind": c["kind"], "lat": c["lat"], "lon": c["lon"], "label": label, "note": note})
+                selected.append({"icon": icon, "lat": c["lat"], "lon": c["lon"], "label": label, "note": note})
                 break
             if choice in ("n", "non", "no"):
                 break
             if choice in ("e", "editer", "éditer", "edit"):
                 new_label = input(f"  Label [{label}] : ").strip() or label
                 new_note = input(f"  Note [{note}] : ").strip() or note
-                selected.append({"kind": c["kind"], "lat": c["lat"], "lon": c["lon"], "label": new_label, "note": new_note})
+                selected.append({"icon": icon, "lat": c["lat"], "lon": c["lon"], "label": new_label, "note": new_note})
                 break
             if choice in ("q", "quitter"):
                 return selected
@@ -239,7 +363,7 @@ def prompt_selection(candidates):
 def format_block(p):
     lines = [
         "type: poi",
-        f"icon: {p['kind']}",
+        f"icon: {p['icon']}",
         f"lat: {p['lat']:.6f}",
         f"lon: {p['lon']:.6f}",
         f"label: {p['label']}",
@@ -267,16 +391,29 @@ def append_to_points_md(path, block_text):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Cherche les points d'eau et boulangeries proches d'une trace GPX "
+        description="Cherche des points d'intérêt (eau, boulangeries, campings, bars, "
+                    "restaurants, réparateurs de vélo) proches d'une trace GPX "
                     "(OpenStreetMap/Overpass) et prépare des blocs à ajouter dans points.md.",
     )
     parser.add_argument("ride", help="Dossier de la sortie (ex: rides/tour-du-pic-saint-loup) ou chemin direct vers un .gpx")
     parser.add_argument("--radius", type=int, default=150, help="Rayon de recherche autour de la trace, en mètres (défaut : 150)")
-    parser.add_argument("--only", choices=["water", "bakery", "both"], default="both", help="Type de points à chercher (défaut : both)")
+    parser.add_argument(
+        "--only",
+        help=f"Types à chercher, séparés par des virgules, parmi : {', '.join(ALL_KINDS)} (défaut : tous)",
+    )
     parser.add_argument("--out", help="Fichier points.md cible (défaut : points.md à côté du .gpx)")
     parser.add_argument("--include-existing", action="store_true", help="Proposer aussi les points déjà présents dans points.md (par défaut, ils sont ignorés silencieusement)")
     parser.add_argument("--dry-run", action="store_true", help="N'écrit rien sur disque, affiche seulement le résultat")
     args = parser.parse_args()
+
+    if args.only:
+        requested = [k.strip() for k in args.only.split(",") if k.strip()]
+        unknown = [k for k in requested if k not in ALL_KINDS]
+        if unknown:
+            sys.exit(f"Type(s) inconnu(s) : {', '.join(unknown)} — attendu parmi : {', '.join(ALL_KINDS)}")
+        kinds = set(requested)
+    else:
+        kinds = set(ALL_KINDS)
 
     if os.path.isdir(args.ride):
         gpx_path = find_gpx_in_dir(args.ride)
@@ -296,14 +433,9 @@ def main():
         sys.exit("Trace GPX vide ou illisible.")
 
     buffer_points = resample(track, 150)
-    query = build_query(
-        buffer_points,
-        args.radius,
-        want_water=args.only in ("water", "both"),
-        want_bakery=args.only in ("bakery", "both"),
-    )
+    query = build_query(buffer_points, args.radius, kinds)
 
-    print(f"Recherche sur OpenStreetMap (rayon {args.radius} m)...")
+    print(f"Recherche sur OpenStreetMap (rayon {args.radius} m, types : {', '.join(sorted(kinds))})...")
     try:
         result = query_overpass(query)
     except (urllib.error.URLError, TimeoutError) as e:
@@ -311,17 +443,24 @@ def main():
 
     candidates = {}
     for el in result.get("elements", []):
-        if el.get("type") != "node":
+        el_type = el.get("type")
+        if el_type == "node":
+            lat, lon = el.get("lat"), el.get("lon")
+        else:
+            center = el.get("center") or {}
+            lat, lon = center.get("lat"), center.get("lon")
+        if lat is None or lon is None:
             continue
+
         tags = el.get("tags", {})
         kind = classify(tags)
         if not kind:
             continue
-        km, dist_km = nearest_km(track, (el["lat"], el["lon"]))
+        km, dist_km = nearest_km(track, (lat, lon))
         candidates[el["id"]] = {
             "kind": kind,
-            "lat": el["lat"],
-            "lon": el["lon"],
+            "lat": lat,
+            "lon": lon,
             "tags": tags,
             "km": km,
             "dist_m": dist_km * 1000,

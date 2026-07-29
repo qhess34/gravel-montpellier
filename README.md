@@ -126,7 +126,7 @@ Champs communs : `type` (obligatoire), `label`. `lat`/`lon` sont
 
 | `type`      | Champs spécifiques                                                                 | `lat`/`lon`                                                                 | Comportement au clic                              |
 |-------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|-------------------------------------------------------|
-| `poi`       | `label` (obligatoire), `note`, `icon` (`water`, `food`, `danger`, `viewpoint`, ou `generic` par défaut) | **obligatoires**, aucune source automatique                                    | Ouvre une popup avec le label et la note              |
+| `poi`       | `label` (obligatoire), `note`, `icon` (`water`, `food`, `grocery`, `bar`, `restaurant`, `camping`, `bike-repair`, `danger`, `viewpoint`, ou `generic` par défaut) | **obligatoires**, aucune source automatique                                    | Ouvre une popup avec le label et la note              |
 | `photo`     | `photo` (obligatoire — nom de fichier présent dans `photos/`), `caption`             | facultatifs : si absents, lus depuis les **EXIF GPS** de la photo (photo ignorée avec avertissement si la photo n'a pas d'EXIF GPS) | Ouvre la photo en grand (lightbox)                     |
 | `panoramax` | `picture` (obligatoire — identifiant de la photo sur Panoramax), `sequence` (recommandé), `endpoint` (optionnel, instance publique par défaut) | facultatifs : si absents, **résolus automatiquement via l'API Panoramax** au moment du build (nécessite un accès réseau ; point ignoré avec avertissement si l'API ne répond pas) | Ouvre la visionneuse Panoramax intégrée en superposition |
 
@@ -136,33 +136,45 @@ Champs communs : `type` (obligatoire), `label`. `lat`/`lon` sont
 
 Chaque type de point (POI par icône, photo, panoramax, départ/arrivée)
 a son propre pictogramme sur la carte pour rester reconnaissable en un
-coup d'œil.
+coup d'œil. Dès qu'une sortie a au moins deux types de points différents,
+une barre de filtre apparaît au-dessus de la carte : cliquer sur un type
+le masque à la fois sur la carte et sur le profil altimétrique (et
+inversement pour le réafficher) — pratique pour isoler par exemple
+seulement les points d'eau sur une longue sortie chargée en POI.
 
-**Synthèse ravitaillement :** pour une sortie avec trace GPX, tout point
-`type: poi` avec `icon: water` ou `icon: food` est automatiquement
+**Liste compacte sur le parcours :** pour une sortie avec trace GPX,
+tout point `type: poi` (quel que soit son `icon`) est automatiquement
 projeté sur la trace pour en déduire son point kilométrique (PK), et
-listé dans un encadré « Points d'eau et boulangeries sur le parcours »
+listé sous forme de petites étiquettes compactes (« PK 22 · Ravitaillement »)
 sous la description — rien à écrire en plus, ça vient uniquement de ce
 que vous avez déjà mis dans `points.md`. Un point à plus de 3 km de la
 trace n'est pas considéré comme « sur le parcours » et n'apparaît pas
-dans cette synthèse (il reste affiché sur la carte).
+dans cette liste (il reste affiché sur la carte). La note, si présente,
+s'affiche au survol de l'étiquette plutôt que de prendre de la place en
+permanence.
 
 Une sortie sans trace GPX peut quand même afficher une carte si elle
 contient des points dans `points.md` — la carte se cadre alors
 automatiquement sur ces points.
 
-### Trouver automatiquement les points d'eau et boulangeries
+### Trouver automatiquement des points d'intérêt utiles
 
 `tools/find_supplies.py` interroge OpenStreetMap (API Overpass) le long
-de la trace GPX d'une sortie, vous propose un par un les points d'eau et
-boulangeries trouvés (commune, nom, distance à la trace, PK), et génère
-les blocs à coller dans `points.md` pour ceux que vous validez — plus
-besoin de chercher les coordonnées à la main. La commune est déterminée
-par géocodage inverse (Nominatim) et préfixée au label par défaut (ex :
+de la trace GPX d'une sortie, vous propose un par un les points trouvés
+(commune, nom, distance à la trace, PK), et génère les blocs à coller
+dans `points.md` pour ceux que vous validez — plus besoin de chercher
+les coordonnées à la main. La commune est déterminée par géocodage
+inverse (Nominatim) et préfixée au label par défaut (ex :
 « Saint-Mathieu-de-Tréviers — Fontaine du village »), modifiable avec `e`
 avant validation. Les points déjà présents dans `points.md` (à moins de
 20 m d'un point existant) ne sont pas reproposés d'une exécution à
 l'autre.
+
+Types recherchés (tous par défaut, filtrables avec `--only`) : points
+d'eau (`water`), boulangeries (`bakery`), magasins alimentaires
+(`grocery` — supérettes, supermarchés, primeurs), campings (`camping`),
+bars (`bar`), restaurants (`restaurant`), réparateurs de vélo
+(`bike_repair`).
 
 Ne dépend que de Python 3.8+ (bibliothèque standard uniquement, rien à
 installer) ; nécessite un accès réseau.
@@ -182,8 +194,8 @@ Options utiles :
 # Rayon de recherche autour de la trace (défaut : 150 m)
 python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --radius 250
 
-# Un seul type de point
-python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --only water
+# Un ou plusieurs types précis (séparés par des virgules)
+python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --only water,bakery
 
 # Revoir aussi les points déjà présents dans points.md
 python3 tools/find_supplies.py rides/tour-du-pic-saint-loup --include-existing
@@ -243,6 +255,28 @@ pas éditable par sortie, il vient du gabarit) un court rappel — terrain
 qui peut avoir changé, passage éventuel sur propriété privée, pratique
 sous sa propre responsabilité — avec un lien vers la page complète.
 
+## Statistiques (Umami)
+
+Le script [Umami](https://umami.is/) est inséré sur toutes les pages via
+`-umami-id`, déjà réglé par défaut sur l'identifiant du site
+(`9e97164b-65cd-4fef-82f2-f08b105783d3`) — rien à faire pour l'activer.
+
+```bash
+# Utiliser un autre identifiant
+go run ./cmd/generator -umami-id "autre-identifiant"
+
+# Désactiver (aucun script inséré)
+go run ./cmd/generator -umami-id ""
+```
+
+En CI, surchargeable sans toucher au workflow via une variable de dépôt
+**`UMAMI_ID`** (*Settings → Secrets and variables → Actions → Variables*),
+selon le même principe que `SITE_URL`.
+
+Les builds locaux (`Dockerfile`, `docker-compose.yml`) désactivent déjà le
+tracking (`-umami-id ""`) pour ne pas polluer les statistiques avec des
+visites de test — seul le build via la CI (déploiement réel) l'active.
+
 ## Partage (Facebook, WhatsApp, X, e-mail) et aperçu d'image
 
 Chaque page de sortie affiche automatiquement des boutons de partage —
@@ -286,7 +320,7 @@ navigateur (certains navigateurs bloquent les requêtes `fetch` en
 Options disponibles :
 
 ```bash
-go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -site-url "https://montpellier.cycloexplore.fr" -out ./public -title "Cyclo Explore"
+go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -site-url "https://montpellier.cycloexplore.fr" -umami-id "9e97164b-65cd-4fef-82f2-f08b105783d3" -out ./public -title "Cyclo Explore"
 ```
 
 ## Générer et prévisualiser avec Docker
@@ -361,7 +395,7 @@ rides/                  une sortie = un dossier
 .github/workflows/     CI de build + déploiement GitHub Pages
 Dockerfile              build + service du site via nginx (voir ci-dessus)
 docker-compose.yml      boucle de dev : régénération + aperçu local
-tools/find_supplies.py  recherche interactive de points d'eau/boulangeries (OSM)
+tools/find_supplies.py  recherche interactive de POI utiles (OSM)
 tools/surface_stats.py  estimation du revêtement, écrit dans description.md (OSM)
 ```
 

@@ -49,9 +49,18 @@ type Ride struct {
 
 	Points       []Point // POI, photos géolocalisées et points panoramax (points.md)
 	HasPanoramax bool    // true si au moins un Point de type panoramax
-	Supplies     []Point // points d'eau et boulangeries (icon water/food), triés par PK croissant
+	RoutePOIs    []Point // POI de type "poi" situés sur le parcours (tous types), triés par PK croissant
+
+	POIKinds     []POIKind // types de points présents sur cette sortie, pour le filtre carte/profil
+	HasPOIFilter bool      // true si au moins deux types différents sont présents
 
 	OutDir string // nom du dossier de sortie, ex: rides/<slug>/
+}
+
+// POIKind décrit un type de point pour la barre de filtre (icône + libellé).
+type POIKind struct {
+	Icon  string
+	Label string
 }
 
 // Site regroupe tout ce qui est nécessaire pour générer les pages.

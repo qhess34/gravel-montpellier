@@ -225,17 +225,20 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 		if p.Type == PointPanoramax {
 			ride.HasPanoramax = true
 		}
-		if p.Type == PointPOI && p.HasKmMark && (p.Icon == "water" || p.Icon == "food") {
-			ride.Supplies = append(ride.Supplies, p)
+		if p.Type == PointPOI && p.HasKmMark {
+			ride.RoutePOIs = append(ride.RoutePOIs, p)
 		}
 	}
-	sort.Slice(ride.Supplies, func(i, j int) bool {
-		return ride.Supplies[i].KmMark < ride.Supplies[j].KmMark
+	sort.Slice(ride.RoutePOIs, func(i, j int) bool {
+		return ride.RoutePOIs[i].KmMark < ride.RoutePOIs[j].KmMark
 	})
+
+	ride.POIKinds = collectPOIKinds(points)
+	ride.HasPOIFilter = len(ride.POIKinds) > 1
 
 	if len(trackPoints) > 0 {
 		profile := buildElevationProfile(trackPoints, 200)
-		if svg := renderElevationProfileSVG(profile, ride.Supplies); svg != "" {
+		if svg := renderElevationProfileSVG(profile, ride.RoutePOIs); svg != "" {
 			ride.ElevationProfileSVG = svg
 			ride.ElevationProfileDataJSON = elevationProfileDataJSON(profile)
 			ride.HasElevationProfile = true

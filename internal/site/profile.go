@@ -69,7 +69,7 @@ const (
 // native via <title>). Les dimensions et échelles du graphique sont
 // exposées en attributs data-* pour que le JS (survol synchronisé avec la
 // carte) puisse les réutiliser sans les dupliquer.
-func renderElevationProfileSVG(profile []profilePoint, supplies []Point) template.HTML {
+func renderElevationProfileSVG(profile []profilePoint, pois []Point) template.HTML {
 	if len(profile) < 2 {
 		return ""
 	}
@@ -137,7 +137,7 @@ func renderElevationProfileSVG(profile []profilePoint, supplies []Point) templat
 		fmt.Fprintf(&b, `<text x="%.1f" y="%.1f" class="elevation-label elevation-label--km elevation-label--end">%.0f</text>`, x(totalKm), profileHeight-4, totalKm)
 	}
 
-	for _, s := range supplies {
+	for _, s := range pois {
 		cx := x(s.KmMark)
 		cy := y(elevationAt(profile, s.KmMark))
 		label := html.EscapeString(s.Label)

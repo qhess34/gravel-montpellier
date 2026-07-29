@@ -22,6 +22,7 @@ type Options struct {
 	// nécessaire pour générer des liens de partage et un aperçu d'image
 	// valides (Facebook/WhatsApp/etc. exigent des URLs absolues) ; si
 	// vide, les boutons de partage et les balises Open Graph sont omis.
+	UmamiID string // identifiant de site Umami (statistiques) ; vide = pas de script inséré
 }
 
 type pageData struct {
@@ -32,6 +33,7 @@ type pageData struct {
 	Rides     []*Ride
 	Ride      *Ride
 	AllTags   []string
+	UmamiID   string
 
 	MetaURL         string // URL absolue de la page (canonical / og:url)
 	MetaImage       string // URL absolue de l'image d'aperçu (og:image)
@@ -103,6 +105,7 @@ func Build(opts Options) error {
 		Footer:    footerHTML,
 		Rides:     rides,
 		AllTags:   collectTags(rides),
+		UmamiID:   opts.UmamiID,
 	}
 	if baseURL != "" {
 		indexData.MetaURL = baseURL + "/"
@@ -119,6 +122,7 @@ func Build(opts Options) error {
 		Root:      "",
 		Footer:    footerHTML,
 		Legal:     legalHTML,
+		UmamiID:   opts.UmamiID,
 	}
 	if baseURL != "" {
 		legalData.MetaURL = baseURL + "/mentions-legales.html"
@@ -168,6 +172,7 @@ func Build(opts Options) error {
 			Root:      "../../",
 			Footer:    footerHTML,
 			Ride:      ride,
+			UmamiID:   opts.UmamiID,
 		}
 		if baseURL != "" {
 			pageURL := baseURL + "/rides/" + ride.Slug + "/"

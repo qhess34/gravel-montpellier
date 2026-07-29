@@ -6,7 +6,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-    command: go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -out ./public
+    command: go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -umami-id "" -out ./public
 
   # Sert le contenu de ./public sur http://localhost:8080
   # Usage : docker compose up serve

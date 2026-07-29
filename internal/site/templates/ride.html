@@ -29,6 +29,17 @@
   </div>
   {{end}}
 
+  {{if .HasPOIFilter}}
+  <div class="poi-filter" data-poi-filter>
+    <span class="poi-filter-label">Afficher :</span>
+    {{range .POIKinds}}
+    <button type="button" class="poi-filter-btn is-active" data-poi-kind="{{.Icon}}">
+      <span class="poi-filter-swatch poi-filter-swatch--{{.Icon}}" aria-hidden="true"></span>{{.Label}}
+    </button>
+    {{end}}
+  </div>
+  {{end}}
+
   {{if or .HasGPX .Points}}
   <div id="map" class="ride-map"></div>
   {{end}}
@@ -72,16 +83,15 @@
     {{.Body}}
   </div>
 
-  {{if .Supplies}}
-  <div class="supplies">
-    <h2>Points d'eau et boulangeries sur le parcours</h2>
-    <ul class="supplies-list">
-      {{range .Supplies}}
-      <li class="supplies-item supplies-item--{{.Icon}}">
-        <span class="supplies-icon" aria-hidden="true"></span>
-        <span class="supplies-km">PK {{printf "%.0f" .KmMark}}</span>
-        <span class="supplies-label">{{.Label}}</span>
-        {{if .Note}}<span class="supplies-note">{{.Note}}</span>{{end}}
+  {{if .RoutePOIs}}
+  <div class="poi-summary-wrap">
+    <h2 class="poi-summary-title">Points d'intérêt sur le parcours</h2>
+    <ul class="poi-summary">
+      {{range .RoutePOIs}}
+      <li class="poi-chip poi-chip--{{.Icon}}" {{if .Note}}title="{{.Note}}"{{end}}>
+        <span class="poi-chip-icon" aria-hidden="true"></span>
+        <span class="poi-chip-km">PK {{printf "%.0f" .KmMark}}</span>
+        <span class="poi-chip-label">{{.Label}}</span>
       </li>
       {{end}}
     </ul>
@@ -112,6 +122,12 @@
   }).addTo(map);
 
   var gmMarkers = [];
+  var gmMarkersByKind = {};
+  function gmTrackMarker(kind, marker) {
+    gmMarkers.push(marker);
+    (gmMarkersByKind[kind] = gmMarkersByKind[kind] || []).push(marker);
+    return marker;
+  }
 
   {{if .HasGPX}}
   new L.GPX('{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}', {
@@ -148,19 +164,19 @@
 
   {{range .Points}}
   {{if eq .Type "poi"}}
-  gmMarkers.push(
+  gmTrackMarker('{{.Icon}}',
     L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('{{.Icon}}') })
       .bindPopup(window.gmPoiPopup('{{.Label}}', '{{.Note}}'))
       .addTo(map)
   );
   {{else if eq .Type "photo"}}
-  gmMarkers.push(
+  gmTrackMarker('photo',
     L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('photo') })
       .on('click', function () { window.gmOpenPhoto('{{$.Root}}rides/{{$.Ride.Slug}}/{{.PhotoRel}}', '{{.Caption}}'); })
       .addTo(map)
   );
   {{else if eq .Type "panoramax"}}
-  gmMarkers.push(
+  gmTrackMarker('panoramax',
     L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('panoramax') })
       .bindPopup(window.gmPoiPopup('{{.Label}}', '360° · cliquez le marqueur pour ouvrir la visionneuse'))
       .on('click', function () { window.gmOpenPanoramax('{{.Endpoint}}', '{{.Sequence}}', '{{.Picture}}'); })
@@ -177,6 +193,10 @@
 
   {{if .HasElevationProfile}}
   window.gmInitProfileHover(document.querySelector('.elevation-profile'), map, {{.ElevationProfileDataJSON}});
+  {{end}}
+
+  {{if .HasPOIFilter}}
+  window.gmInitPOIFilter(document.querySelector('[data-poi-filter]'), gmMarkersByKind, document.querySelector('.elevation-profile'), map);
   {{end}}
 </script>
 {{end}}

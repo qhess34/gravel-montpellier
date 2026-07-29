@@ -29,9 +29,9 @@
   <link rel="stylesheet" href="{{.Root}}static/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  {{if .UmamiID}}<script defer src="https://cloud.umami.is/script.js" data-website-id="{{.UmamiID}}"></script>{{end}}
 </head>
 <body>
-  <script defer src="https://cloud.umami.is/script.js" data-website-id="9e97164b-65cd-4fef-82f2-f08b105783d3"></script>
   <script src="{{.Root}}static/script.js"></script>
 
   <header class="site-header">
