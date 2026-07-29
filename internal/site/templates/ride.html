@@ -92,6 +92,7 @@
         <span class="poi-chip-icon" aria-hidden="true"></span>
         <span class="poi-chip-km">PK {{printf "%.0f" .KmMark}}</span>
         <span class="poi-chip-label">{{.Label}}</span>
+        <a class="poi-chip-report" href="https://www.openstreetmap.org/note/new#map=18/{{.Lat}}/{{.Lon}}&amp;layers=N" target="_blank" rel="noopener noreferrer" title="Signaler une erreur sur OpenStreetMap" aria-label="Signaler une erreur sur OpenStreetMap ({{.Label}})">⚑</a>
       </li>
       {{end}}
     </ul>

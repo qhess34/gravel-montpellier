@@ -397,6 +397,19 @@ a:hover { text-decoration: underline; }
 .poi-chip-icon::before { font-size: 0.95rem; line-height: 1; }
 .poi-chip-km { font-weight: 600; color: var(--terracotta-dark); white-space: nowrap; }
 .poi-chip-label { color: var(--ink); }
+.poi-chip-report {
+  margin-left: 3px;
+  color: var(--ink-soft);
+  opacity: 0.35;
+  font-size: 0.78rem;
+  line-height: 1;
+  text-decoration: none;
+}
+.poi-chip-report:hover {
+  opacity: 1;
+  color: var(--terracotta-dark);
+  text-decoration: none;
+}
 
 .poi-chip--water .poi-chip-icon::before        { content: '💧'; }
 .poi-chip--food  .poi-chip-icon::before        { content: '🥐'; }
