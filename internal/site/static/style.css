@@ -58,7 +58,7 @@ a:hover { text-decoration: underline; }
   color: var(--ink);
 }
 .brand:hover { text-decoration: none; }
-.brand-mark { color: var(--terracotta); font-size: 1.4rem; }
+.brand-logo { display: block; height: 44px; width: 44px; }
 .site-header nav a {
   color: var(--ink-soft);
   font-weight: 500;
@@ -458,6 +458,7 @@ a:hover { text-decoration: underline; }
   .hero { padding: 44px 0 32px; }
   .hero h1 { font-size: 1.8rem; }
   .ride-map { height: 300px; }
+  .brand-logo { height: 34px; width: 34px; }
 }
 
 /* Marqueurs carte (POI, photo, panoramax) */

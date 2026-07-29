@@ -27,6 +27,7 @@
   <script type="application/ld+json">{{.StructuredDataJSON}}</script>
   {{end}}
   <link rel="stylesheet" href="{{.Root}}static/style.css">
+  <link rel="icon" href="{{.Root}}static/logo.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   {{if .UmamiID}}<script defer src="https://cloud.umami.is/script.js" data-website-id="{{.UmamiID}}"></script>{{end}}
@@ -37,7 +38,7 @@
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="{{.Root}}index.html">
-        <span class="brand-mark">⛰</span>
+        <img class="brand-logo" src="{{.Root}}static/logo.png" alt="Cyclo Explore" width="44" height="44">
         <span>Cyclo Explore</span>
       </a>
       <nav>
