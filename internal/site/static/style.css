@@ -38,13 +38,12 @@ a:hover { text-decoration: underline; }
 
 /* Header */
 .site-header {
-  background: linear-gradient(135deg, #e9dcc8, var(--cream));
+  background: var(--paper);
   border-bottom: 1px solid var(--line);
 }
 .site-header .wrap {
   display: flex;
-  flex-direction: column;
-  align-items: left;
+  align-items: center;
   justify-content: space-between;
   padding-top: 14px;
   padding-bottom: 14px;
@@ -59,14 +58,12 @@ a:hover { text-decoration: underline; }
   color: var(--ink);
 }
 .brand:hover { text-decoration: none; }
-.brand-logo { display: block; height: 300px; width: 300px; }
+.brand-logo { display: block; height: 176px; width: 176px; }
 .site-header nav a {
   color: var(--ink-soft);
   font-weight: 500;
   margin-left: 20px;
 }
-
-.title-sub { color: var(--ink-soft); font-size: 1.1rem; max-width: 700px; }
 
 /* Hero */
 .hero {
@@ -370,60 +367,72 @@ a:hover { text-decoration: underline; }
 .legal-body ul { padding-left: 1.2em; }
 .legal-body li { margin-bottom: 0.4em; }
 
-/* Liste compacte des POI sur le parcours */
-.poi-summary-wrap {
-  max-width: 720px;
+/* Frise chronologique des POI sur le parcours (verticale) */
+.poi-timeline-wrap {
   margin-top: 32px;
   padding-top: 24px;
   border-top: 1px solid var(--line);
+  max-width: 480px;
 }
 .poi-summary-title { font-size: 1.25rem; margin-bottom: 10px; }
-.poi-summary {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.poi-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 5px 12px 5px 9px;
-  font-size: 0.85rem;
-  cursor: default;
-}
-.poi-chip-icon::before { font-size: 0.95rem; line-height: 1; }
-.poi-chip-km { font-weight: 600; color: var(--terracotta-dark); white-space: nowrap; }
-.poi-chip-label { color: var(--ink); }
-.poi-chip-report {
-  margin-left: 3px;
-  color: var(--ink-soft);
-  opacity: 0.35;
-  font-size: 0.78rem;
-  line-height: 1;
-  text-decoration: none;
-}
-.poi-chip-report:hover {
-  opacity: 1;
-  color: var(--terracotta-dark);
-  text-decoration: none;
-}
 
-.poi-chip--water .poi-chip-icon::before        { content: '💧'; }
-.poi-chip--food  .poi-chip-icon::before        { content: '🥐'; }
-.poi-chip--grocery .poi-chip-icon::before      { content: '🛒'; }
-.poi-chip--camping .poi-chip-icon::before      { content: '🏕️'; }
-.poi-chip--bar .poi-chip-icon::before          { content: '🍺'; }
-.poi-chip--restaurant .poi-chip-icon::before   { content: '🍽️'; }
-.poi-chip--bike-repair .poi-chip-icon::before  { content: '🔧'; }
-.poi-chip--danger .poi-chip-icon::before       { content: '⚠️'; }
-.poi-chip--viewpoint .poi-chip-icon::before    { content: '👁️'; }
-.poi-chip--generic .poi-chip-icon::before      { content: '📍'; }
+.poi-timeline {
+  position: relative;
+  height: 420px;
+  margin: 4px 0;
+  padding: 14px 0 14px 24px;
+}
+.poi-timeline-track {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 5px;
+  width: 2px;
+  background: var(--line);
+}
+.poi-timeline-item {
+  position: absolute;
+  left: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.poi-timeline-dot {
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--paper);
+  box-shadow: 0 1px 3px rgba(43, 38, 32, 0.35);
+  flex-shrink: 0;
+}
+.poi-timeline-label {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+.poi-timeline-km { font-weight: 700; color: var(--terracotta-dark); flex-shrink: 0; }
+.poi-timeline-name { color: var(--ink-soft); }
+.poi-timeline-endcap {
+  padding-left: 24px;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+.poi-timeline-endcap--finish { margin-top: 4px; }
+
+/* Lien discret de signalement OSM, dans les popups carte */
+.gm-popup-report {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  opacity: 0.6;
+}
+.gm-popup-report:hover { opacity: 1; color: var(--terracotta-dark); }
 
 /* Barre de filtre par type de POI (carte + profil altimétrique) */
 .poi-filter {

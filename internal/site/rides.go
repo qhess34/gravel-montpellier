@@ -226,6 +226,15 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 			ride.HasPanoramax = true
 		}
 		if p.Type == PointPOI && p.HasKmMark {
+			if ride.DistanceKm > 0 {
+				pct := int(math.Round(p.KmMark / ride.DistanceKm * 100))
+				if pct < 0 {
+					pct = 0
+				} else if pct > 100 {
+					pct = 100
+				}
+				p.KmPct = pct
+			}
 			ride.RoutePOIs = append(ride.RoutePOIs, p)
 		}
 	}

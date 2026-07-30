@@ -84,18 +84,22 @@
   </div>
 
   {{if .RoutePOIs}}
-  <div class="poi-summary-wrap">
+  <div class="poi-timeline-wrap">
     <h2 class="poi-summary-title">Points d'intérêt sur le parcours</h2>
-    <ul class="poi-summary">
+    <div class="poi-timeline-endcap">Départ · 0 km</div>
+    <div class="poi-timeline">
+      <div class="poi-timeline-track"></div>
       {{range .RoutePOIs}}
-      <li class="poi-chip poi-chip--{{.Icon}}" {{if .Note}}title="{{.Note}}"{{end}}>
-        <span class="poi-chip-icon" aria-hidden="true"></span>
-        <span class="poi-chip-km">PK {{printf "%.0f" .KmMark}}</span>
-        <span class="poi-chip-label">{{.Label}}</span>
-        <a class="poi-chip-report" href="https://www.openstreetmap.org/note/new#map=18/{{.Lat}}/{{.Lon}}&amp;layers=N" target="_blank" rel="noopener noreferrer" title="Signaler une erreur sur OpenStreetMap" aria-label="Signaler une erreur sur OpenStreetMap ({{.Label}})">⚑</a>
-      </li>
+      <div class="poi-timeline-item" style="top:{{.KmPct}}%" {{if .Note}}title="{{.Note}}"{{end}}>
+        <span class="poi-timeline-dot poi-filter-swatch--{{.Icon}}"></span>
+        <span class="poi-timeline-label">
+          <span class="poi-timeline-km">{{printf "%.0f" .KmMark}} km</span>
+          <span class="poi-timeline-name">{{.Label}}</span>
+        </span>
+      </div>
       {{end}}
-    </ul>
+    </div>
+    <div class="poi-timeline-endcap poi-timeline-endcap--finish">Arrivée · {{printf "%.0f" .DistanceKm}} km</div>
   </div>
   {{end}}
 
@@ -167,7 +171,7 @@
   {{if eq .Type "poi"}}
   gmTrackMarker('{{.Icon}}',
     L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('{{.Icon}}') })
-      .bindPopup(window.gmPoiPopup('{{.Label}}', '{{.Note}}'))
+      .bindPopup(window.gmPoiPopup('{{.Label}}', '{{.Note}}', {{.Lat}}, {{.Lon}}))
       .addTo(map)
   );
   {{else if eq .Type "photo"}}

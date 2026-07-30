@@ -84,7 +84,9 @@
   };
 
   // Construit le contenu d'une popup Leaflet pour un point d'intérêt.
-  window.gmPoiPopup = function (label, note) {
+  // lat/lon sont optionnels : s'ils sont fournis, un lien discret pour
+  // signaler une erreur à cet endroit sur OpenStreetMap est ajouté.
+  window.gmPoiPopup = function (label, note, lat, lon) {
     var div = document.createElement("div");
     var strong = document.createElement("strong");
     strong.textContent = label;
@@ -93,6 +95,15 @@
       var p = document.createElement("p");
       p.textContent = note;
       div.appendChild(p);
+    }
+    if (lat !== undefined && lon !== undefined) {
+      var a = document.createElement("a");
+      a.className = "gm-popup-report";
+      a.href = "https://www.openstreetmap.org/note/new#map=18/" + lat + "/" + lon + "&layers=N";
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = "Signaler une erreur sur OpenStreetMap";
+      div.appendChild(a);
     }
     return div;
   };
