@@ -3,7 +3,7 @@ title: Tour du Pic Saint Loup au départ de Clapiers (boucle)
 date: 24/07/2026
 difficulty: Moyenne
 departure: Clapiers - Médiathèque
-tags: pistes, vues panoramiques, ascensions, beaux villages, gravel, 1 jour
+tags: pistes, vues panoramiques, ascensions, beaux villages, gravel, 1 jour, montagne
 surface_paved_km: 37.5
 surface_unpaved_km: 24.5
 ---
