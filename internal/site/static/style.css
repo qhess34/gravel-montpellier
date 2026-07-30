@@ -418,6 +418,17 @@ a:hover { text-decoration: underline; }
   line-height: 1.3;
 }
 .poi-timeline-km { font-weight: 700; color: var(--terracotta-dark); flex-shrink: 0; }
+.poi-timeline-icon::before { font-size: 0.9rem; line-height: 1; }
+.poi-timeline-icon--water::before        { content: '💧'; }
+.poi-timeline-icon--food::before         { content: '🥐'; }
+.poi-timeline-icon--grocery::before      { content: '🛒'; }
+.poi-timeline-icon--camping::before      { content: '🏕️'; }
+.poi-timeline-icon--bar::before          { content: '🍺'; }
+.poi-timeline-icon--restaurant::before   { content: '🍽️'; }
+.poi-timeline-icon--bike-repair::before  { content: '🔧'; }
+.poi-timeline-icon--danger::before       { content: '⚠️'; }
+.poi-timeline-icon--viewpoint::before    { content: '👁️'; }
+.poi-timeline-icon--generic::before      { content: '📍'; }
 .poi-timeline-name { color: var(--ink-soft); }
 .poi-timeline-endcap {
   padding-left: 24px;
