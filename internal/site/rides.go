@@ -226,21 +226,22 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 			ride.HasPanoramax = true
 		}
 		if p.Type == PointPOI && p.HasKmMark {
-			if ride.DistanceKm > 0 {
-				pct := int(math.Round(p.KmMark / ride.DistanceKm * 100))
-				if pct < 0 {
-					pct = 0
-				} else if pct > 100 {
-					pct = 100
-				}
-				p.KmPct = pct
-			}
 			ride.RoutePOIs = append(ride.RoutePOIs, p)
 		}
 	}
 	sort.Slice(ride.RoutePOIs, func(i, j int) bool {
 		return ride.RoutePOIs[i].KmMark < ride.RoutePOIs[j].KmMark
 	})
+	// Répartition à intervalle égal sur la frise (pas proportionnelle au km) :
+	// chaque point occupe la même place visuelle, quel que soit l'écart réel
+	// avec ses voisins.
+	if n := len(ride.RoutePOIs); n > 1 {
+		for i := range ride.RoutePOIs {
+			ride.RoutePOIs[i].TimelinePct = int(math.Round(float64(i) / float64(n-1) * 100))
+		}
+	} else if n == 1 {
+		ride.RoutePOIs[0].TimelinePct = 50
+	}
 
 	ride.POIKinds = collectPOIKinds(points)
 	ride.HasPOIFilter = len(ride.POIKinds) > 1
