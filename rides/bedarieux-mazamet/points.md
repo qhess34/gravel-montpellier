@@ -385,3 +385,46 @@ picture: ccd3f624-8a5f-42f2-9a1c-a3105ff5c3b6
 ---
 type: panoramax
 picture: 732433d4-3e9d-4382-8227-b5fa8bb340c6
+
+
+---
+
+type: poi
+icon: camping
+lat: 43.576986
+lon: 3.069819
+label: Les Aires — Domaine de Gatinié
+
+---
+
+type: poi
+icon: camping
+lat: 43.562204
+lon: 2.973079
+label: Mons — Camping Municipal Le Claps
+note: Horaires : Oct-Mar closed; Apr-Jun,Sep 09:00-12:00,15:00-18:00; Jul-Aug 09:00-12:00,14:00-19:00
+
+---
+
+type: poi
+icon: camping
+lat: 43.559816
+lon: 2.911401
+label: Olargues — Le Baous
+
+---
+
+type: poi
+icon: camping
+lat: 43.522172
+lon: 2.831263
+label: Prémian — Les Terrasses du Jaur
+note: Exploité par Commune de Prémian
+
+---
+
+type: poi
+icon: camping
+lat: 43.481496
+lon: 2.698890
+label: Courniou — A la ferme des Enclauses
