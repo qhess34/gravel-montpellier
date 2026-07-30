@@ -3,7 +3,7 @@ title: Bédarieux / Mazamet (Aller Simple)
 date: 30/07/2026
 difficulty: Moyen
 departure: Parking voie verte Bédarieux
-tags: voie verte, vues panoramiques, beaux villes, montagne, 2 jours, 3 jours, 4 jours, 5 jours, itinérance, en famille, baignade
+tags: voie verte, vues panoramiques, beaux villages, montagne, 2 jours, 3 jours, 4 jours, 5 jours, itinérance, en famille, baignade
 
 ---
 
