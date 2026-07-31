@@ -62,6 +62,12 @@ lon: 3.006113
 label: Colombières-sur-Orb — Camping à la ferme
 
 ---
+type: poi
+icon: camping
+lat: 43.453776
+lon: 2.526566
+label: Albine - Lestap
+---
 
 type: poi
 icon: restaurant
