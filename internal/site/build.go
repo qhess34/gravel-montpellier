@@ -167,6 +167,14 @@ func Build(opts Options) error {
 			}
 		}
 
+		if ride.HasInstagramImage {
+			src := filepath.Join(opts.RidesDir, ride.Slug, "instagram.jpg")
+			dst := filepath.Join(outRideDir, "instagram.jpg")
+			if err := copyFile(src, dst); err != nil {
+				return fmt.Errorf("copie instagram.jpg (%s) : %w", ride.Slug, err)
+			}
+		}
+
 		pd := pageData{
 			PageTitle: ride.Title,
 			Root:      "../../",

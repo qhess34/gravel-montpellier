@@ -35,9 +35,9 @@ type Point struct {
 	Sequence string // panoramax uniquement : identifiant de séquence (optionnel)
 	Endpoint string // panoramax uniquement : URL de l'API (optionnel)
 
-	KmMark      float64 // point kilométrique sur la trace (si HasKmMark)
-	HasKmMark   bool    // true si le point est assez proche de la trace GPX pour qu'un PK ait du sens
-	TimelinePct int     // position en % sur la frise, à intervalle égal entre les points (pas proportionnel au km)
+	KmMark           float64 // point kilométrique sur la trace (si HasKmMark)
+	HasKmMark        bool    // true si le point est assez proche de la trace GPX pour qu'un PK ait du sens
+	TimelineOffsetPx int     // position sur la frise, en px depuis le haut (écart fixe entre points, pas de km)
 }
 
 // poiKindOrder associe chaque icône reconnue à un libellé, dans l'ordre

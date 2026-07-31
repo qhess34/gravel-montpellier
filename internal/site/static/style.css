@@ -361,6 +361,11 @@ a:hover { text-decoration: underline; }
 .share-btn--x:hover    { background: #14171a; border-color: #14171a; color: #fff; }
 .share-btn--mail:hover { background: var(--olive); border-color: var(--olive); color: #fff; }
 .share-btn--copy:hover { background: var(--terracotta); border-color: var(--terracotta); color: #fff; }
+.share-btn--ig:hover {
+  background: linear-gradient(45deg, #f9ce34, #ee2a7b, #6228d7);
+  border-color: transparent;
+  color: #fff;
+}
 .share-btn--copied     { background: var(--olive); border-color: var(--olive); color: #fff; }
 
 /* Page Mentions légales */
@@ -381,7 +386,6 @@ a:hover { text-decoration: underline; }
 
 .poi-timeline {
   position: relative;
-  height: 420px;
   margin: 4px 0;
   padding: 14px 0 14px 24px;
 }

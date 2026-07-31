@@ -18,14 +18,21 @@
   </div>
   {{end}}
 
-  {{if $.MetaURL}}
+  {{if or $.MetaURL .HasInstagramImage}}
   <div class="share-bar">
     <span class="share-label">Partager :</span>
+    {{if $.MetaURL}}
     <a class="share-btn share-btn--fb" href="{{$.ShareFacebook}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur Facebook">Facebook</a>
     <a class="share-btn share-btn--wa" href="{{$.ShareWhatsApp}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur WhatsApp">WhatsApp</a>
     <a class="share-btn share-btn--x" href="{{$.ShareTwitter}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur X">X</a>
     <a class="share-btn share-btn--mail" href="{{$.ShareEmail}}" aria-label="Partager par e-mail">E-mail</a>
     <button type="button" class="share-btn share-btn--copy" data-copy-link="{{$.MetaURL}}">Copier le lien</button>
+    {{end}}
+    {{if .HasInstagramImage}}
+    <a class="share-btn share-btn--ig" href="{{$.Root}}rides/{{.Slug}}/instagram.jpg" download
+       data-ig-share="{{$.Root}}rides/{{.Slug}}/instagram.jpg" data-ig-title="{{.Title}}"
+       aria-label="Partager l'image sur Instagram">Instagram</a>
+    {{end}}
   </div>
   {{end}}
 
@@ -87,10 +94,10 @@
   <div class="poi-timeline-wrap">
     <h2 class="poi-summary-title">Points d'intérêt sur le parcours</h2>
     <div class="poi-timeline-endcap">Départ · 0 km</div>
-    <div class="poi-timeline">
+    <div class="poi-timeline" style="height:{{.TimelineHeightPx}}px">
       <div class="poi-timeline-track"></div>
       {{range .RoutePOIs}}
-      <div class="poi-timeline-item" style="top:{{.TimelinePct}}%" {{if .Note}}title="{{.Note}}"{{end}}>
+      <div class="poi-timeline-item" style="top:{{.TimelineOffsetPx}}px" {{if .Note}}title="{{.Note}}"{{end}}>
         <span class="poi-timeline-dot poi-filter-swatch--{{.Icon}}"></span>
         <span class="poi-timeline-label">
           <span class="poi-timeline-km">{{printf "%.0f" .KmMark}} km</span>

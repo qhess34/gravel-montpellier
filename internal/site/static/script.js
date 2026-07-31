@@ -285,6 +285,35 @@
     }
   });
 
+  // Bouton "Instagram" du bloc de partage. Il n'existe pas d'URL de partage
+  // web pour Instagram (contrairement à Facebook/WhatsApp/X) : on utilise la
+  // Web Share API avec un fichier quand le navigateur le permet (ouvre le
+  // sélecteur natif de l'appareil, qui propose Instagram s'il est installé).
+  // Sans ce support (desktop, navigateurs plus anciens), le lien garde son
+  // comportement natif : téléchargement direct de l'image (attribut download).
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-ig-share]");
+    if (!btn) return;
+    if (!(navigator.share && navigator.canShare)) return; // comportement natif (téléchargement)
+
+    var url = btn.getAttribute("data-ig-share");
+    if (!url) return;
+    e.preventDefault();
+
+    fetch(url)
+      .then(function (resp) { return resp.blob(); })
+      .then(function (blob) {
+        var file = new File([blob], "sortie.jpg", { type: blob.type || "image/jpeg" });
+        if (navigator.canShare({ files: [file] })) {
+          return navigator.share({ files: [file], title: btn.getAttribute("data-ig-title") || "" });
+        }
+        window.location.href = url;
+      })
+      .catch(function () {
+        window.location.href = url;
+      });
+  });
+
   // Filtre des sorties par tags sur la page d'accueil. Les cartes sont déjà
   // toutes dans le DOM (chaque .ride-card porte data-tags="tag1,tag2,...") ;
   // on affiche/masque en JS, sans rechargement. L'état est reflété dans le

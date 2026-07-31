@@ -232,6 +232,53 @@ python3 tools/surface_stats.py rides/tour-du-pic-saint-loup --dry-run
 Relancer le script écrase simplement les valeurs précédentes (pas de
 doublon), par exemple après avoir mis à jour la trace d'une sortie.
 
+### Générer une image de partage Instagram
+
+`tools/make_instagram_image.py` compose une image au format Instagram
+(portrait 1080×1350) pour une sortie : une de ses photos en fond, la
+silhouette de la trace GPX en médaillon, le titre, les stats (distance,
+dénivelé, difficulté) et le logo Cyclo Explore.
+
+Dépend de [Pillow](https://pillow.readthedocs.io/) (pas dans la
+bibliothèque standard, contrairement aux autres scripts) :
+
+```bash
+pip install Pillow
+# si erreur "externally-managed-environment" :
+pip install Pillow --break-system-packages
+```
+
+```bash
+python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup
+```
+
+Écrit `instagram.jpg` à la racine du dossier de la sortie par défaut —
+dès qu'il existe, le générateur le reprend automatiquement (copié sur le
+site, et un bouton **Instagram** apparaît dans le bloc de partage de la
+page). Sans photo dans `photos/`, un dégradé aux couleurs du site est
+utilisé à la place ; sans trace GPX, le médaillon est simplement omis —
+le script ne bloque jamais, il fait de son mieux avec ce qui est
+disponible.
+
+Options utiles :
+
+```bash
+# Choisir une photo précise plutôt que la première du dossier
+python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --photo photos/sommet.jpg
+
+# Écrire ailleurs (pour prévisualiser avant de valider)
+python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --out apercu.jpg
+```
+
+> Partage réel vers Instagram : il n'existe pas de lien web universel
+> pour poster directement sur Instagram (contrairement à
+> Facebook/WhatsApp/X). Le bouton **Instagram** utilise l'API de partage
+> native du navigateur (`navigator.share`) quand elle est disponible —
+> essentiellement sur mobile — ce qui ouvre le sélecteur de partage du
+> téléphone avec Instagram parmi les options. Sur desktop, ou si cette
+> API n'est pas disponible, le bouton télécharge simplement l'image :
+> à vous de la partager depuis l'app Instagram.
+
 ## Le footer
 
 Le contenu de `content/footer.md` (markdown simple, pas de frontmatter)
@@ -397,6 +444,7 @@ Dockerfile              build + service du site via nginx (voir ci-dessus)
 docker-compose.yml      boucle de dev : régénération + aperçu local
 tools/find_supplies.py  recherche interactive de POI utiles (OSM)
 tools/surface_stats.py  estimation du revêtement, écrit dans description.md (OSM)
+tools/make_instagram_image.py  image de partage Instagram (nécessite Pillow)
 ```
 
 Vous n'avez normalement besoin de toucher qu'à `rides/`,

@@ -50,9 +50,12 @@ type Ride struct {
 	Points       []Point // POI, photos géolocalisées et points panoramax (points.md)
 	HasPanoramax bool    // true si au moins un Point de type panoramax
 	RoutePOIs    []Point // POI de type "poi" situés sur le parcours (tous types), triés par PK croissant
+	TimelineHeightPx int // hauteur (px) de la frise chronologique, calculée selon le nombre de RoutePOIs
 
 	POIKinds     []POIKind // types de points présents sur cette sortie, pour le filtre carte/profil
 	HasPOIFilter bool      // true si au moins deux types différents sont présents
+
+	HasInstagramImage bool // true si rides/<slug>/instagram.jpg existe (généré par tools/make_instagram_image.py)
 
 	OutDir string // nom du dossier de sortie, ex: rides/<slug>/
 }
