@@ -179,8 +179,8 @@ def load_logo_with_transparency(path, size):
     gray = logo.convert("L")
     # Le fond du logo est blanc : on le rend transparent par seuillage simple
     # (suffisant pour un logo en aplats de couleur comme celui-ci).
-    mask = gray.point(lambda p: 0 if p > 248 else 255)
-    logo.putalpha(mask)
+#    mask = gray.point(lambda p: 0 if p > 248 else 255)
+#    logo.putalpha(mask)
     return logo
 
 
@@ -207,8 +207,11 @@ def draw_shadowed_text(draw, pos, text, font, fill):
     draw.text((x, y), text, font=font, fill=fill)
 
 
-def draw_track_badge(draw, track, box, color):
-    x0, y0, size = box
+def draw_track_overlay(draw, track, area, color):
+    """Dessine la trace directement sur la photo (pas de carte blanche
+    derrière), avec une ombre portée assortie à celle du texte pour rester
+    lisible quel que soit le fond."""
+    x0, y0, size = area
     if len(track) < 2:
         return
     lats = [p[0] for p in track]
@@ -222,7 +225,7 @@ def draw_track_badge(draw, track, box, color):
     lon_span_m = lon_span * math.cos(math.radians(ref_lat))
     ratio = (lon_span_m / lat_span) if lat_span else 1.0
 
-    pad = size * 0.16
+    pad = size * 0.08
     inner = size - 2 * pad
     if ratio > 1:
         draw_w, draw_h = inner, inner / ratio
@@ -238,9 +241,15 @@ def draw_track_badge(draw, track, box, color):
         y = oy + (max_lat - lat) / lat_span * draw_h
         pts.append((x, y))
 
+    shadow = [(x + 4, y + 4) for x, y in pts]
+    draw.line(shadow, fill=(0, 0, 0, 130), width=8, joint="curve")
     draw.line(pts, fill=color, width=7, joint="curve")
-    draw.ellipse([pts[0][0] - 6, pts[0][1] - 6, pts[0][0] + 6, pts[0][1] + 6], fill=color)
-    draw.ellipse([pts[-1][0] - 6, pts[-1][1] - 6, pts[-1][0] + 6, pts[-1][1] + 6], fill=color)
+
+    for p in (pts[0], pts[-1]):
+        sx, sy = p[0] + 4, p[1] + 4
+        draw.ellipse([sx - 7, sy - 7, sx + 7, sy + 7], fill=(0, 0, 0, 130))
+    for p in (pts[0], pts[-1]):
+        draw.ellipse([p[0] - 7, p[1] - 7, p[0] + 7, p[1] + 7], fill=color, outline=WHITE, width=2)
 
 
 # --- Programme principal --------------------------------------------------
@@ -250,7 +259,7 @@ def main():
     parser.add_argument("ride", help="Dossier de la sortie (ex: rides/tour-du-pic-saint-loup)")
     parser.add_argument("--photo", help="Photo à utiliser (chemin relatif au dossier de la sortie, ou absolu). Défaut : la première de photos/")
     parser.add_argument("--out", help="Fichier de sortie (défaut : instagram.jpg dans le dossier de la sortie)")
-    parser.add_argument("--logo", default=os.path.join(os.path.dirname(__file__), "..", "internal", "site", "static", "logo.png"), help="Chemin du logo à incruster")
+    parser.add_argument("--logo", default=os.path.join(os.path.dirname(__file__), "..", "internal", "site", "static", "logo_withouttext.png"), help="Chemin du logo à incruster")
     args = parser.parse_args()
 
     ride_dir = args.ride
@@ -314,20 +323,19 @@ def main():
     canvas = Image.alpha_composite(canvas, bottom_gradient(CANVAS_W, CANVAS_H))
     draw = ImageDraw.Draw(canvas)
 
-    # --- Logo (haut gauche) ---
-    logo_size = 130
-    try:
-        logo = load_logo_with_transparency(args.logo, logo_size)
-        canvas.alpha_composite(logo, (48, 48))
-    except (FileNotFoundError, OSError):
-        print(f"⚠ logo introuvable ({args.logo}), ignoré")
+    # --- Logo (haut gauche), agrandi ---
+#    logo_size = 350
+#    try:
+#        logo = load_logo_with_transparency(args.logo, logo_size)
+#        canvas.alpha_composite(logo, (20, -30))
+#    except (FileNotFoundError, OSError):
+#        print(f"⚠ logo introuvable ({args.logo}), ignoré")
 
-    # --- Badge trace (haut droite) ---
+    # --- Trace (haut droite), directement sur la photo ---
     if track and len(track) >= 2:
-        badge_size = 260
+        badge_size = 1000
         bx, by = CANVAS_W - badge_size - 48, 48
-        draw.rounded_rectangle([bx, by, bx + badge_size, by + badge_size], radius=24, fill=(255, 255, 255, 235))
-        draw_track_badge(draw, track, (bx, by, badge_size), TERRACOTTA)
+        draw_track_overlay(draw, track, (bx, by, badge_size), TERRACOTTA)
 
     # --- Texte (bas) ---
     font_title = load_font(FONT_BOLD_CANDIDATES, 64)
@@ -348,9 +356,10 @@ def main():
 
     y = CANVAS_H - 72
     if departure:
-        box = draw.textbbox((0, 0), departure, font=font_brand)
+        departure_line = f"Départ : {departure}"
+        box = draw.textbbox((0, 0), departure_line, font=font_brand)
         y -= (box[3] - box[1])
-        draw_shadowed_text(draw, (56, y), departure, font_brand, (247, 242, 234, 230))
+        draw_shadowed_text(draw, (56, y), departure_line, font_brand, (247, 242, 234, 230))
         y -= 14
     if stats_line:
         box = draw.textbbox((0, 0), stats_line, font=font_stats)
