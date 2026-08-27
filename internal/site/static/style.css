@@ -195,6 +195,35 @@ a:hover { text-decoration: underline; }
 
 .gpx-download { margin-top: -10px; }
 
+.locate-me { margin: 10px 0 0; }
+.locate-me-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.locate-me-btn:hover { border-color: var(--terracotta); }
+.locate-me-btn:disabled { opacity: 0.6; cursor: default; }
+
+.gm-my-location {
+  fill: #2f6fed;
+  stroke: #fff;
+  stroke-width: 2;
+  animation: gm-pulse 2s ease-in-out infinite;
+}
+@keyframes gm-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
 /* Statistiques de revêtement (route/piste cyclable vs chemin/sentier) */
 .surface-stats { margin: 20px 0; max-width: 480px; }
 .surface-stats-title { font-size: 1.1rem; margin-bottom: 10px; }

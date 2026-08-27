@@ -247,6 +247,50 @@
     });
   };
 
+  // Bouton "Me localiser sur la carte" : demande la position du visiteur
+  // (API de géolocalisation du navigateur, nécessite son autorisation) et
+  // place un marqueur "vous êtes ici" sur la carte Leaflet.
+  window.gmInitLocateMe = function (map) {
+    var btn = document.querySelector("[data-locate-me]");
+    if (!btn || !map) return;
+
+    var marker = null;
+    var defaultLabel = btn.textContent;
+
+    btn.addEventListener("click", function () {
+      if (!navigator.geolocation) {
+        btn.textContent = "Géolocalisation non disponible";
+        setTimeout(function () { btn.textContent = defaultLabel; }, 2500);
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Localisation en cours...";
+
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          var latlng = [pos.coords.latitude, pos.coords.longitude];
+          if (marker) {
+            marker.setLatLng(latlng);
+          } else {
+            marker = L.circleMarker(latlng, { radius: 8, className: "gm-my-location" }).addTo(map);
+            marker.bindPopup("Vous êtes ici");
+          }
+          map.panTo(latlng);
+          marker.openPopup();
+          btn.disabled = false;
+          btn.textContent = defaultLabel;
+        },
+        function () {
+          btn.disabled = false;
+          btn.textContent = "Position indisponible";
+          setTimeout(function () { btn.textContent = defaultLabel; }, 2500);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  };
+
   // Active le lightbox sur toute image marquée data-lightbox (galerie photo).
   document.addEventListener("click", function (e) {
     var trigger = e.target.closest("[data-lightbox]");
@@ -312,6 +356,31 @@
       .catch(function () {
         window.location.href = url;
       });
+  });
+
+  // Défilement des photos d'une sortie au survol de sa carte, sur l'accueil
+  // (chaque .ride-card-photo avec plusieurs photos porte data-photos="url1,url2,...").
+  document.addEventListener("DOMContentLoaded", function () {
+    var cards = document.querySelectorAll(".ride-card-photo[data-photos]");
+    cards.forEach(function (card) {
+      var photos = card.getAttribute("data-photos").split(",").filter(Boolean);
+      if (photos.length < 2) return;
+
+      var timer = null;
+      var i = 0;
+
+      card.addEventListener("mouseenter", function () {
+        i = 0;
+        timer = setInterval(function () {
+          i = (i + 1) % photos.length;
+          card.style.backgroundImage = "url('" + photos[i] + "')";
+        }, 900);
+      });
+      card.addEventListener("mouseleave", function () {
+        clearInterval(timer);
+        card.style.backgroundImage = "url('" + photos[0] + "')";
+      });
+    });
   });
 
   // Filtre des sorties par tags sur la page d'accueil. Les cartes sont déjà

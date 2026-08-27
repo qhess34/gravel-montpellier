@@ -179,8 +179,8 @@ def load_logo_with_transparency(path, size):
     gray = logo.convert("L")
     # Le fond du logo est blanc : on le rend transparent par seuillage simple
     # (suffisant pour un logo en aplats de couleur comme celui-ci).
-#    mask = gray.point(lambda p: 0 if p > 248 else 255)
-#    logo.putalpha(mask)
+    mask = gray.point(lambda p: 0 if p > 248 else 255)
+    logo.putalpha(mask)
     return logo
 
 
@@ -259,7 +259,7 @@ def main():
     parser.add_argument("ride", help="Dossier de la sortie (ex: rides/tour-du-pic-saint-loup)")
     parser.add_argument("--photo", help="Photo à utiliser (chemin relatif au dossier de la sortie, ou absolu). Défaut : la première de photos/")
     parser.add_argument("--out", help="Fichier de sortie (défaut : instagram.jpg dans le dossier de la sortie)")
-    parser.add_argument("--logo", default=os.path.join(os.path.dirname(__file__), "..", "internal", "site", "static", "logo_withouttext.png"), help="Chemin du logo à incruster")
+    parser.add_argument("--logo", default=os.path.join(os.path.dirname(__file__), "..", "internal", "site", "static", "logo.png"), help="Chemin du logo à incruster")
     args = parser.parse_args()
 
     ride_dir = args.ride
@@ -324,16 +324,16 @@ def main():
     draw = ImageDraw.Draw(canvas)
 
     # --- Logo (haut gauche), agrandi ---
-#    logo_size = 350
-#    try:
-#        logo = load_logo_with_transparency(args.logo, logo_size)
-#        canvas.alpha_composite(logo, (20, -30))
-#    except (FileNotFoundError, OSError):
-#        print(f"⚠ logo introuvable ({args.logo}), ignoré")
+    logo_size = 190
+    try:
+        logo = load_logo_with_transparency(args.logo, logo_size)
+        canvas.alpha_composite(logo, (48, 48))
+    except (FileNotFoundError, OSError):
+        print(f"⚠ logo introuvable ({args.logo}), ignoré")
 
     # --- Trace (haut droite), directement sur la photo ---
     if track and len(track) >= 2:
-        badge_size = 1000
+        badge_size = 820  # x5 (260) dépasserait le cadre (1080 de large) et chevaucherait le texte ; plafonné pour rester net
         bx, by = CANVAS_W - badge_size - 48, 48
         draw_track_overlay(draw, track, (bx, by, badge_size), TERRACOTTA)
 
