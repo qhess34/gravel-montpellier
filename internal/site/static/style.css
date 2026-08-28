@@ -134,11 +134,20 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 10px 24px rgba(43, 38, 32, 0.08);
 }
 .ride-card-photo {
+  position: relative;
   height: 170px;
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
   background-color: #ddd2bd;
 }
+.ride-card-photo-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.ride-card-photo-layer.is-active { opacity: 1; }
 .ride-card-photo--placeholder {
   display: flex;
   align-items: center;
@@ -195,23 +204,17 @@ a:hover { text-decoration: underline; }
 
 .gpx-download { margin-top: -10px; }
 
-.locate-me { margin: 10px 0 0; }
-.locate-me-btn {
-  display: inline-flex;
+/* Contrôle "Me localiser", intégré à la carte à côté du zoom (styles de
+   base hérités de .leaflet-bar/.leaflet-bar a, propres à Leaflet). */
+.gm-locate-control { margin-top: 10px; }
+.gm-locate-btn {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  border: 1px solid var(--line);
-  background: var(--paper);
-  color: var(--ink);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 0.85rem;
-  font-family: inherit;
-  cursor: pointer;
-  transition: border-color 0.15s ease;
+  justify-content: center;
+  font-size: 15px;
 }
-.locate-me-btn:hover { border-color: var(--terracotta); }
-.locate-me-btn:disabled { opacity: 0.6; cursor: default; }
+.gm-locate-btn--loading { opacity: 0.5; pointer-events: none; }
+.gm-locate-btn--error { background: #f8d7da !important; }
 
 .gm-my-location {
   fill: #2f6fed;

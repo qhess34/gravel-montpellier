@@ -49,7 +49,6 @@
 
   {{if or .HasGPX .Points}}
   <div id="map" class="ride-map"></div>
-  <p class="locate-me"><button type="button" class="locate-me-btn" data-locate-me>📍 Me localiser sur la carte</button></p>
   {{end}}
   {{if .HasGPX}}
   <p class="gpx-download"><a href="{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}" download>Télécharger la trace GPX</a></p>

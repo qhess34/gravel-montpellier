@@ -63,7 +63,7 @@ rechargeable tel quel.
 ### track.gpx
 
 Un seul fichier `.gpx` par dossier de sortie. S'il est présent :
-- il est affiché tel quel sur une carte (OpenStreetMap + Leaflet) sur la page de la sortie, avec un bouton **« Me localiser sur la carte »** (géolocalisation du navigateur, avec son autorisation) pour voir sa propre position dessus,
+- il est affiché tel quel sur une carte (OpenStreetMap + Leaflet) sur la page de la sortie, avec un bouton **« Me localiser »** intégré à la carte à côté du zoom (géolocalisation du navigateur, avec son autorisation) pour voir sa propre position dessus,
 - une **estimation du revêtement** (route/piste cyclable vs chemin/sentier) peut être affichée sous forme de barre + pourcentages sous la carte, si `description.md` contient les champs `surface_paved_km`/`surface_unpaved_km` — voir `tools/surface_stats.py` ci-dessous pour les calculer automatiquement,
 - un **profil altimétrique** est généré automatiquement (SVG, sans JavaScript) sous la carte, avec les points d'eau/boulangeries repérés au bon endroit ; survoler la carte ou le profil affiche le point correspondant sur l'autre (et inversement),
 - il est proposé au téléchargement,

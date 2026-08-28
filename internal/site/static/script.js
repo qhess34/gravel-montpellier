@@ -247,48 +247,68 @@
     });
   };
 
-  // Bouton "Me localiser sur la carte" : demande la position du visiteur
-  // (API de géolocalisation du navigateur, nécessite son autorisation) et
-  // place un marqueur "vous êtes ici" sur la carte Leaflet.
+  // Contrôle "Me localiser" intégré à la carte (même famille que les
+  // boutons de zoom) : demande la position du visiteur (API de
+  // géolocalisation du navigateur, nécessite son autorisation) et place un
+  // marqueur "vous êtes ici" sur la carte Leaflet.
   window.gmInitLocateMe = function (map) {
-    var btn = document.querySelector("[data-locate-me]");
-    if (!btn || !map) return;
+    if (!map || !window.L) return;
 
-    var marker = null;
-    var defaultLabel = btn.textContent;
+    var LocateControl = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd: function () {
+        var container = L.DomUtil.create("div", "leaflet-bar gm-locate-control");
+        var link = L.DomUtil.create("a", "gm-locate-btn", container);
+        link.href = "#";
+        link.title = "Me localiser sur la carte";
+        link.setAttribute("role", "button");
+        link.setAttribute("aria-label", "Me localiser sur la carte");
+        link.innerHTML = "📍";
 
-    btn.addEventListener("click", function () {
-      if (!navigator.geolocation) {
-        btn.textContent = "Géolocalisation non disponible";
-        setTimeout(function () { btn.textContent = defaultLabel; }, 2500);
-        return;
-      }
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
 
-      btn.disabled = true;
-      btn.textContent = "Localisation en cours...";
+        var marker = null;
 
-      navigator.geolocation.getCurrentPosition(
-        function (pos) {
-          var latlng = [pos.coords.latitude, pos.coords.longitude];
-          if (marker) {
-            marker.setLatLng(latlng);
-          } else {
-            marker = L.circleMarker(latlng, { radius: 8, className: "gm-my-location" }).addTo(map);
-            marker.bindPopup("Vous êtes ici");
+        L.DomEvent.on(link, "click", function (e) {
+          L.DomEvent.stop(e);
+          if (link.classList.contains("gm-locate-btn--loading")) return;
+
+          if (!navigator.geolocation) {
+            link.classList.add("gm-locate-btn--error");
+            setTimeout(function () { link.classList.remove("gm-locate-btn--error"); }, 2000);
+            return;
           }
-          map.panTo(latlng);
-          marker.openPopup();
-          btn.disabled = false;
-          btn.textContent = defaultLabel;
-        },
-        function () {
-          btn.disabled = false;
-          btn.textContent = "Position indisponible";
-          setTimeout(function () { btn.textContent = defaultLabel; }, 2500);
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+
+          link.classList.add("gm-locate-btn--loading");
+
+          navigator.geolocation.getCurrentPosition(
+            function (pos) {
+              var latlng = [pos.coords.latitude, pos.coords.longitude];
+              if (marker) {
+                marker.setLatLng(latlng);
+              } else {
+                marker = L.circleMarker(latlng, { radius: 8, className: "gm-my-location" }).addTo(map);
+                marker.bindPopup("Vous êtes ici");
+              }
+              map.panTo(latlng);
+              marker.openPopup();
+              link.classList.remove("gm-locate-btn--loading");
+            },
+            function () {
+              link.classList.remove("gm-locate-btn--loading");
+              link.classList.add("gm-locate-btn--error");
+              setTimeout(function () { link.classList.remove("gm-locate-btn--error"); }, 2000);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+          );
+        });
+
+        return container;
+      },
     });
+
+    new LocateControl().addTo(map);
   };
 
   // Active le lightbox sur toute image marquée data-lightbox (galerie photo).
@@ -358,13 +378,14 @@
       });
   });
 
-  // Défilement des photos d'une sortie au survol de sa carte, sur l'accueil
-  // (chaque .ride-card-photo avec plusieurs photos porte data-photos="url1,url2,...").
+  // Défilement en fondu des photos d'une sortie au survol de sa carte, sur
+  // l'accueil (chaque .ride-card-photo[data-photo-carousel] contient
+  // plusieurs .ride-card-photo-layer superposés, un par photo).
   document.addEventListener("DOMContentLoaded", function () {
-    var cards = document.querySelectorAll(".ride-card-photo[data-photos]");
+    var cards = document.querySelectorAll("[data-photo-carousel]");
     cards.forEach(function (card) {
-      var photos = card.getAttribute("data-photos").split(",").filter(Boolean);
-      if (photos.length < 2) return;
+      var layers = card.querySelectorAll(".ride-card-photo-layer");
+      if (layers.length < 2) return;
 
       var timer = null;
       var i = 0;
@@ -372,13 +393,16 @@
       card.addEventListener("mouseenter", function () {
         i = 0;
         timer = setInterval(function () {
-          i = (i + 1) % photos.length;
-          card.style.backgroundImage = "url('" + photos[i] + "')";
-        }, 900);
+          layers[i].classList.remove("is-active");
+          i = (i + 1) % layers.length;
+          layers[i].classList.add("is-active");
+        }, 1200);
       });
       card.addEventListener("mouseleave", function () {
         clearInterval(timer);
-        card.style.backgroundImage = "url('" + photos[0] + "')";
+        layers.forEach(function (layer, idx) {
+          layer.classList.toggle("is-active", idx === 0);
+        });
       });
     });
   });

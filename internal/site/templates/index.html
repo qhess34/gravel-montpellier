@@ -19,7 +19,11 @@
     {{$ride := .}}
     <a class="ride-card" data-tags="{{.TagsAttr}}" href="{{$.Root}}rides/{{.Slug}}/index.html">
       {{if .Photos}}
-        <div class="ride-card-photo" style="background-image:url('{{$.Root}}rides/{{.Slug}}/{{index .Photos 0}}')" data-photos="{{range $i, $p := .Photos}}{{if $i}},{{end}}{{$.Root}}rides/{{$ride.Slug}}/{{$p}}{{end}}"></div>
+        <div class="ride-card-photo" data-photo-carousel>
+          {{range $i, $p := .Photos}}
+          <div class="ride-card-photo-layer{{if eq $i 0}} is-active{{end}}" style="background-image:url('{{$.Root}}rides/{{$ride.Slug}}/{{$p}}')"></div>
+          {{end}}
+        </div>
       {{else}}
         <div class="ride-card-photo ride-card-photo--placeholder">⛰</div>
       {{end}}
