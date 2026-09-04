@@ -83,6 +83,50 @@
     openModal(wrap);
   };
 
+  // Clic sur la trace : si une vue Panoramax existe à proximité du point
+  // cliqué, affiche une popup avec un bouton pour l'ouvrir directement.
+  window.gmHandleTrackClick = function (ev, map, panoramaxPoints) {
+    if (!panoramaxPoints || !panoramaxPoints.length) return;
+
+    function distMeters(lat1, lon1, lat2, lon2) {
+      var R = 6371000;
+      var toRad = function (d) { return (d * Math.PI) / 180; };
+      var dLat = toRad(lat2 - lat1);
+      var dLon = toRad(lon2 - lon1);
+      var a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    var clickLat = ev.latlng.lat;
+    var clickLon = ev.latlng.lng;
+    var best = null;
+    var bestDist = 60; // mètres : au-delà, pas de vue panoramax "ici"
+
+    panoramaxPoints.forEach(function (p) {
+      var d = distMeters(clickLat, clickLon, p.lat, p.lon);
+      if (d < bestDist) {
+        bestDist = d;
+        best = p;
+      }
+    });
+    if (!best) return;
+
+    var wrap = document.createElement("div");
+    wrap.className = "gm-track-panoramax-popup";
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "gm-track-panoramax-btn";
+    btn.textContent = "🧭 Voir en 360° · " + best.label;
+    btn.addEventListener("click", function () {
+      window.gmOpenPanoramax(best.endpoint, best.sequence, best.picture);
+    });
+    wrap.appendChild(btn);
+
+    L.popup().setLatLng([best.lat, best.lon]).setContent(wrap).openOn(map);
+  };
+
   // Construit le contenu d'une popup Leaflet pour un point d'intérêt.
   // lat/lon sont optionnels : s'ils sont fournis, un lien discret pour
   // signaler une erreur à cet endroit sur OpenStreetMap est ajouté.

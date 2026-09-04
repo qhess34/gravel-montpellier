@@ -136,6 +136,10 @@ Champs communs : `type` (obligatoire), `label`. `lat`/`lon` sont
 > récupère depuis son visionneur : bouton en haut à gauche de l'image
 > → onglet *Résumé* → *Copier l'identifiant*.
 
+Cliquer directement sur la trace ouvre aussi un bouton « Voir en 360° »
+si un point panoramax se trouve à moins de 60 m du clic — pas besoin de
+viser précisément le petit marqueur 🧭.
+
 Chaque type de point (POI par icône, photo, panoramax, départ/arrivée)
 a son propre pictogramme sur la carte pour rester reconnaissable en un
 coup d'œil. Dès qu'une sortie a au moins deux types de points différents,

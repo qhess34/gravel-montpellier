@@ -649,3 +649,19 @@ body.gm-modal-lock { overflow: hidden; }
   border-radius: 8px;
   overflow: hidden;
 }
+
+.gm-track-panoramax-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: #6b3fa0;
+  color: #fff;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.gm-track-panoramax-btn:hover { background: #57327f; }
