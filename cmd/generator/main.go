@@ -23,6 +23,7 @@ func main() {
 	title := flag.String("title", "Cyclo Explore", "titre du site")
 	siteURL := flag.String("site-url", "https://montpellier.cycloexplore.fr", "URL publique du site — nécessaire pour les boutons de partage et l'aperçu d'image")
 	umamiID := flag.String("umami-id", "9e97164b-65cd-4fef-82f2-f08b105783d3", "identifiant de site Umami (statistiques) — vide pour désactiver")
+	version := flag.String("version", "", "identifiant de version (ex: SHA court du commit) affiché en pied de page — optionnel")
 	flag.Parse()
 
 	err := site.Build(site.Options{
@@ -33,6 +34,7 @@ func main() {
 		SiteTitle:  *title,
 		SiteURL:    *siteURL,
 		UmamiID:    *umamiID,
+		Version:    *version,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Erreur :", err)

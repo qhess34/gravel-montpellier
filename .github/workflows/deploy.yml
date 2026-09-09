@@ -30,7 +30,8 @@ jobs:
         env:
           SITE_URL: ${{ vars.SITE_URL || 'https://montpellier.cycloexplore.fr' }}
           UMAMI_ID: ${{ vars.UMAMI_ID || '9e97164b-65cd-4fef-82f2-f08b105783d3' }}
-        run: go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -site-url "$SITE_URL" -umami-id "$UMAMI_ID" -out ./public
+          COMMIT_SHA: ${{ github.sha }}
+        run: go run ./cmd/generator -rides ./rides -footer ./content/footer.md -legal ./content/mentions-legales.md -site-url "$SITE_URL" -umami-id "$UMAMI_ID" -version "${COMMIT_SHA:0:7}" -out ./public
 
       - name: Uploader l'artefact Pages
         uses: actions/upload-pages-artifact@v3

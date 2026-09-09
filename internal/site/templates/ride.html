@@ -126,7 +126,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 {{if .HasGPX}}<script src="https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/gpx.min.js"></script>{{end}}
-{{if .HasPanoramax}}<script src="https://cdn.jsdelivr.net/npm/@panoramax/web-viewer@5.0.0-develop-025b014a/build/cjs/index.js"></script>{{end}}
+{{if .HasPanoramax}}<script type="module" src="https://cdn.jsdelivr.net/npm/@panoramax/web-viewer@5.0.0/build/esm/index_photoviewer.js"></script>{{end}}
 <script>
   var map = L.map('map');
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

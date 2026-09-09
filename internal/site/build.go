@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Options contrôle la génération du site.
@@ -23,6 +24,7 @@ type Options struct {
 	// valides (Facebook/WhatsApp/etc. exigent des URLs absolues) ; si
 	// vide, les boutons de partage et les balises Open Graph sont omis.
 	UmamiID string // identifiant de site Umami (statistiques) ; vide = pas de script inséré
+	Version string // identifiant de version (ex: SHA court du commit), affiché en pied de page ; optionnel
 }
 
 type pageData struct {
@@ -34,6 +36,7 @@ type pageData struct {
 	Ride      *Ride
 	AllTags   []string
 	UmamiID   string
+	BuildInfo string // date de génération (+ version si fournie), affichée en pied de page
 
 	MetaURL         string // URL absolue de la page (canonical / og:url)
 	MetaImage       string // URL absolue de l'image d'aperçu (og:image)
@@ -64,6 +67,11 @@ func Build(opts Options) error {
 	legalHTML, err := loadMarkdownFile(opts.LegalPath)
 	if err != nil {
 		return fmt.Errorf("mentions légales : %w", err)
+	}
+
+	buildInfo := "Site généré le " + time.Now().UTC().Format("02/01/2006 à 15:04") + " UTC"
+	if opts.Version != "" {
+		buildInfo += " · " + opts.Version
 	}
 
 	rides, err := LoadRides(opts.RidesDir)
@@ -106,6 +114,7 @@ func Build(opts Options) error {
 		Rides:     rides,
 		AllTags:   collectTags(rides),
 		UmamiID:   opts.UmamiID,
+		BuildInfo: buildInfo,
 	}
 	if baseURL != "" {
 		indexData.MetaURL = baseURL + "/"
@@ -123,6 +132,7 @@ func Build(opts Options) error {
 		Footer:    footerHTML,
 		Legal:     legalHTML,
 		UmamiID:   opts.UmamiID,
+		BuildInfo: buildInfo,
 	}
 	if baseURL != "" {
 		legalData.MetaURL = baseURL + "/mentions-legales.html"
@@ -181,6 +191,7 @@ func Build(opts Options) error {
 			Footer:    footerHTML,
 			Ride:      ride,
 			UmamiID:   opts.UmamiID,
+			BuildInfo: buildInfo,
 		}
 		if baseURL != "" {
 			pageURL := baseURL + "/rides/" + ride.Slug + "/"

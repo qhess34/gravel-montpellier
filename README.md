@@ -308,6 +308,25 @@ pas éditable par sortie, il vient du gabarit) un court rappel — terrain
 qui peut avoir changé, passage éventuel sur propriété privée, pratique
 sous sa propre responsabilité — avec un lien vers la page complète.
 
+## Version en pied de page
+
+Chaque page affiche, tout en bas, une ligne discrète avec la date et
+l'heure de génération (UTC) — utile pour vérifier rapidement si un
+déploiement a bien pris en compte vos derniers changements :
+
+```
+Site généré le 15/08/2026 à 14:32 UTC
+```
+
+En CI, le SHA court du commit est ajouté automatiquement à la suite
+(`... UTC · a1b2c3d`), via `-version`. En local (`go run`, Docker), cette
+option n'est pas renseignée par défaut : seule la date apparaît. Vous
+pouvez la préciser vous-même si besoin :
+
+```bash
+go run ./cmd/generator -version "test-local"
+```
+
 ## Statistiques (Umami)
 
 Le script [Umami](https://umami.is/) est inséré sur toutes les pages via

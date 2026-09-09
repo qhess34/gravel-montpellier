@@ -347,6 +347,12 @@ a:hover { text-decoration: underline; }
   border-top: 1px solid var(--line);
   font-size: 0.85rem;
 }
+.build-info {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  opacity: 0.7;
+}
 
 /* Bandeau d'avertissement sur les pages de sortie */
 .disclaimer {
