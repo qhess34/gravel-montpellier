@@ -62,6 +62,21 @@
 
   // Ouvre la visionneuse Panoramax (composant web officiel @panoramax/web-viewer)
   // pointant sur une photo précise.
+  // Parcourt layer et tous ses sous-calques (récursif) pour appliquer
+  // callback à chaque Polyline trouvée — nécessaire car L.GPX imbrique
+  // parfois la trace réelle dans des sous-groupes (par segment), qu'un
+  // simple eachLayer non récursif sur la couche du dessus ne voit pas.
+  window.gmEachPolyline = function (layer, callback) {
+    if (layer instanceof L.Polyline) {
+      callback(layer);
+    }
+    if (typeof layer.eachLayer === "function") {
+      layer.eachLayer(function (child) {
+        window.gmEachPolyline(child, callback);
+      });
+    }
+  };
+
   window.gmOpenPanoramax = function (endpoint, sequence, picture) {
     // Le composant se base sur la query string de la page (ex: ?focus=pic&pic=...)
     // avant l'attribut "picture" si elle est présente. On la vide pour être
@@ -102,7 +117,7 @@
     var clickLat = ev.latlng.lat;
     var clickLon = ev.latlng.lng;
     var best = null;
-    var bestDist = 60; // mètres : au-delà, pas de vue panoramax "ici"
+    var bestDist = 200; // mètres : au-delà, pas de vue panoramax "ici" (marge généreuse : cliquer précisément sur une ligne fine à l'écran est imprécis, et le point panoramax n'est pas forcément exactement sur la trace enregistrée)
 
     panoramaxPoints.forEach(function (p) {
       var d = distMeters(clickLat, clickLon, p.lat, p.lon);
