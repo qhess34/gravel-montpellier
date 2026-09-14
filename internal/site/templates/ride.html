@@ -151,11 +151,22 @@
     { lat: {{.Lat}}, lon: {{.Lon}}, label: '{{.Label}}', endpoint: '{{.Endpoint}}', sequence: '{{.Sequence}}', picture: '{{.Picture}}' },
     {{end}}{{end}}
   ];
+  // Clic sur toute la carte plutôt que sur la seule polyligne : cliquer
+  // pixel-parfait sur une ligne fine de quelques px est trop imprécis (un
+  // clic à côté part sur la carte, pas sur la trace, et rien ne se passe).
+  // Le seuil de distance dans gmHandleTrackClick filtre déjà les clics
+  // trop éloignés d'un point panoramax.
+  map.on('click', function (ev) { window.gmHandleTrackClick(ev, map, gmPanoramaxPoints); });
   {{end}}
 
   {{if .HasGPX}}
   new L.GPX('{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}', {
     async: true,
+    // On ne parse que la trace elle-même : les waypoints (<wpt>) créeraient
+    // un marqueur cliquable par point de cheminement du fichier GPX, ce qui
+    // intercepte les clics destinés à la carte/trace (nos propres POI
+    // viennent de points.md, pas des waypoints du GPX).
+    gpx_options: { parseElements: ['track', 'route'] },
     marker_options: {
       startIconUrl: null,
       endIconUrl: null,
@@ -167,9 +178,6 @@
     window.gmEachPolyline(e.target, function (layer) {
       layer.on('mousemove', function (ev) { map.fire('gm:track-hover', { latlng: ev.latlng }); });
       layer.on('mouseout', function () { map.fire('gm:track-hover-end'); });
-      {{if .HasPanoramax}}
-      layer.on('click', function (ev) { window.gmHandleTrackClick(ev, map, gmPanoramaxPoints); });
-      {{end}}
     });
   }).addTo(map);
 
