@@ -136,9 +136,15 @@ Champs communs : `type` (obligatoire), `label`. `lat`/`lon` sont
 > récupère depuis son visionneur : bouton en haut à gauche de l'image
 > → onglet *Résumé* → *Copier l'identifiant*.
 
-Cliquer directement sur la trace ouvre aussi un bouton « Voir en 360° »
-si un point panoramax se trouve à moins de 60 m du clic — pas besoin de
-viser précisément le petit marqueur 🧭.
+Cliquer n'importe où sur la carte d'une sortie propose aussi un bouton
+« Voir en 360° » quand une vue panoramax existe à proximité — pas besoin
+de viser précisément un marqueur. Il vérifie d'abord vos points
+panoramax catalogués dans `points.md` (à moins de 60 m du clic), et à
+défaut interroge l'API Panoramax en direct pour trouver n'importe quelle
+photo existante à proximité (moins de 25 m), même si vous ne l'avez pas
+ajoutée vous-même — pratique pour explorer la couverture Panoramax le
+long de tout le parcours plutôt que seulement aux points que vous avez
+choisis. Nécessite un accès réseau côté visiteur pour ce second cas.
 
 Chaque type de point (POI par icône, photo, panoramax, départ/arrivée)
 a son propre pictogramme sur la carte pour rester reconnaissable en un

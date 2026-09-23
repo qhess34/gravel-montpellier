@@ -126,10 +126,8 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 {{if .HasGPX}}<script src="https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/gpx.min.js"></script>{{end}}
-{{if .HasPanoramax}}
 <script>window.exports = window.exports || {};</script>
 <script src="https://cdn.jsdelivr.net/npm/@panoramax/web-viewer@5.0.0-develop-025b014a/build/cjs/index.js"></script>
-{{end}}
 <script>
   var map = L.map('map');
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -145,7 +143,10 @@
     return marker;
   }
 
-  {{if .HasPanoramax}}
+  // Points panoramax déjà catalogués à la main dans points.md (rapide, pas
+  // de réseau) — vérifiés en premier au clic. S'il n'y en a pas à proximité,
+  // gmHandleTrackClick interroge l'API Panoramax en direct pour trouver
+  // n'importe quelle photo existante près du point cliqué.
   var gmPanoramaxPoints = [
     {{range .Points}}{{if eq .Type "panoramax"}}
     { lat: {{.Lat}}, lon: {{.Lon}}, label: '{{.Label}}', endpoint: '{{.Endpoint}}', sequence: '{{.Sequence}}', picture: '{{.Picture}}' },
@@ -154,10 +155,7 @@
   // Clic sur toute la carte plutôt que sur la seule polyligne : cliquer
   // pixel-parfait sur une ligne fine de quelques px est trop imprécis (un
   // clic à côté part sur la carte, pas sur la trace, et rien ne se passe).
-  // Le seuil de distance dans gmHandleTrackClick filtre déjà les clics
-  // trop éloignés d'un point panoramax.
   map.on('click', function (ev) { window.gmHandleTrackClick(ev, map, gmPanoramaxPoints); });
-  {{end}}
 
   {{if .HasGPX}}
   new L.GPX('{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}', {

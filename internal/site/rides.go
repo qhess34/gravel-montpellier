@@ -256,7 +256,7 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 	ride.HasPOIFilter = len(ride.POIKinds) > 1
 
 	if len(trackPoints) > 0 {
-		profile := buildElevationProfile(trackPoints, 200)
+		profile := buildElevationProfile(trackPoints, 1000)
 		if svg := renderElevationProfileSVG(profile, ride.RoutePOIs); svg != "" {
 			ride.ElevationProfileSVG = svg
 			ride.ElevationProfileDataJSON = elevationProfileDataJSON(profile)

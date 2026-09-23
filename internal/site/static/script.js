@@ -100,46 +100,94 @@
 
   // Clic sur la trace : si une vue Panoramax existe à proximité du point
   // cliqué, affiche une popup avec un bouton pour l'ouvrir directement.
-  window.gmHandleTrackClick = function (ev, map, panoramaxPoints) {
-    if (!panoramaxPoints || !panoramaxPoints.length) return;
+  var GM_PANORAMAX_DEFAULT_ENDPOINT = "https://api.panoramax.xyz/api";
 
-    function distMeters(lat1, lon1, lat2, lon2) {
-      var R = 6371000;
-      var toRad = function (d) { return (d * Math.PI) / 180; };
-      var dLat = toRad(lat2 - lat1);
-      var dLon = toRad(lon2 - lon1);
-      var a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
+  function gmDistMeters(lat1, lon1, lat2, lon2) {
+    var R = 6371000;
+    var toRad = function (d) { return (d * Math.PI) / 180; };
+    var dLat = toRad(lat2 - lat1);
+    var dLon = toRad(lon2 - lon1);
+    var a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
 
-    var clickLat = ev.latlng.lat;
-    var clickLon = ev.latlng.lng;
-    var best = null;
-    var bestDist = 200; // mètres : au-delà, pas de vue panoramax "ici" (marge généreuse : cliquer précisément sur une ligne fine à l'écran est imprécis, et le point panoramax n'est pas forcément exactement sur la trace enregistrée)
-
-    panoramaxPoints.forEach(function (p) {
-      var d = distMeters(clickLat, clickLon, p.lat, p.lon);
-      if (d < bestDist) {
-        bestDist = d;
-        best = p;
-      }
-    });
-    if (!best) return;
-
+  function gmShowPanoramaxPopup(map, latlng, label, endpoint, sequence, picture) {
     var wrap = document.createElement("div");
     wrap.className = "gm-track-panoramax-popup";
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "gm-track-panoramax-btn";
-    btn.textContent = "🧭 Voir en 360° · " + best.label;
+    btn.textContent = "🧭 Voir en 360°" + (label ? " · " + label : "");
     btn.addEventListener("click", function () {
-      window.gmOpenPanoramax(best.endpoint, best.sequence, best.picture);
+      window.gmOpenPanoramax(endpoint, sequence, picture);
     });
     wrap.appendChild(btn);
+    L.popup().setLatLng(latlng).setContent(wrap).openOn(map);
+  }
 
-    L.popup().setLatLng([best.lat, best.lon]).setContent(wrap).openOn(map);
+  // Interroge l'API Panoramax (standard STAC, filtre bbox) pour trouver la
+  // photo la plus proche de (lat, lon), dans un rayon de radiusM. Renvoie
+  // une promesse résolue avec {id, sequence, lat, lon} ou null si rien à
+  // proximité (ou en cas d'erreur réseau).
+  window.gmFindNearestPanoramax = function (lat, lon, radiusM, endpoint) {
+    var dLat = radiusM / 111320;
+    var dLon = radiusM / (111320 * Math.cos((lat * Math.PI) / 180));
+    var bbox = [lon - dLon, lat - dLat, lon + dLon, lat + dLat].join(",");
+    var url = endpoint.replace(/\/$/, "") + "/search?bbox=" + encodeURIComponent(bbox) + "&limit=10";
+
+    return fetch(url)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        var features = (data && data.features) || [];
+        if (!features.length) return null;
+
+        var best = null;
+        var bestDist = Infinity;
+        features.forEach(function (f) {
+          var coords = f.geometry && f.geometry.coordinates;
+          if (!coords) return;
+          var d = gmDistMeters(lat, lon, coords[1], coords[0]);
+          if (d < bestDist) {
+            bestDist = d;
+            best = { id: f.id, sequence: f.collection, lat: coords[1], lon: coords[0] };
+          }
+        });
+        return best;
+      })
+      .catch(function () {
+        return null;
+      });
+  };
+
+  // Clic sur la carte : ouvre un bouton "Voir en 360°" si une vue panoramax
+  // existe près de l'endroit cliqué. Vérifie d'abord les points catalogués
+  // à la main dans points.md (rapide, pas de réseau) ; à défaut, interroge
+  // l'API Panoramax en direct pour trouver n'importe quelle photo existante
+  // à proximité, même non cataloguée.
+  window.gmHandleTrackClick = function (ev, map, panoramaxPoints) {
+    var clickLat = ev.latlng.lat;
+    var clickLon = ev.latlng.lng;
+
+    var best = null;
+    var bestDist = 60; // mètres : ces points sont placés à la main, donc on peut être strict
+    (panoramaxPoints || []).forEach(function (p) {
+      var d = gmDistMeters(clickLat, clickLon, p.lat, p.lon);
+      if (d < bestDist) {
+        bestDist = d;
+        best = p;
+      }
+    });
+    if (best) {
+      gmShowPanoramaxPopup(map, [best.lat, best.lon], best.label, best.endpoint, best.sequence, best.picture);
+      return;
+    }
+
+    window.gmFindNearestPanoramax(clickLat, clickLon, 25, GM_PANORAMAX_DEFAULT_ENDPOINT).then(function (found) {
+      if (!found) return;
+      gmShowPanoramaxPopup(map, [found.lat, found.lon], "", GM_PANORAMAX_DEFAULT_ENDPOINT, found.sequence, found.id);
+    });
   };
 
   // Construit le contenu d'une popup Leaflet pour un point d'intérêt.
