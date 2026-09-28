@@ -113,7 +113,14 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  function gmShowPanoramaxPopup(map, latlng, label, endpoint, sequence, picture) {
+  function gmPanoramaxLoadingContent() {
+    var wrap = document.createElement("div");
+    wrap.className = "gm-track-panoramax-popup gm-track-panoramax-popup--loading";
+    wrap.textContent = "Recherche d'une vue 360°…";
+    return wrap;
+  }
+
+  function gmPanoramaxButtonContent(label, endpoint, sequence, picture) {
     var wrap = document.createElement("div");
     wrap.className = "gm-track-panoramax-popup";
     var btn = document.createElement("button");
@@ -124,7 +131,14 @@
       window.gmOpenPanoramax(endpoint, sequence, picture);
     });
     wrap.appendChild(btn);
-    L.popup().setLatLng(latlng).setContent(wrap).openOn(map);
+    return wrap;
+  }
+
+  function gmPanoramaxEmptyContent() {
+    var wrap = document.createElement("div");
+    wrap.className = "gm-track-panoramax-popup gm-track-panoramax-popup--empty";
+    wrap.textContent = "Aucune photo à 360° à cet endroit.";
+    return wrap;
   }
 
   // Interroge l'API Panoramax (standard STAC, filtre bbox) pour trouver la
@@ -161,12 +175,16 @@
       });
   };
 
-  // Clic sur la carte : ouvre un bouton "Voir en 360°" si une vue panoramax
-  // existe près de l'endroit cliqué. Vérifie d'abord les points catalogués
-  // à la main dans points.md (rapide, pas de réseau) ; à défaut, interroge
-  // l'API Panoramax en direct pour trouver n'importe quelle photo existante
-  // à proximité, même non cataloguée.
+  // Clic sur la carte : ouvre immédiatement une popup avec un indicateur de
+  // chargement, puis l'actualise avec un bouton "Voir en 360°" si une vue
+  // panoramax existe près de l'endroit cliqué, ou un message sinon. Vérifie
+  // d'abord les points catalogués à la main dans points.md (rapide, pas de
+  // réseau) ; à défaut, interroge l'API Panoramax en direct pour trouver
+  // n'importe quelle photo existante à proximité, même non cataloguée.
+  var gmTrackClickSeq = 0;
+
   window.gmHandleTrackClick = function (ev, map, panoramaxPoints) {
+    var seq = ++gmTrackClickSeq;
     var clickLat = ev.latlng.lat;
     var clickLon = ev.latlng.lng;
 
@@ -180,13 +198,23 @@
       }
     });
     if (best) {
-      gmShowPanoramaxPopup(map, [best.lat, best.lon], best.label, best.endpoint, best.sequence, best.picture);
+      L.popup().setLatLng([best.lat, best.lon])
+        .setContent(gmPanoramaxButtonContent(best.label, best.endpoint, best.sequence, best.picture))
+        .openOn(map);
       return;
     }
 
+    var popup = L.popup().setLatLng(ev.latlng).setContent(gmPanoramaxLoadingContent()).openOn(map);
+
     window.gmFindNearestPanoramax(clickLat, clickLon, 25, GM_PANORAMAX_DEFAULT_ENDPOINT).then(function (found) {
-      if (!found) return;
-      gmShowPanoramaxPopup(map, [found.lat, found.lon], "", GM_PANORAMAX_DEFAULT_ENDPOINT, found.sequence, found.id);
+      // Un clic plus récent a eu lieu, ou la popup a été refermée entre-temps.
+      if (seq !== gmTrackClickSeq || !map.hasLayer(popup)) return;
+
+      if (found) {
+        popup.setContent(gmPanoramaxButtonContent("", GM_PANORAMAX_DEFAULT_ENDPOINT, found.sequence, found.id));
+      } else {
+        popup.setContent(gmPanoramaxEmptyContent());
+      }
     });
   };
 
