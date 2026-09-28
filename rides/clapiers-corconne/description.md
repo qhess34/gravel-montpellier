@@ -1,5 +1,5 @@
 ---
-title: Clapiers, Courconne puis montée à la Taillade  (boucle)
+title: Clapiers, Corconne puis montée à la Taillade  (boucle)
 date: 26/09/2026
 difficulty: Difficile
 departure: Clapiers - Médiathèque
