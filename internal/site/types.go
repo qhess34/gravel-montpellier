@@ -61,7 +61,8 @@ type Ride struct {
 	SlopeJSON   template.JS  // tronçons [{s,e,c,p,l}] : pente affichée au survol du profil et de la carte
 
 	Points       []Point // POI, photos géolocalisées et points panoramax (points.md)
-	HasPanoramax bool    // true si au moins un Point de type panoramax
+	HasPanoramax   bool // true si au moins un Point de type panoramax
+	PanoramaxCount int  // nombre de vues 360° sélectionnées dans points.md
 	RoutePOIs    []Point // POI de type "poi" situés sur le parcours (tous types), triés par PK croissant
 	OffRoutePOIs []Point // POI de type "poi" trop loin de la trace pour avoir un PK
 

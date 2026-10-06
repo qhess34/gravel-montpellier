@@ -262,6 +262,7 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 	for _, p := range points {
 		if p.Type == PointPanoramax {
 			ride.HasPanoramax = true
+			ride.PanoramaxCount++
 		}
 		if p.Type == PointPOI {
 			if p.HasKmMark {

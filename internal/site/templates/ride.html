@@ -106,6 +106,16 @@
     </div>
     {{end}}
 
+    {{if .HasGPX}}
+    <div class="pano-callout">
+      <span class="pano-callout-badge" aria-hidden="true">360°</span>
+      <div class="pano-callout-text">
+        <strong>Parcours visible en 360° avec Panoramax</strong>
+        <p>Cliquez sur la trace ou sur le profil altimétrique&nbsp;: la photo immersive la plus proche s'affiche, puis avancez le long du chemin comme dans Street View{{if .PanoramaxCount}} — {{.PanoramaxCount}} vue{{if gt .PanoramaxCount 1}}s{{end}} sélectionnée{{if gt .PanoramaxCount 1}}s{{end}} sont repérées par 🧭 sur la carte{{end}}.</p>
+      </div>
+      <a class="pano-callout-link" href="https://panoramax.fr/" target="_blank" rel="noopener">Panoramax, c'est quoi&nbsp;?</a>
+    </div>
+    {{end}}
     <div id="map" class="ride-map"></div>
 
     {{if .HasElevationProfile}}
@@ -275,6 +285,7 @@
 
   window.gmInitPOIList(document.querySelector('.poi-section'), map, gmPoiMarkers, document.querySelector('[data-poi-filter]'));
   window.gmInitLocateMe(map);
+  {{if .HasGPX}}window.gmInit360Control(map, [{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], gmPanoramaxPoints);{{end}}
 </script>
 {{end}}
 {{end}}
