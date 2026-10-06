@@ -270,8 +270,13 @@
   // profil). `svg` est le <svg class="elevation-profile"> généré côté
   // serveur (échelle exposée en attributs data-*), `data` un tableau
   // [{km, ele, lat, lon}, ...] le long de la trace.
-  window.gmInitProfileHover = function (svg, map, data) {
+  // slopes (optionnel) : tronçons [{s, e, p, l}] issus de slope.geojson —
+  // kilométrage de début/fin, pente en %, libellé — pour afficher la pente
+  // au survol, sur le profil comme sur la carte.
+  window.gmInitProfileHover = function (svg, map, data, slopes) {
     if (!svg || !map || !data || !data.length) return;
+    slopes = slopes || [];
+    var tooltip = svg.parentNode && svg.parentNode.querySelector(".elevation-tooltip");
 
     var padL = parseFloat(svg.dataset.padL);
     var padTop = parseFloat(svg.dataset.padTop);
@@ -292,9 +297,33 @@
 
     function ensureMapMarker() {
       if (!mapMarker) {
-        mapMarker = L.circleMarker([0, 0], { radius: 7, className: "gm-hover-marker" });
+        mapMarker = L.circleMarker([0, 0], { radius: 7, className: "gm-hover-marker", interactive: false });
+        mapMarker.bindTooltip("", { permanent: true, direction: "top", offset: [0, -8], className: "gm-hover-tooltip" });
       }
       return mapMarker;
+    }
+
+    function slopeAt(km) {
+      for (var i = 0; i < slopes.length; i++) {
+        if (km >= slopes[i].s && km <= slopes[i].e) return slopes[i];
+      }
+      return null;
+    }
+
+    function fmt(v, digits) { return v.toFixed(digits).replace(".", ","); }
+
+    // Texte de survol : « PK 12,3 km · ↗ +5,2 % » (pente du tronçon calculée
+    // par tools/slope_colors.py ; seulement le PK et l'altitude sans elle).
+    function hoverHTML(point) {
+      var html = "<strong>PK " + fmt(point.km, 1) + " km</strong>";
+      var seg = slopeAt(point.km);
+      if (seg && typeof seg.p === "number") {
+        var arrow = seg.p >= 2 ? "↗" : seg.p <= -2 ? "↘" : "→";
+        html += ' · <span class="gm-hover-slope" style="--slope-color:' + seg.c + '">' + arrow + " " +
+          (seg.p > 0 ? "+" : "") + fmt(seg.p, 1) + " %</span>";
+      }
+      html += '<span class="gm-hover-ele">' + Math.round(point.ele) + " m</span>";
+      return html;
     }
 
     function nearestByKm(km) {
@@ -333,13 +362,24 @@
         dot.setAttribute("cy", gy);
         dot.style.display = "";
       }
+      var html = hoverHTML(point);
       ensureMapMarker().setLatLng([point.lat, point.lon]).addTo(map);
+      mapMarker.setTooltipContent(html);
+      if (tooltip) {
+        tooltip.innerHTML = html;
+        tooltip.hidden = false;
+        var pct = (gx / width) * 100;
+        tooltip.style.left = pct + "%";
+        tooltip.classList.toggle("is-left", pct > 75);
+        tooltip.classList.toggle("is-right", pct < 25);
+      }
     }
 
     function hide() {
       if (guide) guide.style.display = "none";
       if (dot) dot.style.display = "none";
       if (mapMarker) map.removeLayer(mapMarker);
+      if (tooltip) tooltip.hidden = true;
     }
 
     function onSvgMove(evt) {
@@ -388,7 +428,7 @@
         });
 
         if (svg) {
-          var els = svg.querySelectorAll(".elevation-marker--" + kind);
+          var els = (svg.parentNode || svg).querySelectorAll(".elevation-marker--" + kind);
           els.forEach(function (el) { el.style.display = active ? "" : "none"; });
         }
       });
@@ -553,8 +593,6 @@
       if (b.isValid()) map.fitBounds(b, { padding: [24, 24] });
     }
 
-    function formatKm(v) { return v.toFixed(1).replace(".", ","); }
-
     function addSlope(data) {
       if (!data || !data.features || !data.features.length) throw new Error("GeoJSON vide");
       // Liseré sombre sous la trace : garde chaque couleur lisible sur le fond de carte.
@@ -565,15 +603,6 @@
       var layer = L.geoJSON(data, {
         style: function (f) {
           return { color: f.properties.color, weight: 5, opacity: 1, lineCap: "round", lineJoin: "round" };
-        },
-        onEachFeature: function (f, l) {
-          var p = f.properties;
-          var text = p.label;
-          if (typeof p.slope_pct === "number") {
-            text += " · " + (p.slope_pct > 0 ? "+" : "") + p.slope_pct.toFixed(1).replace(".", ",") + " %";
-          }
-          text += " · km " + formatKm(p.start_km) + " → " + formatKm(p.end_km);
-          l.bindTooltip(text, { sticky: true, direction: "top", className: "gm-slope-tooltip" });
         },
       }).addTo(map);
       attachHover(layer);
@@ -643,14 +672,15 @@
 
   // --- Fiche de sortie : liste des POI reliée à la carte ---------------------
 
-  // Cliquer sur un POI de la liste centre la carte dessus et ouvre sa popup
-  // (en réaffichant son type s'il avait été masqué par le filtre).
+  // Cliquer sur un POI de la liste ou sur son icône dans le profil
+  // altimétrique centre la carte dessus et ouvre sa popup (en réaffichant son
+  // type s'il avait été masqué par le filtre).
   window.gmInitPOIList = function (section, map, registry, filterBar) {
-    if (!section || !map) return;
+    if (!map) return;
     var current = null;
-    section.addEventListener("click", function (e) {
+    document.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-poi-id]");
-      if (!btn) return;
+      if (!btn || !(btn.closest(".poi-section") || btn.closest(".elevation-chart"))) return;
       var entry = registry[btn.getAttribute("data-poi-id")];
       if (!entry) return;
 
@@ -661,8 +691,8 @@
       }
 
       if (current) current.classList.remove("is-current");
-      current = btn;
-      btn.classList.add("is-current");
+      current = section && section.querySelector('.poi-item[data-poi-id="' + btn.getAttribute("data-poi-id") + '"]');
+      if (current) current.classList.add("is-current");
 
       var reduce = prefersReducedMotion();
       map.getContainer().scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });

@@ -117,6 +117,11 @@ func renderElevationProfileSVG(profile []profilePoint, pois []Point, segments []
 	areaPath := fmt.Sprintf("M%.1f,%.1f L%s L%.1f,%.1f Z", x(0), yBase, pointsStr, x(totalKm), yBase)
 
 	var b strings.Builder
+	// Le SVG est enveloppé dans un conteneur qui porte aussi, en HTML, les
+	// icônes cliquables des POI et l'info-bulle de survol : positionnés en %
+	// par-dessus le graphique, ils gardent leur taille quelle que soit la
+	// largeur d'écran (contrairement à des éléments dessinés dans le SVG).
+	b.WriteString(`<div class="elevation-chart">`)
 	fmt.Fprintf(&b, `<svg class="elevation-profile" viewBox="0 0 %.0f %.0f" preserveAspectRatio="none" role="img" aria-label="Profil altimétrique, survolez pour repérer la position sur la carte"`, profileWidth, profileHeight)
 	fmt.Fprintf(&b, ` data-width="%.0f" data-height="%.0f" data-pad-l="%.0f" data-pad-r="%.0f" data-pad-top="%.0f" data-pad-bot="%.0f" data-min-ele="%.2f" data-max-ele="%.2f">`,
 		profileWidth, profileHeight, profilePadL, profilePadR, profilePadTop, profilePadBot, minEle, maxEle)
@@ -142,20 +147,21 @@ func renderElevationProfileSVG(profile []profilePoint, pois []Point, segments []
 		fmt.Fprintf(&b, `<text x="%.1f" y="%.1f" class="elevation-label elevation-label--km elevation-label--end">%.0f</text>`, x(totalKm), profileHeight-4, totalKm)
 	}
 
-	for _, s := range pois {
-		cx := x(s.KmMark)
-		cy := y(elevationAt(profile, s.KmMark))
-		label := html.EscapeString(s.Label)
-		fmt.Fprintf(&b, `<circle cx="%.1f" cy="%.1f" r="4.5" class="elevation-marker elevation-marker--%s"><title>%s (PK %.0f)</title></circle>`,
-			cx, cy, s.Icon, label, s.KmMark)
-	}
-
 	// Ligne + point de survol, positionnés dynamiquement par script.js
 	// (gmInitProfileHover) ; masqués tant qu'aucun survol n'a eu lieu.
 	fmt.Fprintf(&b, `<line class="elevation-hover-line" y1="%.1f" y2="%.1f" style="display:none"/>`, profilePadTop, profileHeight-profilePadBot)
 	b.WriteString(`<circle class="elevation-hover-dot" r="5" style="display:none"/>`)
-
 	b.WriteString(`</svg>`)
+
+	// POI : icône cliquable (centre la carte sur le point et ouvre sa popup).
+	for _, s := range pois {
+		label := html.EscapeString(fmt.Sprintf("%s — PK %s km", s.Label, formatKmFR(s.KmMark)))
+		icon := html.EscapeString(s.Icon)
+		fmt.Fprintf(&b, `<button type="button" class="elevation-poi poi-icon poi-icon--%s elevation-marker--%s" data-poi-id="%d" style="left:%.2f%%;top:%.2f%%" title="%s" aria-label="%s"></button>`,
+			icon, icon, s.ID, x(s.KmMark)/profileWidth*100, y(elevationAt(profile, s.KmMark))/profileHeight*100, label, label)
+	}
+	b.WriteString(`<div class="elevation-tooltip" aria-hidden="true" hidden></div>`)
+	b.WriteString(`</div>`)
 	return template.HTML(b.String())
 }
 
@@ -188,6 +194,11 @@ func writeSlopeProfile(b *strings.Builder, profile []profilePoint, segments []sl
 			x(start), yBase, line, x(end), yBase, seg.Color)
 		fmt.Fprintf(b, `<path d="M%s" class="elevation-seg-line" stroke="%s" fill="none"/>`, line, seg.Color)
 	}
+}
+
+// formatKmFR formate un kilométrage avec une décimale et une virgule.
+func formatKmFR(km float64) string {
+	return strings.Replace(fmt.Sprintf("%.1f", km), ".", ",", 1)
 }
 
 // elevationAt renvoie l'altitude interpolée du profil à un kilométrage donné.

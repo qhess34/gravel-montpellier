@@ -174,7 +174,7 @@ a:hover { text-decoration: underline; }
 .surface-swatch--unknown { background: #ccc3b1; }
 
 /* Profil altimétrique */
-.elevation-wrap { margin: 24px 0; }
+.elevation-wrap { margin: 24px 0 12px; }
 .elevation-title { font-size: 1.1rem; margin-bottom: 10px; }
 .elevation-profile {
   width: 100%;
@@ -196,13 +196,78 @@ a:hover { text-decoration: underline; }
 }
 .elevation-label--km { text-anchor: middle; }
 .elevation-label--end { text-anchor: end; }
-.elevation-marker { stroke: var(--paper); stroke-width: 1.5; cursor: pointer; }
-.elevation-marker--water     { fill: #3d7ea6; }
-.elevation-marker--food      { fill: #b8562f; }
-.elevation-marker--danger    { fill: #b5342a; }
-.elevation-marker--viewpoint { fill: var(--olive); }
-.elevation-marker--generic   { fill: var(--terracotta); }
+/* Conteneur du profil : icônes des POI et info-bulle en HTML par-dessus le SVG */
+.elevation-chart { position: relative; }
+.elevation-poi {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 7px));
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: var(--poi-color, var(--terracotta));
+  box-shadow: 0 1px 4px rgba(43, 38, 32, 0.35);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: transform 0.12s ease;
+}
+/* Petite pointe vers la courbe */
+.elevation-poi::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  margin-left: -4px;
+  border: 4px solid transparent;
+  border-top: 5px solid var(--poi-color, var(--terracotta));
+}
+.elevation-poi:hover,
+.elevation-poi:focus-visible { transform: translate(-50%, calc(-100% - 7px)) scale(1.18); z-index: 2; }
+.elevation-poi.poi-icon--water       { --poi-color: #3d7ea6; }
+.elevation-poi.poi-icon--food        { --poi-color: #b8562f; }
+.elevation-poi.poi-icon--grocery     { --poi-color: #5a8f3d; }
+.elevation-poi.poi-icon--camping     { --poi-color: #2f8f6a; }
+.elevation-poi.poi-icon--bar         { --poi-color: #c98a1f; }
+.elevation-poi.poi-icon--restaurant  { --poi-color: #9c4f7a; }
+.elevation-poi.poi-icon--bike-repair { --poi-color: #55606b; }
+.elevation-poi.poi-icon--danger      { --poi-color: #b5342a; }
+.elevation-poi.poi-icon--viewpoint   { --poi-color: var(--olive); }
 
+/* Info-bulle de survol : PK + pente (profil et carte) */
+.elevation-tooltip {
+  position: absolute;
+  top: 6px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 3;
+}
+.elevation-tooltip.is-left { transform: translateX(calc(-100% - 10px)); }
+.elevation-tooltip.is-right { transform: translateX(10px); }
+.elevation-tooltip,
+.gm-hover-tooltip {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 9px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+.gm-hover-tooltip::before { border-top-color: var(--ink) !important; }
+.gm-hover-slope {
+  font-weight: 700;
+  padding-left: 6px;
+  border-left: 3px solid var(--slope-color, #fff);
+}
+.gm-hover-ele { margin-left: 8px; opacity: 0.75; }
 .elevation-profile { cursor: crosshair; }
 .elevation-hover-line {
   stroke: var(--ink);
@@ -1187,6 +1252,9 @@ body.gm-modal-lock { overflow: hidden; }
   .home-map { height: 58vh; min-height: 320px; }
   .ride { padding-top: 20px; }
   .carousel-viewport { aspect-ratio: 4 / 3; }
+  /* Profil plus haut sur mobile (le SVG s'étire ; icônes et info-bulle sont positionnées en %) */
+  .elevation-profile { height: 160px; }
+  .elevation-poi { width: 22px; height: 22px; font-size: 10px; }
   .carousel-btn { width: 38px; height: 38px; font-size: 1.6rem; }
   .carousel-btn--prev { left: 6px; }
   .carousel-btn--next { right: 6px; }

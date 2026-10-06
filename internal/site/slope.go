@@ -28,20 +28,24 @@ type slopeGeoJSON struct {
 	Legend       []SlopeClass `json:"legend"`
 	Features     []struct {
 		Properties struct {
-			Class   string  `json:"class"`
-			Color   string  `json:"color"`
-			StartKm float64 `json:"start_km"`
-			EndKm   float64 `json:"end_km"`
+			Class   string   `json:"class"`
+			Label   string   `json:"label"`
+			Color   string   `json:"color"`
+			StartKm float64  `json:"start_km"`
+			EndKm   float64  `json:"end_km"`
+			Slope   *float64 `json:"slope_pct"`
 		} `json:"properties"`
 	} `json:"features"`
 }
 
-// slopeSegment : tronçon de pente (kilométrage + couleur), utilisé pour
-// colorer le profil altimétrique comme la carte.
+// slopeSegment : tronçon de pente, utilisé pour colorer le profil
+// altimétrique comme la carte, et pour afficher la pente au survol.
 type slopeSegment struct {
-	StartKm float64
-	EndKm   float64
-	Color   string
+	StartKm float64  `json:"s"`
+	EndKm   float64  `json:"e"`
+	Color   string   `json:"c"`
+	Slope   *float64 `json:"p"` // nil si l'altitude est inexploitable
+	Label   string   `json:"l"`
 }
 
 // loadSlopeData vérifie que rides/<slug>/slope.geojson existe et correspond
@@ -83,7 +87,8 @@ func loadSlopeData(slug, rideDir, gpxPath string) (legend []SlopeClass, segments
 	for _, f := range data.Features {
 		present[f.Properties.Class] = true
 		if hexColorRe.MatchString(f.Properties.Color) && f.Properties.EndKm > f.Properties.StartKm {
-			segments = append(segments, slopeSegment{f.Properties.StartKm, f.Properties.EndKm, f.Properties.Color})
+			p := f.Properties
+			segments = append(segments, slopeSegment{p.StartKm, p.EndKm, p.Color, p.Slope, p.Label})
 		}
 	}
 	for _, c := range data.Legend {

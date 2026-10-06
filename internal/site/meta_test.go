@@ -153,7 +153,7 @@ func TestLoadSlopeDataDetectsStaleFile(t *testing.T) {
 
 func TestSlopeProfileUsesSegmentColors(t *testing.T) {
 	profile := []profilePoint{{Km: 0, Ele: 10}, {Km: 1, Ele: 50}, {Km: 2, Ele: 20}}
-	svg := string(renderElevationProfileSVG(profile, nil, []slopeSegment{{0, 1, "#dc2626"}, {1, 2, "#2563eb"}}))
+	svg := string(renderElevationProfileSVG(profile, nil, []slopeSegment{{StartKm: 0, EndKm: 1, Color: "#dc2626"}, {StartKm: 1, EndKm: 2, Color: "#2563eb"}}))
 	if !strings.Contains(svg, `stroke="#dc2626"`) || !strings.Contains(svg, `stroke="#2563eb"`) {
 		t.Errorf("couleurs de pente absentes du profil : %s", svg)
 	}

@@ -108,6 +108,12 @@
 
     <div id="map" class="ride-map"></div>
 
+    {{if .HasElevationProfile}}
+    <div class="elevation-wrap">
+      <h2 class="elevation-title">Profil altimétrique</h2>
+      {{.ElevationProfileSVG}}
+    </div>
+    {{end}}
     {{if .HasSlope}}
     <div class="slope-legend" aria-label="Légende : couleur de la trace selon la pente">
       <span class="slope-legend-title">Pente :</span>
@@ -133,12 +139,6 @@
     </div>
     {{end}}
 
-    {{if .HasElevationProfile}}
-    <div class="elevation-wrap">
-      <h2 class="elevation-title">Profil altimétrique</h2>
-      {{.ElevationProfileSVG}}
-    </div>
-    {{end}}
   </section>
   {{end}}
 
@@ -268,7 +268,7 @@
   {{end}}
 
   {{if .HasElevationProfile}}
-  window.gmInitProfileHover(document.querySelector('.elevation-profile'), map, {{.ElevationProfileDataJSON}});
+  window.gmInitProfileHover(document.querySelector('.elevation-profile'), map, {{.ElevationProfileDataJSON}}, {{if .SlopeJSON}}{{.SlopeJSON}}{{else}}[]{{end}});
   {{end}}
 
   {{if .HasPOIFilter}}

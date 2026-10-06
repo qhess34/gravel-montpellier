@@ -95,7 +95,7 @@ Un seul fichier `.gpx` par dossier de sortie. S'il est présent :
 - sa trace (simplifiée) apparaît sur la **carte d'accueil**, avec une couleur propre à la sortie ; cliquer dessus ouvre une popup (photo, synthèse, difficulté, durée, D+, bouton « Voir la sortie »), survoler un cartouche met sa trace en évidence,
 - il est affiché sur une carte (OpenStreetMap + Leaflet) sur la page de la sortie, **colorisé selon la pente** (voir « Colorisation des traces selon la pente »), avec un bouton **« Me localiser »** intégré à la carte à côté du zoom (géolocalisation du navigateur, avec son autorisation) pour voir sa propre position dessus,
 - une **estimation du revêtement** (route/piste cyclable vs chemin/sentier) peut être affichée sous forme de barre + pourcentages sous la carte, si `description.md` contient les champs `surface_paved_km`/`surface_unpaved_km` — voir `tools/surface_stats.py` ci-dessous pour les calculer automatiquement,
-- un **profil altimétrique** est généré automatiquement (SVG, sans JavaScript) sous la carte, avec les points d'eau/boulangeries repérés au bon endroit ; survoler la carte ou le profil affiche le point correspondant sur l'autre (et inversement),
+- un **profil altimétrique** est généré automatiquement (SVG) sous la carte, coloré selon la pente, avec l'icône de chaque POI au bon endroit (cliquer sur une icône centre la carte sur le point et ouvre sa popup) ; survoler la trace ou le profil affiche, sur les deux, la position, le point kilométrique et la pente du tronçon (ex : « PK 12,3 km · ↗ +5,2 % »). La légende des pentes et la barre de revêtement suivent le profil,
 - il est proposé au téléchargement (fichier original, non modifié),
 - la distance et le dénivelé sont calculés automatiquement si vous ne les
   avez pas renseignés dans `description.md`.
@@ -352,8 +352,8 @@ vert pour le plat (couleur par défaut), du bleu clair au bleu foncé pour
 les descentes de plus en plus raides, et du jaune au rouge (jaune,
 orangé, orange, rouge) pour les montées de plus en plus raides. Les
 mêmes couleurs sont appliquées au **profil altimétrique**. Une légende
-est affichée sous la carte, et survoler un tronçon affiche sa pente et
-ses kilomètres. Sur la carte d'accueil, chaque sortie garde au
+est affichée sous le profil, et survoler la trace ou le profil affiche
+le point kilométrique et la pente du tronçon. Sur la carte d'accueil, chaque sortie garde au
 contraire sa propre couleur.
 
 Les pentes sont **pré-calculées** par `tools/slope_colors.py` (Python 3.8+,
