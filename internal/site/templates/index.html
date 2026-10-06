@@ -54,10 +54,12 @@
   </div>
   <script type="application/json" id="home-map-data">{{.HomeMapJSON}}</script>
 
-  <div class="ride-grid" data-ride-grid>
+  <div class="ride-rail" data-ride-rail>
+  <button type="button" class="ride-rail-btn ride-rail-btn--prev" data-rail-prev aria-label="Sorties précédentes" aria-controls="ride-list" hidden>&#8249;</button>
+  <div class="ride-grid" id="ride-list" data-ride-grid role="list" aria-label="Liste des sorties">
     {{range .Rides}}
     {{$ride := .}}
-    <article class="ride-card" data-slug="{{.Slug}}" data-tags="{{.TagsAttr}}" data-difficulty="{{.DifficultyKey}}" style="--ride-color: {{.Color}}">
+    <article role="listitem" class="ride-card" data-slug="{{.Slug}}" data-tags="{{.TagsAttr}}" data-difficulty="{{.DifficultyKey}}" style="--ride-color: {{.Color}}">
       {{if .PhotoThumbs}}
       <div class="ride-card-photo" data-photo-carousel>
         {{range $i, $p := .PhotoThumbs}}
@@ -74,20 +76,17 @@
       <div class="ride-card-body">
         <h2 class="ride-card-title">
           <span class="ride-swatch" aria-hidden="true"></span>
-          <a class="ride-card-link" href="{{$.Root}}rides/{{.Slug}}/index.html">{{.Title}}</a>
+          <a class="ride-card-link" href="{{$.Root}}rides/{{.Slug}}/">{{.Title}}</a>
         </h2>
         {{template "ride-facts" .}}
         {{if .DateRaw}}<p class="ride-card-date">{{.DateRaw}}</p>{{end}}
         {{if .SummaryText}}<p class="ride-card-summary">{{.SummaryText}}</p>{{end}}
-        {{if .Tags}}
-        <div class="ride-tags">
-          {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
-        </div>
-        {{end}}
         <span class="ride-card-cta" aria-hidden="true">Voir la sortie <span class="ride-card-cta-arrow">→</span></span>
       </div>
     </article>
     {{end}}
+  </div>
+  <button type="button" class="ride-rail-btn ride-rail-btn--next" data-rail-next aria-label="Sorties suivantes" aria-controls="ride-list" hidden>&#8250;</button>
   </div>
   <p class="tag-filter-empty" data-tag-empty role="status">Aucune sortie ne correspond à ces filtres.</p>
 </section>

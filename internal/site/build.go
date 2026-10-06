@@ -28,7 +28,8 @@ type Options struct {
 }
 
 type pageData struct {
-	PageTitle string
+	PageTitle string // titre court (og:title, fil d'Ariane)
+	DocTitle  string // contenu de <title> ; « PageTitle · Cyclo Explore » si vide
 	Root      string
 	Footer    template.HTML
 	Legal     template.HTML
@@ -45,6 +46,12 @@ type pageData struct {
 	MetaImage          string      // URL absolue de l'image d'aperçu (og:image)
 	MetaDescription    string      // court résumé (meta description / og:description)
 	StructuredDataJSON template.JS // JSON-LD (schema.org), si baseURL configuré
+
+	MetaImageWidth  int    // dimensions de l'image d'aperçu (og:image:width/height)
+	MetaImageHeight int    //
+	MetaImageAlt    string // texte alternatif de l'image d'aperçu
+	PublishedTime   string // article:published_time (AAAA-MM-JJ), fiches uniquement
+	Robots          string // meta robots (ex : « noindex » pour la page 404)
 
 	ShareFacebook string
 	ShareWhatsApp string
@@ -109,27 +116,9 @@ func Build(opts Options) error {
 	if err != nil {
 		return fmt.Errorf("parsing template légal : %w", err)
 	}
-
-	// Page d'accueil
-	indexData := pageData{
-		PageTitle: opts.SiteTitle,
-		Root:      "",
-		Footer:    footerHTML,
-		Rides:     rides,
-		AllTags:   collectTags(rides),
-		UmamiID:   opts.UmamiID,
-		BuildInfo: buildInfo,
-
-		AllDifficulties: collectDifficulties(rides),
-		HomeMapJSON:     homeMapJSON(rides, ""),
-	}
-	if baseURL != "" {
-		indexData.MetaURL = baseURL + "/"
-		indexData.MetaDescription = "Itinéraires, traces GPX et aventures à vélo autour de Montpellier."
-		indexData.StructuredDataJSON = websiteStructuredDataJSON(opts.SiteTitle, baseURL+"/")
-	}
-	if err := renderToFile(indexTmpl, filepath.Join(opts.OutDir, "index.html"), indexData); err != nil {
-		return fmt.Errorf("génération index.html : %w", err)
+	notFoundTmpl, err := parsePage("templates/404.html")
+	if err != nil {
+		return fmt.Errorf("parsing template 404 : %w", err)
 	}
 
 	// Page "Mentions légales"
@@ -212,7 +201,12 @@ func Build(opts Options) error {
 			pd.MetaURL = pageURL
 			pd.MetaDescription = metaDescription(ride)
 			if len(ride.Photos) > 0 {
-				pd.MetaImage = baseURL + "/rides/" + ride.Slug + "/" + ride.Photos[0]
+				pd.MetaImage = baseURL + "/rides/" + ride.Slug + "/" + urlPathEscape(ride.Photos[0])
+				pd.MetaImageAlt = ride.Title
+				pd.MetaImageWidth, pd.MetaImageHeight = imageSize(filepath.Join(outRideDir, ride.Photos[0]))
+			}
+			if isISODate(ride.SortKey) {
+				pd.PublishedTime = ride.SortKey
 			}
 			pd.ShareFacebook = "https://www.facebook.com/sharer/sharer.php?u=" + escapeURLComponent(pageURL)
 			pd.ShareWhatsApp = "https://wa.me/?text=" + escapeURLComponent(ride.Title+" "+pageURL)
@@ -227,6 +221,42 @@ func Build(opts Options) error {
 		}
 
 		fmt.Printf("  ✓ %s (%s)\n", ride.Title, ride.Slug)
+	}
+
+	// Page d'accueil (après les sorties : son image d'aperçu est une photo publiée)
+	indexData := pageData{
+		PageTitle: opts.SiteTitle,
+		DocTitle:  opts.SiteTitle + " — Sorties vélo & gravel autour de Montpellier",
+		Root:      "",
+		Footer:    footerHTML,
+		Rides:     rides,
+		AllTags:   collectTags(rides),
+		UmamiID:   opts.UmamiID,
+		BuildInfo: buildInfo,
+
+		AllDifficulties: collectDifficulties(rides),
+		HomeMapJSON:     homeMapJSON(rides, ""),
+	}
+	if baseURL != "" {
+		indexData.MetaURL = baseURL + "/"
+		indexData.MetaDescription = siteDescription
+		indexData.StructuredDataJSON = websiteStructuredDataJSON(opts.SiteTitle, baseURL+"/", rides)
+		// Image d'aperçu : couverture de la sortie la plus récente.
+		for _, r := range rides {
+			if len(r.Photos) > 0 {
+				indexData.MetaImage = baseURL + "/rides/" + r.Slug + "/" + urlPathEscape(r.Photos[0])
+				indexData.MetaImageAlt = r.Title
+				indexData.MetaImageWidth, indexData.MetaImageHeight = imageSize(filepath.Join(opts.OutDir, "rides", r.Slug, r.Photos[0]))
+				break
+			}
+		}
+	}
+	if err := renderToFile(indexTmpl, filepath.Join(opts.OutDir, "index.html"), indexData); err != nil {
+		return fmt.Errorf("génération index.html : %w", err)
+	}
+
+	if err := writeNotFoundPage(notFoundTmpl, opts, baseURL, footerHTML, buildInfo); err != nil {
+		return fmt.Errorf("génération 404.html : %w", err)
 	}
 
 	if err := writeRobotsTxt(opts.OutDir, baseURL); err != nil {
@@ -266,7 +296,7 @@ func cleanDir(dir string) error {
 // résumé chiffré.
 func metaDescription(ride *Ride) string {
 	if ride.SummaryText != "" {
-		return truncateText(ride.SummaryText, 155)
+		return truncateText(ride.SummaryText, 150)
 	}
 	return shareDescription(ride)
 }
@@ -329,9 +359,38 @@ func loadMarkdownFile(path string) (template.HTML, error) {
 	return Markdown(string(data)), nil
 }
 
+// writeNotFoundPage génère 404.html, servie par GitHub Pages (et nginx en
+// local si configuré) pour toute URL inconnue. Elle peut donc s'afficher à
+// n'importe quelle profondeur : ses liens partent de la racine du site
+// (chemin de -site-url), et elle est exclue de l'indexation.
+func writeNotFoundPage(tmpl *template.Template, opts Options, baseURL string, footer template.HTML, buildInfo string) error {
+	root := "/"
+	if u, err := url.Parse(baseURL); err == nil && baseURL != "" {
+		root = strings.TrimRight(u.Path, "/") + "/"
+	}
+	data := pageData{
+		PageTitle: "Page introuvable",
+		Root:      root,
+		Footer:    footer,
+		UmamiID:   opts.UmamiID,
+		BuildInfo: buildInfo,
+		Robots:    "noindex",
+	}
+	return renderToFile(tmpl, filepath.Join(opts.OutDir, "404.html"), data)
+}
+
 // templateFuncs : petites fonctions utilitaires disponibles dans les gabarits.
 var templateFuncs = template.FuncMap{
-	"inc":          func(i int) int { return i + 1 },
+	"inc": func(i int) int { return i + 1 },
+	// homeHref : lien vers l'accueil sous sa forme canonique (« ./ » ou
+	// « ../../ ») plutôt que « index.html », pour ne pas créer deux URLs
+	// pour la même page.
+	"homeHref": func(root string) string {
+		if root == "" {
+			return "./"
+		}
+		return root
+	},
 	"poiKindLabel": poiKindLabel,
 }
 

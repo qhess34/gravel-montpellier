@@ -92,7 +92,7 @@ liste des tags est repliée derrière le bouton « Tags ».
 ### track.gpx
 
 Un seul fichier `.gpx` par dossier de sortie. S'il est présent :
-- sa trace (simplifiée) apparaît sur la **carte d'accueil**, avec une couleur propre à la sortie ; cliquer dessus ouvre une popup (photo, synthèse, difficulté, durée, D+, bouton « Voir la sortie »), survoler un cartouche met sa trace en évidence,
+- sa trace (simplifiée) apparaît sur la **carte d'accueil**, avec une couleur propre à la sortie ; cliquer dessus ouvre une popup (photo, synthèse, difficulté, durée, D+, bouton « Voir la sortie ») et amène son cartouche dans la ligne de cartouches sous la carte. Ces cartouches (photo, titre, difficulté, durée, D+, distance, date, synthèse — sans les tags, qui servent au filtre) sont alignés sur une seule ligne qui défile avec les flèches ‹ › (ou au doigt / à la molette) ; survoler un cartouche met sa trace en évidence,
 - il est affiché sur une carte (OpenStreetMap + Leaflet) sur la page de la sortie, **colorisé selon la pente** (voir « Colorisation des traces selon la pente »), avec un bouton **« Me localiser »** intégré à la carte à côté du zoom (géolocalisation du navigateur, avec son autorisation) pour voir sa propre position dessus,
 - une **estimation du revêtement** (route/piste cyclable vs chemin/sentier) peut être affichée sous forme de barre + pourcentages sous la carte, si `description.md` contient les champs `surface_paved_km`/`surface_unpaved_km` — voir `tools/surface_stats.py` ci-dessous pour les calculer automatiquement,
 - un **profil altimétrique** est généré automatiquement (SVG) sous la carte, coloré selon la pente, avec l'icône de chaque POI au bon endroit (cliquer sur une icône centre la carte sur le point et ouvre sa popup) ; survoler la trace ou le profil affiche, sur les deux, la position, le point kilométrique et la pente du tronçon (ex : « PK 12,3 km · ↗ +5,2 % »). La légende des pentes et la barre de revêtement suivent le profil,
@@ -462,6 +462,36 @@ selon le même principe que `SITE_URL`.
 Les builds locaux (`Dockerfile`, `docker-compose.yml`) désactivent déjà le
 tracking (`-umami-id ""`) pour ne pas polluer les statistiques avec des
 visites de test — seul le build via la CI (déploiement réel) l'active.
+
+## Référencement (SEO)
+
+Tout est généré automatiquement à partir du contenu des sorties, rien à
+saisir en plus :
+
+- **Titres et descriptions** : `<title>` propre à chaque page (« Titre ·
+  Cyclo Explore », accueil « Cyclo Explore — Sorties vélo & gravel autour
+  de Montpellier ») ; meta description = synthèse de `description.md`
+  (~150 caractères).
+- **URL canoniques** : `<link rel="canonical">` sur chaque page, et tous
+  les liens internes pointent vers la même forme (`/rides/<slug>/`, sans
+  `index.html`) pour éviter les doublons.
+- **Partage sur les réseaux** (Open Graph / Twitter) : titre, description,
+  langue (`fr_FR`), image avec dimensions et texte alternatif — la
+  première photo de la sortie, ou pour l'accueil celle de la sortie la plus
+  récente —, date de publication et tags (`article:*`).
+- **Données structurées** (JSON-LD schema.org) : accueil = Organisation +
+  Site web + liste des sorties ; fiche = Article (auteur, éditeur, date,
+  mots-clés, jusqu'à 3 photos, point de départ géolocalisé) + fil d'Ariane.
+- **sitemap.xml** avec dates (format de date reconnu requis) et photos de
+  chaque sortie ; **robots.txt** qui le référence.
+- **Page 404** (`404.html`, servie par GitHub Pages) non indexée, avec un
+  lien vers les sorties.
+- Pages statiques, une seule balise `h1` par page, attribut `lang="fr"`,
+  textes alternatifs des photos, images allégées et miniatures.
+
+Après la mise en ligne, déclarez le sitemap
+(`https://montpellier.cycloexplore.fr/sitemap.xml`) dans Google Search
+Console et Bing Webmaster Tools.
 
 ## Partage (Facebook, WhatsApp, X, e-mail) et aperçu d'image
 

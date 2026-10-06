@@ -1144,12 +1144,42 @@
       console.error("[Cyclo Explore] Données de la carte illisibles :", err);
     }
 
+    // Défilement horizontal des cartouches : flèches gauche/droite, masquées
+    // aux extrémités. Une flèche fait défiler d'une « page » de cartouches.
+    var rail = explore.querySelector("[data-ride-grid]");
+    var railPrev = explore.querySelector("[data-rail-prev]");
+    var railNext = explore.querySelector("[data-rail-next]");
+    function updateRail() {
+      if (!rail) return;
+      var max = rail.scrollWidth - rail.clientWidth;
+      if (railPrev) railPrev.hidden = rail.scrollLeft <= 10;
+      if (railNext) railNext.hidden = rail.scrollLeft >= max - 10;
+    }
+    function scrollRail(dir) {
+      var card = rail.querySelector(".ride-card:not([hidden])");
+      var step = card ? card.getBoundingClientRect().width + 20 : 320;
+      var perPage = Math.max(1, Math.floor(rail.clientWidth / step));
+      rail.scrollBy({ left: dir * perPage * step, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    }
+    if (rail) {
+      if (railPrev) railPrev.addEventListener("click", function () { scrollRail(-1); });
+      if (railNext) railNext.addEventListener("click", function () { scrollRail(1); });
+      rail.addEventListener("scroll", updateRail, { passive: true });
+      window.addEventListener("resize", updateRail);
+    }
+
     var selectedCard = null;
     var home = initHomeMap(document.getElementById("home-map"), rides, {
       onSelect: function (slug) {
         if (selectedCard) selectedCard.classList.remove("is-selected");
         selectedCard = slug ? cardBySlug[slug] : null;
-        if (selectedCard) selectedCard.classList.add("is-selected");
+        if (selectedCard) {
+          selectedCard.classList.add("is-selected");
+          // Amène le cartouche de la sortie cliquée dans la ligne visible,
+          // sans faire défiler la page verticalement.
+          var target = selectedCard.offsetLeft - (rail.clientWidth - selectedCard.offsetWidth) / 2;
+          rail.scrollTo({ left: Math.max(0, target), behavior: prefersReducedMotion() ? "auto" : "smooth" });
+        }
       },
     });
 
@@ -1216,6 +1246,10 @@
       if (countEl) countEl.textContent = count + (count > 1 ? " sorties" : " sortie");
       if (emptyMsg) emptyMsg.style.display = count === 0 ? "block" : "none";
       if (home) home.setVisible(shown, refit);
+      if (rail) {
+        rail.scrollLeft = 0;
+        updateRail();
+      }
     }
 
     explore.addEventListener("click", function (e) {

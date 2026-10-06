@@ -41,7 +41,7 @@ func homeMapJSON(rides []*Ride, root string) template.JS {
 			Slug:       r.Slug,
 			Title:      r.Title,
 			Color:      r.Color,
-			URL:        root + "rides/" + r.Slug + "/index.html",
+			URL:        root + "rides/" + r.Slug + "/",
 			Summary:    truncateText(r.SummaryText, 200),
 			Difficulty: r.Difficulty,
 			DiffKey:    r.DifficultyKey,
