@@ -35,18 +35,22 @@ type pageData struct {
 	Rides     []*Ride
 	Ride      *Ride
 	AllTags   []string
-	UmamiID   string
-	BuildInfo string // date de génération (+ version si fournie), affichée en pied de page
 
-	MetaURL         string // URL absolue de la page (canonical / og:url)
-	MetaImage       string // URL absolue de l'image d'aperçu (og:image)
-	MetaDescription string // court résumé (meta description / og:description)
+	AllDifficulties []DifficultyOption // valeurs du filtre par difficulté (accueil)
+	HomeMapJSON     template.JS        // traces simplifiées + infos des popups (carte d'accueil)
+	UmamiID         string
+	BuildInfo       string // date de génération (+ version si fournie), affichée en pied de page
+
+	MetaURL            string      // URL absolue de la page (canonical / og:url)
+	MetaImage          string      // URL absolue de l'image d'aperçu (og:image)
+	MetaDescription    string      // court résumé (meta description / og:description)
 	StructuredDataJSON template.JS // JSON-LD (schema.org), si baseURL configuré
 
 	ShareFacebook string
 	ShareWhatsApp string
 	ShareTwitter  string
 	ShareEmail    string
+	ShareText     string // texte accompagnant le lien (partage natif du navigateur)
 }
 
 // Build génère l'intégralité du site statique dans opts.OutDir.
@@ -93,15 +97,15 @@ func Build(opts Options) error {
 		return fmt.Errorf("écriture du fichier CNAME : %w", err)
 	}
 
-	indexTmpl, err := template.ParseFS(TemplatesFS, "templates/base.html", "templates/index.html")
+	indexTmpl, err := parsePage("templates/index.html")
 	if err != nil {
 		return fmt.Errorf("parsing template index : %w", err)
 	}
-	rideTmpl, err := template.ParseFS(TemplatesFS, "templates/base.html", "templates/ride.html")
+	rideTmpl, err := parsePage("templates/ride.html")
 	if err != nil {
 		return fmt.Errorf("parsing template ride : %w", err)
 	}
-	legalTmpl, err := template.ParseFS(TemplatesFS, "templates/base.html", "templates/legal.html")
+	legalTmpl, err := parsePage("templates/legal.html")
 	if err != nil {
 		return fmt.Errorf("parsing template légal : %w", err)
 	}
@@ -115,6 +119,9 @@ func Build(opts Options) error {
 		AllTags:   collectTags(rides),
 		UmamiID:   opts.UmamiID,
 		BuildInfo: buildInfo,
+
+		AllDifficulties: collectDifficulties(rides),
+		HomeMapJSON:     homeMapJSON(rides, ""),
 	}
 	if baseURL != "" {
 		indexData.MetaURL = baseURL + "/"
@@ -164,16 +171,23 @@ func Build(opts Options) error {
 
 		if len(ride.Photos) > 0 {
 			dstPhotosDir := filepath.Join(outRideDir, "photos")
-			if err := os.MkdirAll(dstPhotosDir, 0o755); err != nil {
+			if err := os.MkdirAll(filepath.Join(dstPhotosDir, thumbDir), 0o755); err != nil {
 				return err
 			}
 			for _, rel := range ride.Photos {
 				name := filepath.Base(rel)
 				src := filepath.Join(opts.RidesDir, ride.Slug, "photos", name)
 				dst := filepath.Join(dstPhotosDir, name)
-				if err := processPhotoFile(src, dst, maxPhotoSide); err != nil {
+				if err := publishPhoto(src, dst, filepath.Join(dstPhotosDir, thumbDir, name)); err != nil {
 					return fmt.Errorf("copie photo (%s/%s) : %w", ride.Slug, name, err)
 				}
+			}
+		}
+
+		if ride.HasSlope {
+			src := filepath.Join(opts.RidesDir, ride.Slug, ride.SlopeFile)
+			if err := copyFile(src, filepath.Join(outRideDir, ride.SlopeFile)); err != nil {
+				return fmt.Errorf("copie %s (%s) : %w", ride.SlopeFile, ride.Slug, err)
 			}
 		}
 
@@ -196,14 +210,15 @@ func Build(opts Options) error {
 		if baseURL != "" {
 			pageURL := baseURL + "/rides/" + ride.Slug + "/"
 			pd.MetaURL = pageURL
-			pd.MetaDescription = shareDescription(ride)
+			pd.MetaDescription = metaDescription(ride)
 			if len(ride.Photos) > 0 {
 				pd.MetaImage = baseURL + "/rides/" + ride.Slug + "/" + ride.Photos[0]
 			}
 			pd.ShareFacebook = "https://www.facebook.com/sharer/sharer.php?u=" + escapeURLComponent(pageURL)
 			pd.ShareWhatsApp = "https://wa.me/?text=" + escapeURLComponent(ride.Title+" "+pageURL)
-			pd.ShareTwitter = "https://twitter.com/intent/tweet?url=" + escapeURLComponent(pageURL) + "&text=" + escapeURLComponent(ride.Title)
+			pd.ShareTwitter = "https://x.com/intent/tweet?url=" + escapeURLComponent(pageURL) + "&text=" + escapeURLComponent(ride.Title)
 			pd.ShareEmail = "mailto:?subject=" + escapeURLComponent(ride.Title) + "&body=" + escapeURLComponent(ride.Title+"\n\n"+pageURL)
+			pd.ShareText = ride.Title + " — " + shareDescription(ride)
 			pd.StructuredDataJSON = rideStructuredDataJSON(ride, pageURL, pd.MetaImage, pd.MetaDescription, baseURL+"/", opts.SiteTitle)
 		}
 
@@ -246,8 +261,18 @@ func cleanDir(dir string) error {
 	return nil
 }
 
-// shareDescription construit un court résumé texte (sans HTML) utilisé
-// comme description de partage et meta description.
+// metaDescription construit la meta description d'une fiche : la synthèse
+// de description.md (tronquée pour les moteurs de recherche), à défaut le
+// résumé chiffré.
+func metaDescription(ride *Ride) string {
+	if ride.SummaryText != "" {
+		return truncateText(ride.SummaryText, 155)
+	}
+	return shareDescription(ride)
+}
+
+// shareDescription construit un court résumé chiffré (sans HTML) : distance,
+// dénivelé, difficulté.
 func shareDescription(ride *Ride) string {
 	var parts []string
 	if ride.DistanceKm > 0 {
@@ -302,6 +327,19 @@ func loadMarkdownFile(path string) (template.HTML, error) {
 		return "", err
 	}
 	return Markdown(string(data)), nil
+}
+
+// templateFuncs : petites fonctions utilitaires disponibles dans les gabarits.
+var templateFuncs = template.FuncMap{
+	"inc":          func(i int) int { return i + 1 },
+	"poiKindLabel": poiKindLabel,
+}
+
+// parsePage assemble le gabarit commun (base + fragments partagés) et celui
+// d'une page.
+func parsePage(page string) (*template.Template, error) {
+	return template.New("base").Funcs(templateFuncs).ParseFS(TemplatesFS,
+		"templates/base.html", "templates/partials.html", page)
 }
 
 func renderToFile(tmpl *template.Template, outPath string, data pageData) error {

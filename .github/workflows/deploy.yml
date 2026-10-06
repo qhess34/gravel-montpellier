@@ -26,6 +26,18 @@ jobs:
         with:
           go-version: "1.22"
 
+      - name: Tests (Go + script Python des pentes)
+        run: |
+          go vet ./...
+          go test ./...
+          python3 -m unittest discover -s tools -p "test_*.py"
+
+      # Recalcule les traces colorisées selon la pente (bibliothèque standard
+      # Python, aucune installation) : le site publié reste juste même si
+      # rides/*/slope.geojson n'a pas été régénéré après un changement de GPX.
+      - name: Coloriser les traces selon la pente
+        run: python3 tools/slope_colors.py
+
       - name: Générer le site
         env:
           SITE_URL: ${{ vars.SITE_URL || 'https://montpellier.cycloexplore.fr' }}

@@ -23,46 +23,48 @@ const maxThumbSide = 640
 // les miniatures.
 const thumbDir = "thumbs"
 
-const jpegQuality = 85
+const (
+	jpegQuality      = 85
+	thumbJPEGQuality = 78
+)
 
-// processPhotoFile publie la photo src vers dst :
-//   - JPEG/PNG dont le plus grand côté dépasse maxSide : réduite à maxSide
+// publishPhoto publie la photo src vers dst, et sa miniature vers thumbDst,
+// en ne décodant l'original qu'une seule fois :
+//   - JPEG/PNG dont le plus grand côté dépasse maxPhotoSide : réduite
 //     (proportions conservées), orientation EXIF appliquée aux pixels pour
 //     les JPEG, ré-encodée (JPEG qualité 85, PNG sans perte) ;
 //   - JPEG avec une orientation EXIF non standard : ré-encodé même s'il est
 //     déjà petit, sinon la photo s'afficherait couchée une fois les EXIF
-//     ignorés par le navigateur ;
+//     supprimés ;
 //   - autres cas (déjà petite, .webp, .gif) : copiée telle quelle.
-func processPhotoFile(src, dst string, maxSide int) error {
+//
+// La miniature (plus grand côté maxThumbSide) sert aux cartouches et popups
+// de l'accueil ; pour un format non décodable par la bibliothèque standard,
+// c'est une simple copie de la photo.
+func publishPhoto(src, dst, thumbDst string) error {
 	img, format, orientation, err := decodePhoto(src)
 	if err != nil {
 		return err
 	}
 	if img == nil {
-		return copyFile(src, dst) // format non pris en charge par la bibliothèque standard
+		if err := copyFile(src, dst); err != nil {
+			return err
+		}
+		return copyFile(src, thumbDst)
 	}
-	b := img.Bounds()
-	if b.Dx() <= maxSide && b.Dy() <= maxSide && orientation == 1 {
-		return copyFile(src, dst)
-	}
-	return encodePhoto(dst, format, applyOrientation(resizeToFit(img, maxSide), orientation))
-}
 
-// processThumbFile écrit une miniature de src (plus grand côté maxSide) dans
-// dst. Pour un format non décodable (.webp, .gif), la photo est copiée telle
-// quelle : la miniature existe toujours, elle n'est simplement pas allégée.
-func processThumbFile(src, dst string, maxSide int) error {
-	img, format, orientation, err := decodePhoto(src)
+	full := resizeToFit(img, maxPhotoSide)
+	b := img.Bounds()
+	if b.Dx() <= maxPhotoSide && b.Dy() <= maxPhotoSide && orientation == 1 {
+		err = copyFile(src, dst)
+	} else {
+		err = encodePhoto(dst, format, applyOrientation(full, orientation), jpegQuality)
+	}
 	if err != nil {
 		return err
 	}
-	if img == nil {
-		return copyFile(src, dst)
-	}
-	if format == "jpeg" {
-		return encodeJPEG(dst, applyOrientation(resizeToFit(img, maxSide), orientation), 78)
-	}
-	return encodePhoto(dst, format, applyOrientation(resizeToFit(img, maxSide), orientation))
+	thumb := applyOrientation(resizeToFit(full, maxThumbSide), orientation)
+	return encodePhoto(thumbDst, format, thumb, thumbJPEGQuality)
 }
 
 // thumbRel renvoie le chemin relatif de la miniature d'une photo
@@ -98,7 +100,7 @@ func decodePhoto(path string) (img image.Image, format string, orientation int, 
 	return img, "jpeg", PhotoOrientation(path), nil
 }
 
-func encodePhoto(dst, format string, img image.Image) error {
+func encodePhoto(dst, format string, img image.Image, quality int) error {
 	if format == "png" {
 		out, err := os.Create(dst)
 		if err != nil {
@@ -107,10 +109,6 @@ func encodePhoto(dst, format string, img image.Image) error {
 		defer out.Close()
 		return png.Encode(out, img)
 	}
-	return encodeJPEG(dst, img, jpegQuality)
-}
-
-func encodeJPEG(dst string, img image.Image, quality int) error {
 	out, err := os.Create(dst)
 	if err != nil {
 		return err

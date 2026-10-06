@@ -30,9 +30,11 @@
   <link rel="icon" href="{{.Root}}static/logo.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  {{block "head" .}}{{end}}
   {{if .UmamiID}}<script defer src="https://cloud.umami.is/script.js" data-website-id="{{.UmamiID}}"></script>{{end}}
 </head>
 <body>
+  <a class="skip-link" href="#contenu">Aller au contenu</a>
   <script src="{{.Root}}static/script.js"></script>
 
   <header class="site-header">
@@ -47,7 +49,7 @@
     </div>
   </header>
 
-  <main>
+  <main id="contenu">
     {{template "content" .}}
   </main>
 
