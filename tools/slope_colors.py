@@ -61,14 +61,15 @@ import xml.etree.ElementTree as ET
 # seuils et couleurs, puis relancez le script : le site reprend la légende
 # depuis le fichier généré.
 SLOPE_CLASSES = [
-    # clé,               libellé,                         min,   max,   couleur
-    ("descente-forte",   "Descente forte (< −6 %)",       None,  -6.0,  "#1d4ed8"),
-    ("descente",         "Descente (−6 à −2 %)",          -6.0,  -2.0,  "#60a5fa"),
-    ("plat",             "Plat (−2 à 2 %)",               -2.0,   2.0,  "#94a3b8"),
-    ("montee-faible",    "Montée faible (2 à 4 %)",        2.0,   4.0,  "#22c55e"),
-    ("montee-moderee",   "Montée modérée (4 à 7 %)",       4.0,   7.0,  "#eab308"),
-    ("montee-soutenue",  "Montée soutenue (7 à 10 %)",     7.0,  10.0,  "#f97316"),
-    ("montee-forte",     "Montée forte (≥ 10 %)",         10.0,  None,  "#dc2626"),
+    # clé,                libellé,                          min,   max,   couleur
+    ("descente-forte",    "Descente forte (< −8 %)",        None,  -8.0,  "#1e3a8a"),  # bleu foncé
+    ("descente",          "Descente (−8 à −4 %)",           -8.0,  -4.0,  "#2563eb"),  # bleu
+    ("descente-legere",   "Descente légère (−4 à −2 %)",    -4.0,  -2.0,  "#7cb4f5"),  # bleu clair
+    ("plat",              "Plat (−2 à 2 %)",                -2.0,   2.0,  "#22a650"),  # vert
+    ("montee-faible",     "Montée faible (2 à 4 %)",         2.0,   4.0,  "#f2c418"),  # jaune
+    ("montee-moderee",    "Montée modérée (4 à 7 %)",        4.0,   7.0,  "#f59e0b"),  # orangé
+    ("montee-soutenue",   "Montée soutenue (7 à 10 %)",      7.0,  10.0,  "#ea580c"),  # orange
+    ("montee-forte",      "Montée forte (≥ 10 %)",          10.0,  None,  "#dc2626"),  # rouge
 ]
 
 # Classe utilisée quand les altitudes sont absentes ou inexploitables.

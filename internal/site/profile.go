@@ -65,11 +65,12 @@ const (
 )
 
 // renderElevationProfileSVG construit le profil altimétrique en SVG pur,
-// avec des repères pour les points d'eau/boulangeries (survol = info-bulle
+// coloré tronçon par tronçon selon la pente (mêmes couleurs que la carte)
+// quand slope.geojson est disponible, avec des repères pour les points d'eau/boulangeries (survol = info-bulle
 // native via <title>). Les dimensions et échelles du graphique sont
 // exposées en attributs data-* pour que le JS (survol synchronisé avec la
 // carte) puisse les réutiliser sans les dupliquer.
-func renderElevationProfileSVG(profile []profilePoint, pois []Point) template.HTML {
+func renderElevationProfileSVG(profile []profilePoint, pois []Point, segments []slopeSegment) template.HTML {
 	if len(profile) < 2 {
 		return ""
 	}
@@ -124,8 +125,12 @@ func renderElevationProfileSVG(profile []profilePoint, pois []Point) template.HT
 	fmt.Fprintf(&b, `<text x="4" y="%.1f" class="elevation-label">%.0f m</text>`, y(maxEle)+4, maxEle)
 	fmt.Fprintf(&b, `<text x="4" y="%.1f" class="elevation-label">%.0f m</text>`, yBase+4, minEle)
 
-	fmt.Fprintf(&b, `<path d="%s" class="elevation-area"/>`, areaPath)
-	fmt.Fprintf(&b, `<path d="%s" class="elevation-line" fill="none"/>`, linePath)
+	if len(segments) > 0 {
+		writeSlopeProfile(&b, profile, segments, totalKm, x, y, yBase)
+	} else {
+		fmt.Fprintf(&b, `<path d="%s" class="elevation-area"/>`, areaPath)
+		fmt.Fprintf(&b, `<path d="%s" class="elevation-line" fill="none"/>`, linePath)
+	}
 
 	step := niceKmStep(totalKm)
 	lastLabelKm := -step
@@ -152,6 +157,37 @@ func renderElevationProfileSVG(profile []profilePoint, pois []Point) template.HT
 
 	b.WriteString(`</svg>`)
 	return template.HTML(b.String())
+}
+
+// writeSlopeProfile dessine le profil tronçon par tronçon : une aire
+// translucide et une ligne de la couleur de pente de chaque tronçon.
+func writeSlopeProfile(b *strings.Builder, profile []profilePoint, segments []slopeSegment, totalKm float64,
+	x, y func(float64) float64, yBase float64) {
+	for _, seg := range segments {
+		start := math.Max(0, seg.StartKm)
+		end := math.Min(totalKm, seg.EndKm)
+		if end <= start {
+			continue
+		}
+		var pts strings.Builder
+		add := func(km float64) {
+			if pts.Len() > 0 {
+				pts.WriteByte(' ')
+			}
+			fmt.Fprintf(&pts, "%.1f,%.1f", x(km), y(elevationAt(profile, km)))
+		}
+		add(start)
+		for _, p := range profile {
+			if p.Km > start && p.Km < end {
+				add(p.Km)
+			}
+		}
+		add(end)
+		line := pts.String()
+		fmt.Fprintf(b, `<path d="M%.1f,%.1f L%s L%.1f,%.1f Z" class="elevation-seg-area" fill="%s"/>`,
+			x(start), yBase, line, x(end), yBase, seg.Color)
+		fmt.Fprintf(b, `<path d="M%s" class="elevation-seg-line" stroke="%s" fill="none"/>`, line, seg.Color)
+	}
 }
 
 // elevationAt renvoie l'altitude interpolée du profil à un kilométrage donné.
