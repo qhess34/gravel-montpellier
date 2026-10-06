@@ -187,7 +187,7 @@ Champs communs : `type` (obligatoire), `label`. `lat`/`lon` sont
 |-------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|-------------------------------------------------------|
 | `poi`       | `label` (obligatoire), `note`, `icon` (`water`, `food`, `grocery`, `bar`, `restaurant`, `camping`, `bike-repair`, `danger`, `viewpoint`, ou `generic` par défaut) | **obligatoires**, aucune source automatique                                    | Ouvre une popup avec le label et la note              |
 | `photo`     | `photo` (obligatoire — nom de fichier présent dans `photos/`), `caption`             | facultatifs : si absents, lus depuis les **EXIF GPS** de la photo (photo ignorée avec avertissement si la photo n'a pas d'EXIF GPS) | Ouvre la photo en grand (lightbox)                     |
-| `panoramax` | `picture` (obligatoire — identifiant de la photo sur Panoramax), `sequence` (recommandé), `endpoint` (optionnel, instance publique par défaut) | facultatifs : si absents, **résolus automatiquement via l'API Panoramax** au moment du build (nécessite un accès réseau ; point ignoré avec avertissement si l'API ne répond pas) | Ouvre la visionneuse Panoramax intégrée en superposition |
+| `panoramax` | `picture` (obligatoire — identifiant de la photo sur Panoramax), `sequence` (recommandé), `endpoint` (optionnel, instance publique par défaut) | facultatifs : si absents, **résolus automatiquement via l'API Panoramax** au moment du build (nécessite un accès réseau ; point ignoré avec avertissement si l'API ne répond pas) | Ouvre la vue Panoramax en grand, par-dessus la page (interface web officielle de Panoramax en iframe, comme le userscript [tampermonkey-komoot-panoramax](https://github.com/qhess34/tampermonkey-komoot-panoramax)) ; ✕ ou Échap pour fermer, ↗ pour l'ouvrir dans un nouvel onglet |
 
 > L'identifiant `picture` (et `sequence`) d'une photo Panoramax se
 > récupère depuis son visionneur : bouton en haut à gauche de l'image
@@ -600,9 +600,11 @@ Les deux sont aussi exécutés par la CI avant chaque déploiement.
   suivante libre si elle est prise ; les sorties sont servies de la plus
   ancienne à la plus récente, donc ajouter une sortie ne change pas les
   couleurs existantes. Le champ `color` permet d'imposer une couleur.
-- **Bibliothèques externes** (CDN, inchangées) : Leaflet 1.9.4 et la
-  visionneuse Panoramax. Le plugin leaflet-gpx n'est plus nécessaire (la
-  trace est lue en GeoJSON, ou le GPX analysé directement en repli).
+- **Bibliothèque externe** (CDN) : Leaflet 1.9.4 uniquement. Le plugin
+  leaflet-gpx n'est plus nécessaire (la trace est lue en GeoJSON, ou le
+  GPX analysé directement en repli), ni le composant
+  `@panoramax/web-viewer` : les vues 360° s'ouvrent dans l'interface web
+  officielle de Panoramax, en iframe.
 
 ## Structure du projet
 
