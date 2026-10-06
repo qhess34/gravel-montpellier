@@ -62,7 +62,7 @@ def stat_blocks(ride):
     return blocks
 
 
-def render(ride, fmt, photo_path=None):
+def render(ride, fmt, photo_path=None, basemap="ign", fetch=None):
     L = FORMATS[fmt]
     W, H = L["w"], L["h"]
     canvas = Image.new("RGBA", (W, H), (*B.CREAM, 255))
@@ -102,7 +102,15 @@ def render(ride, fmt, photo_path=None):
         B.shadow(canvas, (rx, ry, rx + R, ry + R), radius=30, blur=22, offset=(0, 12), alpha=80)
         d = ImageDraw.Draw(canvas)
         d.rounded_rectangle((rx, ry, rx + R, ry + R), radius=30, fill=(*B.PAPER, 255))
-        B.draw_route(canvas, (rx + 16, ry + 16, rx + R - 16, ry + R - 16), ride, width=7)
+        if basemap and basemap != "aucun":
+            # trace sur fond de carte, sur toute la carte (coins arrondis)
+            B.draw_route(canvas, (rx, ry, rx + R, ry + R), ride, width=6, provider=basemap, radius=30, fetch=fetch)
+            if not ride.get("basemap_ok"):  # pas de fond (réseau…) : rendu d'origine
+                d = ImageDraw.Draw(canvas)
+                d.rounded_rectangle((rx, ry, rx + R, ry + R), radius=30, fill=(*B.PAPER, 255))
+                B.draw_route(canvas, (rx + 16, ry + 16, rx + R - 16, ry + R - 16), ride, width=7)
+        else:
+            B.draw_route(canvas, (rx + 16, ry + 16, rx + R - 16, ry + R - 16), ride, width=7)
         d = ImageDraw.Draw(canvas)
 
     # --- Titre ------------------------------------------------------------------
@@ -177,6 +185,9 @@ def main():
     parser.add_argument("--photo", help="Photo à utiliser (chemin relatif au dossier de la sortie, ou absolu). Défaut : la première de photos/")
     parser.add_argument("--out", help="Fichier de sortie (défaut : instagram.jpg, ou instagram-<format>.jpg, dans le dossier de la sortie)")
     parser.add_argument("--site-url", default=B.DEFAULT_SITE_URL, help="URL publique du site (adresse affichée)")
+    parser.add_argument("--fond", choices=sorted(B.TILE_PROVIDERS) + ["aucun"], default="ign",
+                        help="fond de carte sous la trace : ign (Plan IGN, défaut), osm, topo, velo, ou aucun ; "
+                             "tuiles téléchargées puis gardées en cache (~/.cache/cycloexplore/tiles)")
     parser.add_argument("--logo", help=argparse.SUPPRESS)  # ancienne option, l'emblème du site est utilisé
     args = parser.parse_args()
 
@@ -197,7 +208,7 @@ def main():
     if not ride["slope"] and ride["track"]:
         print("⚠ slope.geojson absent : trace en couleur unie (python3 tools/slope_colors.py " + args.ride + ")")
 
-    image = render(ride, args.format, photo)
+    image = render(ride, args.format, photo, basemap=args.fond)
     name = "instagram.jpg" if args.format == "post" else f"instagram-{args.format}.jpg"
     out = args.out or os.path.join(args.ride, name)
     image.save(out, "JPEG", quality=92, optimize=True, progressive=True)

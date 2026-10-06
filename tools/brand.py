@@ -11,10 +11,12 @@ tools/slope_colors.py (lues dans slope.geojson).
 Dépend de Pillow (pip install Pillow).
 """
 
+import io
 import json
 import math
 import os
 import re
+import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import date
 
@@ -448,18 +450,131 @@ def _projector(points, box, pad_frac=0.08):
     return lambda lat, lon: (ox + (lon - min_lon) * k * s, oy + (max_lat - lat) * s)
 
 
-def draw_route(canvas, box, ride, width=8, casing=(255, 255, 255), fallback=TERRACOTTA, scale=3):
+# --- Fond de carte (tuiles) --------------------------------------------------
+
+# Fonds utilisables sous la trace des visuels. Tous gratuits et sans clé ;
+# l'attribution est imprimée sur l'image (obligatoire).
+TILE_PROVIDERS = {
+    "ign": dict(
+        url="https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0"
+            "&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM"
+            "&FORMAT=image/png&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}",
+        attribution="© IGN – Géoplateforme", max_zoom=18),
+    "osm": dict(url="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                attribution="© OpenStreetMap", max_zoom=18),
+    "topo": dict(url="https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
+                 attribution="© OpenStreetMap · OpenTopoMap (CC-BY-SA)", max_zoom=16),
+    "velo": dict(url="https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
+                 attribution="© OpenStreetMap · CyclOSM", max_zoom=18),
+}
+TILE_CACHE = os.path.join(os.path.expanduser("~"), ".cache", "cycloexplore", "tiles")
+USER_AGENT = "CycloExplore-visuels/1.0 (+https://montpellier.cycloexplore.fr)"
+
+
+def _merc(lat, lon):
+    """Coordonnées Web Mercator en pixels au zoom 0 (monde de 256 px)."""
+    lat = max(-85.05112878, min(85.05112878, lat))
+    x = (lon + 180.0) / 360.0 * 256.0
+    y = (1 - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat))) / math.pi) / 2 * 256.0
+    return x, y
+
+
+def fetch_tile(provider, z, x, y, timeout=8):
+    """Une tuile (image RVB), depuis le cache local ou téléchargée."""
+    prov = TILE_PROVIDERS[provider]
+    path = os.path.join(TILE_CACHE, provider, str(z), str(x), f"{y}.img")
+    if os.path.exists(path):
+        return Image.open(path).convert("RGB")
+    req = urllib.request.Request(prov["url"].format(z=z, x=x, y=y), headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        data = r.read()
+    img = Image.open(io.BytesIO(data)).convert("RGB")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "wb") as f:
+        f.write(data)
+    return img
+
+
+def basemap(points, size, provider, pad_frac=0.1, fetch=None):
+    """Fond de carte de taille size=(W, H) cadré sur points, en projection
+    Web Mercator, et la fonction qui projette (lat, lon) sur ce fond.
+
+    Le zoom est choisi pour que la trace remplisse le cadre ; les tuiles du
+    zoom entier immédiatement supérieur sont assemblées puis réduites (plus
+    net). Renvoie (None, None) si une tuile ne peut pas être obtenue (pas de
+    réseau…) : l'appelant garde alors un fond uni.
+    """
+    fetch = fetch or fetch_tile
+    W, H = size
+    xs, ys = zip(*(_merc(lat, lon) for lat, lon in points))
+    span_x, span_y = max(max(xs) - min(xs), 1e-9), max(max(ys) - min(ys), 1e-9)
+    zf = math.log2(min(W * (1 - 2 * pad_frac) / span_x, H * (1 - 2 * pad_frac) / span_y))
+    zi = max(0, min(TILE_PROVIDERS[provider]["max_zoom"], math.ceil(zf)))
+    zf = min(zf, zi)
+    k = 2 ** (zf - zi)  # facteur de réduction des tuiles (≤ 1)
+    cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+
+    # Zone à couvrir, en pixels du zoom entier zi
+    left = cx * 2 ** zi - W / (2 * k)
+    top = cy * 2 ** zi - H / (2 * k)
+    right, bottom = left + W / k, top + H / k
+    tx0, ty0 = int(left // 256), int(top // 256)
+    tx1, ty1 = int(right // 256), int(bottom // 256)
+    n = 2 ** zi
+    mosaic = Image.new("RGB", ((tx1 - tx0 + 1) * 256, (ty1 - ty0 + 1) * 256), CREAM)
+    try:
+        for tx in range(tx0, tx1 + 1):
+            for ty in range(ty0, ty1 + 1):
+                if 0 <= ty < n:
+                    mosaic.paste(fetch(provider, zi, tx % n, ty), ((tx - tx0) * 256, (ty - ty0) * 256))
+    except Exception as e:  # réseau, HTTP, image illisible : on renonce au fond
+        print(f"⚠ fond de carte « {provider} » indisponible ({e}) : trace sur fond uni")
+        return None, None
+    ox, oy = left - tx0 * 256, top - ty0 * 256
+    crop = mosaic.crop((round(ox), round(oy), round(ox + W / k), round(oy + H / k)))
+    image = crop.resize((W, H), Image.Resampling.LANCZOS)
+
+    def project(lat, lon):
+        x, y = _merc(lat, lon)
+        return (x - cx) * 2 ** zf + W / 2, (y - cy) * 2 ** zf + H / 2
+
+    return image, project
+
+
+def soften(image, amount=0.32, tint=CREAM):
+    """Atténue un fond de carte (désaturé et éclairci vers le crème du site)
+    pour que la trace colorée ressorte."""
+    gray = ImageOps.grayscale(image).convert("RGB")
+    muted = Image.blend(image, gray, 0.45)
+    return Image.blend(muted, Image.new("RGB", image.size, tint), amount)
+
+
+def draw_route(canvas, box, ride, width=8, casing=(255, 255, 255), fallback=TERRACOTTA, scale=3,
+               provider=None, radius=0, fetch=None):
     """Silhouette de la trace, colorée selon la pente (slope.geojson) si
     disponible, sinon d'une couleur unie. Dessinée en sur-échantillonnage
-    pour des courbes lisses."""
+    pour des courbes lisses.
+
+    Avec provider (« ign », « osm », « topo », « velo »), la trace est posée
+    sur un fond de carte atténué, recadré dans box (coins arrondis de rayon
+    radius) avec l'attribution du fond. Renvoie True si la trace est
+    dessinée ; ride["basemap_ok"] indique si le fond a pu être utilisé."""
     pts = [(p[0], p[1]) for p in ride["track"]] or [c for s in ride["slope"] for c in s["coords"]]
     if len(pts) < 2:
         return False
     x0, y0, x1, y1 = box
     W, H = (x1 - x0) * scale, (y1 - y0) * scale
     layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    proj = None
+    ride["basemap_ok"] = False
+    if provider:
+        image, proj = basemap(pts, (W, H), provider, fetch=fetch)
+        if image is not None:
+            layer.paste(soften(image).convert("RGBA"), (0, 0))
+            ride["basemap_ok"] = True
+    if proj is None:
+        proj = _projector(pts, (0, 0, W, H))
     d = ImageDraw.Draw(layer)
-    proj = _projector(pts, (0, 0, W, H))
     w = width * scale
     if casing:
         d.line([proj(*p) for p in pts], fill=(*casing, 255), width=w + 6 * scale, joint="curve")
@@ -472,7 +587,21 @@ def draw_route(canvas, box, ride, width=8, casing=(255, 255, 255), fallback=TERR
         cx, cy = proj(*p)
         r = w * 0.9
         d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(*col, 255), outline=(255, 255, 255, 255), width=2 * scale)
-    canvas.alpha_composite(layer.resize((x1 - x0, y1 - y0), Image.Resampling.LANCZOS), (x0, y0))
+
+    if ride["basemap_ok"]:
+        text = TILE_PROVIDERS[provider]["attribution"]
+        f = font("sans", 11 * scale, 500)
+        tw = d.textlength(text, font=f)
+        pad = 5 * scale
+        d.rounded_rectangle((W - tw - 3 * pad, H - 22 * scale, W - pad, H - pad), radius=6 * scale, fill=(255, 255, 255, 200))
+        d.text((W - 2 * pad, H - 13.5 * scale), text, font=f, fill=(*INK_SOFT, 255), anchor="rm")
+
+    out = layer.resize((x1 - x0, y1 - y0), Image.Resampling.LANCZOS)
+    if radius:
+        mask = Image.new("L", out.size, 0)
+        ImageDraw.Draw(mask).rounded_rectangle((0, 0, out.width - 1, out.height - 1), radius=radius, fill=255)
+        out.putalpha(Image.composite(out.getchannel("A"), Image.new("L", out.size, 0), mask))
+    canvas.alpha_composite(out, (x0, y0))
     return True
 
 
