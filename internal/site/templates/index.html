@@ -6,14 +6,30 @@
 {{end}}
 
 {{define "content"}}
+{{with .Hero}}
+<section class="hero"{{if .Image}} style="background-image: var(--hero-overlay), url('{{.Image}}')"{{end}}>
+  <div class="wrap wrap--wide hero-inner">
+    <p class="hero-kicker">Montpellier &amp; alentours</p>
+    <h1 class="hero-title">Sorties vélo &amp; gravel autour de Montpellier</h1>
+    <p class="hero-lead">Itinéraires testés sur le terrain, traces GPX, photos et points d'eau&nbsp;: choisissez votre prochaine sortie sur la carte.</p>
+    <ul class="hero-stats">
+      <li><strong>{{.Rides}}</strong> sorties</li>
+      {{if .Km}}<li><strong>{{.Km}}</strong> km de traces</li>{{end}}
+      {{if .Elevation}}<li><strong>{{.Elevation}}</strong> m de D+</li>{{end}}
+    </ul>
+    <a class="btn btn--primary hero-cta" href="#explore">Explorer la carte <span aria-hidden="true">↓</span></a>
+  </div>
+</section>
+{{else}}
 <h1 class="sr-only">Sorties vélo &amp; gravel autour de Montpellier</h1>
+{{end}}
 
 {{if not .Rides}}
 <section class="wrap">
   <p class="empty">Aucune sortie pour le moment. Ajoutez un dossier dans <code>rides/</code> pour commencer.</p>
 </section>
 {{else}}
-<section class="explore wrap wrap--wide" aria-labelledby="explore-title" data-explore>
+<section class="explore wrap wrap--wide" id="explore" aria-labelledby="explore-title" data-explore>
   <div class="explore-head">
     <h2 class="explore-title" id="explore-title">Explorer les sorties</h2>
     <p class="explore-count" data-ride-count aria-live="polite">{{len .Rides}} sorties</p>
@@ -54,7 +70,7 @@
   </div>
   <script type="application/json" id="home-map-data">{{.HomeMapJSON}}</script>
 
-  <div class="ride-rail" data-ride-rail>
+  <div class="ride-rail" id="sorties" data-ride-rail>
   <button type="button" class="ride-rail-btn ride-rail-btn--prev" data-rail-prev aria-label="Sorties précédentes" aria-controls="ride-list" hidden>&#8249;</button>
   <div class="ride-grid" id="ride-list" data-ride-grid role="list" aria-label="Liste des sorties">
     {{range .Rides}}

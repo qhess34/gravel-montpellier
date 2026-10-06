@@ -48,7 +48,7 @@ a:hover { text-decoration: underline; }
   position: absolute;
   left: 12px;
   top: -60px;
-  z-index: 2000;
+  z-index: 4000;
   background: var(--ink);
   color: #fff;
   padding: 8px 14px;
@@ -69,34 +69,145 @@ a:hover { text-decoration: underline; }
   border: 0;
 }
 
-/* Header */
+/* En-tête : barre fixe, compacte, emblème du logo + nom + devise */
 .site-header {
-  background: linear-gradient(135deg, #e9dcc8, var(--cream));
+  position: sticky;
+  top: 0;
+  z-index: 1100; /* au-dessus des contrôles Leaflet (1000) */
+  background: rgba(255, 253, 249, 0.88);
+  backdrop-filter: saturate(1.4) blur(10px);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
   border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6), 0 6px 20px rgba(43, 38, 32, 0.06);
 }
-.site-header .wrap {
+.site-header-inner {
   display: flex;
   align-items: center;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 68px;
   max-width: 1320px;
 }
 .brand {
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 12px;
   color: var(--ink);
+  min-width: 0;
 }
 .brand:hover { text-decoration: none; }
-.brand-logo { display: block; height: 96px; width: 96px; flex-shrink: 0; }
-.brand-text { display: flex; flex-direction: column; gap: 4px; }
+.brand-logo {
+  display: block;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+.brand:hover .brand-logo { transform: rotate(-8deg) scale(1.05); }
+.brand-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .brand-name {
   font-family: 'Fraunces', serif;
   font-weight: 700;
-  font-size: 1.6rem;
-  color: var(--ink);
+  font-size: 1.45rem;
+  line-height: 1.1;
+  color: #2f3a2c; /* vert sombre du logo */
+  letter-spacing: -0.01em;
 }
-.brand-tagline { color: var(--ink-soft); font-size: 1.05rem; max-width: 480px; }
+.brand-tagline {
+  color: var(--olive);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}
+.site-nav { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.site-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.site-nav a:hover { background: #efe6d4; color: var(--terracotta-dark); text-decoration: none; }
+.site-nav-icon { width: 20px; height: 20px; flex-shrink: 0; color: var(--olive); }
+.site-nav a:hover .site-nav-icon { color: var(--terracotta-dark); }
+
+/* Bandeau de l'accueil : photo de la dernière sortie sous un dégradé */
+.hero {
+  position: relative;
+  color: #fff;
+  /* L'image (photo de la dernière sortie) est ajoutée dans le style de la
+     section : une URL relative doit être résolue par rapport à la page. */
+  --hero-overlay: linear-gradient(100deg, rgba(31, 27, 22, 0.86) 0%, rgba(31, 27, 22, 0.55) 45%, rgba(31, 27, 22, 0.12) 100%);
+  background-color: #2f3a2c;
+  background-image: var(--hero-overlay), linear-gradient(135deg, #6b7a4f, #2f3a2c);
+  background-size: cover;
+  background-position: center 40%;
+  overflow: hidden;
+}
+.hero::after {
+  /* liseré « relief » en bas du bandeau */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 28px;
+  background: var(--cream);
+  clip-path: polygon(0 100%, 0 60%, 8% 30%, 16% 55%, 27% 10%, 38% 50%, 47% 35%, 58% 70%, 70% 20%, 81% 55%, 90% 35%, 100% 60%, 100% 100%);
+}
+.hero .hero-inner {
+  position: relative;
+  padding-top: 56px;
+  padding-bottom: 72px;
+}
+.hero-kicker {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #e9dcc8;
+}
+.hero-title {
+  font-size: clamp(1.9rem, 4.6vw, 3.1rem);
+  max-width: 15em;
+  margin: 0 0 14px;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+}
+.hero-lead {
+  max-width: 36em;
+  margin: 0 0 22px;
+  font-size: 1.08rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+.hero-stats {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 26px;
+  padding: 0;
+}
+.hero-stats li {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+  font-size: 0.9rem;
+}
+.hero-stats strong { font-family: 'Fraunces', serif; font-size: 1.1rem; margin-right: 2px; }
+.hero-cta { padding: 11px 22px; font-size: 0.98rem; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); }
+
+/* Les ancres (#explore, #sorties) ne passent pas sous l'en-tête fixe */
+#explore, #sorties { scroll-margin-top: 84px; }
+html { scroll-behavior: smooth; }
 
 .empty { color: var(--ink-soft); padding: 48px 0; }
 
@@ -431,10 +542,23 @@ a:hover { text-decoration: underline; }
 
 @media (max-width: 600px) {
   .ride-map { height: 340px; }
-  .brand { gap: 12px; }
-  .brand-logo { height: 64px; width: 64px; }
-  .brand-name { font-size: 1.3rem; }
-  .brand-tagline { font-size: 0.85rem; }
+  .site-header-inner { min-height: 58px; gap: 8px; }
+  .brand { gap: 9px; }
+  .brand-logo { width: 42px; height: 42px; }
+  .brand-name { font-size: 1.2rem; }
+  .brand-tagline { font-size: 0.6rem; letter-spacing: 0.12em; }
+  .site-nav a { padding: 9px; }
+  .site-nav-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* icônes seules, libellé lu par les lecteurs d'écran */
+  .site-nav-icon { width: 24px; height: 24px; }
+  .hero .hero-inner { padding-top: 26px; padding-bottom: 46px; }
+  .hero-title { font-size: 1.75rem; margin-bottom: 10px; }
+  .hero-lead { font-size: 0.95rem; margin-bottom: 16px; }
+  .hero-stats { gap: 6px; margin-bottom: 18px; }
+  .hero-stats li { padding: 4px 10px; font-size: 0.8rem; }
+  .hero-stats strong { font-size: 0.95rem; }
+  .hero-cta { padding: 9px 18px; font-size: 0.9rem; }
+  .hero::after { height: 14px; }
+  #explore, #sorties { scroll-margin-top: 70px; }
 }
 
 /* Marqueurs carte (POI, photo, panoramax) */
@@ -491,7 +615,7 @@ a:hover { text-decoration: underline; }
 .gm-modal {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 3000;
   display: none;
 }
 .gm-modal--open { display: block; }

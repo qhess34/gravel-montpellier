@@ -399,6 +399,16 @@ modèle de terrain, assez régulières ; un enregistrement GPS brut est plus
 bruité. Un mur très court (< 100 m) est lissé : c'est une indication de
 l'effort, pas une mesure topographique.
 
+## En-tête et bandeau d'accueil
+
+L'en-tête (fixe en haut de l'écran) affiche l'emblème du logo
+(`internal/site/static/logo-mark.png`, extrait de `logo_withouttext.png`),
+le nom et la devise « Sorties vélo · Aventure · Partage », ainsi qu'une
+navigation vers la carte et la liste des sorties. Sur l'accueil, un
+bandeau reprend en fond la photo de couverture de la sortie la plus
+récente, avec le titre du site et les chiffres clés (nombre de sorties,
+kilomètres et dénivelé cumulés), calculés automatiquement.
+
 ## Le footer
 
 Le contenu de `content/footer.md` (markdown simple, pas de frontmatter)
