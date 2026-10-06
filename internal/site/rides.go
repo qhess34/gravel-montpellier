@@ -1,7 +1,9 @@
 package site
 
 import (
+	"encoding/json"
 	"fmt"
+	"html/template"
 	"math"
 	"os"
 	"path/filepath"
@@ -172,6 +174,9 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 				ride.SlopeFile = slopeFileName
 				ride.SlopeLegend = legend
 				slopeSegments = segments
+				if b, err := json.Marshal(segments); err == nil {
+					ride.SlopeJSON = template.JS(b)
+				}
 			}
 		}
 	}

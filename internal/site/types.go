@@ -58,6 +58,7 @@ type Ride struct {
 	HasSlope    bool         // true si slope.geojson (tools/slope_colors.py) existe et correspond au GPX
 	SlopeFile   string       // chemin relatif du GeoJSON publié (ex: slope.geojson)
 	SlopeLegend []SlopeClass // classes de pente présentes sur la trace, pour la légende
+	SlopeJSON   template.JS  // tronçons [{s,e,c,p,l}] : pente affichée au survol du profil et de la carte
 
 	Points       []Point // POI, photos géolocalisées et points panoramax (points.md)
 	HasPanoramax bool    // true si au moins un Point de type panoramax
