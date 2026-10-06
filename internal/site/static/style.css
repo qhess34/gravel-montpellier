@@ -11,6 +11,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -35,6 +36,25 @@ a:hover { text-decoration: underline; }
   margin: 0 auto;
   padding: 0 24px;
 }
+.wrap--wide { max-width: 1320px; }
+
+/* Focus clavier bien visible partout */
+:focus-visible {
+  outline: 3px solid var(--terracotta);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 2000;
+  background: var(--ink);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+}
+.skip-link:focus { top: 12px; }
 
 /* Accessibilité : visible pour les lecteurs d'écran uniquement */
 .sr-only {
@@ -57,8 +77,9 @@ a:hover { text-decoration: underline; }
 .site-header .wrap {
   display: flex;
   align-items: center;
-  padding-top: 20px;
-  padding-bottom: 20px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  max-width: 1320px;
 }
 .brand {
   display: flex;
@@ -67,7 +88,7 @@ a:hover { text-decoration: underline; }
   color: var(--ink);
 }
 .brand:hover { text-decoration: none; }
-.brand-logo { display: block; height: 300px; width: 300px; flex-shrink: 0; }
+.brand-logo { display: block; height: 96px; width: 96px; flex-shrink: 0; }
 .brand-text { display: flex; flex-direction: column; gap: 4px; }
 .brand-name {
   font-family: 'Fraunces', serif;
@@ -79,130 +100,18 @@ a:hover { text-decoration: underline; }
 
 .empty { color: var(--ink-soft); padding: 48px 0; }
 
-/* Filtre par tags (accueil) */
-.tag-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 28px 0 0;
-}
-.tag-filter-btn {
-  border: 1px solid var(--line);
-  background: var(--paper);
-  color: var(--ink-soft);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-.tag-filter-btn:hover { border-color: var(--terracotta); }
-.tag-filter-btn.is-active {
-  background: var(--terracotta);
-  border-color: var(--terracotta);
-  color: #fff;
-}
-.tag-filter-btn--all { font-weight: 600; }
-.tag-filter-empty {
-  display: none;
-  color: var(--ink-soft);
-  padding: 24px 0 48px;
-}
-
-/* Ride grid / cards */
-.ride-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-  padding: 48px 0;
-}
-.ride-card {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-  color: var(--ink);
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.ride-card:hover {
-  text-decoration: none;
-  transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(43, 38, 32, 0.08);
-}
-.ride-card-photo {
-  position: relative;
-  height: 170px;
-  overflow: hidden;
-  background-color: #ddd2bd;
-}
-.ride-card-photo-layer {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-}
-.ride-card-photo-layer.is-active { opacity: 1; }
-.ride-card-photo--placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.4rem;
-  color: var(--olive);
-}
-.ride-card-body { padding: 18px 20px 22px; }
-.ride-card-body h2 { font-size: 1.2rem; }
-.ride-card-date { color: var(--ink-soft); font-size: 0.9rem; margin: 0 0 10px; }
-
-.ride-stats {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 14px;
-  margin: 0 0 10px;
-  padding: 0;
-  font-size: 0.92rem;
-  color: var(--ink-soft);
-}
-.ride-stats li:not(:last-child)::after {
-  content: '·';
-  margin-left: 14px;
-  color: var(--line);
-}
-.ride-stats--big {
-  font-size: 1.05rem;
-  margin: 14px 0 6px;
-}
-
-.ride-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.tag {
-  background: #efe6d4;
-  color: var(--terracotta-dark);
-  border-radius: 999px;
-  padding: 3px 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
 /* Ride detail */
-.ride { padding: 48px 0 64px; }
+.ride { padding: 32px 24px 64px; }
 .back { margin-bottom: 8px; }
 .back a { color: var(--ink-soft); font-size: 0.92rem; }
 .ride h1 { font-size: 2.1rem; margin-top: 4px; }
 
 .ride-map {
-  height: 420px;
+  height: clamp(340px, 60vh, 560px);
   border-radius: var(--radius);
-  margin: 24px 0;
+  margin: 12px 0;
   border: 1px solid var(--line);
 }
-
-.gpx-download { margin-top: -10px; }
 
 /* Contrôle "Me localiser", intégré à la carte à côté du zoom (styles de
    base hérités de .leaflet-bar/.leaflet-bar a, propres à Leaflet). */
@@ -316,21 +225,6 @@ a:hover { text-decoration: underline; }
 .ride-body p { margin: 0 0 1em; }
 .ride-body ul { padding-left: 1.2em; }
 
-.gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
-  margin-top: 32px;
-}
-.gallery-item img {
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  display: block;
-}
-
 /* Footer */
 .site-footer {
   border-top: 1px solid var(--line);
@@ -413,73 +307,6 @@ a:hover { text-decoration: underline; }
 .legal-body ul { padding-left: 1.2em; }
 .legal-body li { margin-bottom: 0.4em; }
 
-/* Frise chronologique des POI sur le parcours (verticale) */
-.poi-timeline-wrap {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--line);
-  max-width: 480px;
-}
-.poi-summary-title { font-size: 1.25rem; margin-bottom: 10px; }
-
-.poi-timeline {
-  position: relative;
-  margin: 4px 0;
-  padding: 14px 0 14px 24px;
-}
-.poi-timeline-track {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 5px;
-  width: 2px;
-  background: var(--line);
-}
-.poi-timeline-item {
-  position: absolute;
-  left: 0;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.poi-timeline-dot {
-  display: block;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  border: 2px solid var(--paper);
-  box-shadow: 0 1px 3px rgba(43, 38, 32, 0.35);
-  flex-shrink: 0;
-}
-.poi-timeline-label {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  font-size: 0.85rem;
-  line-height: 1.3;
-}
-.poi-timeline-km { font-weight: 700; color: var(--terracotta-dark); flex-shrink: 0; }
-.poi-timeline-icon::before { font-size: 0.9rem; line-height: 1; }
-.poi-timeline-icon--water::before        { content: '💧'; }
-.poi-timeline-icon--food::before         { content: '🥐'; }
-.poi-timeline-icon--grocery::before      { content: '🛒'; }
-.poi-timeline-icon--camping::before      { content: '🏕️'; }
-.poi-timeline-icon--bar::before          { content: '🍺'; }
-.poi-timeline-icon--restaurant::before   { content: '🍽️'; }
-.poi-timeline-icon--bike-repair::before  { content: '🔧'; }
-.poi-timeline-icon--danger::before       { content: '⚠️'; }
-.poi-timeline-icon--viewpoint::before    { content: '👁️'; }
-.poi-timeline-icon--generic::before      { content: '📍'; }
-.poi-timeline-name { color: var(--ink-soft); }
-.poi-timeline-endcap {
-  padding-left: 24px;
-  font-size: 0.72rem;
-  color: var(--ink-soft);
-  opacity: 0.8;
-}
-.poi-timeline-endcap--finish { margin-top: 4px; }
-
 /* Lien discret de signalement OSM, dans les popups carte */
 .gm-popup-report {
   display: inline-block;
@@ -536,11 +363,11 @@ a:hover { text-decoration: underline; }
 .poi-filter-swatch--panoramax    { background: #6b3fa0; }
 
 @media (max-width: 600px) {
-  .ride-map { height: 300px; }
-  .site-header .wrap { padding-top: 16px; padding-bottom: 16px; }
-  .brand { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .brand-logo { height: 110px; width: 110px; }
-  .brand-tagline { font-size: 0.95rem; }
+  .ride-map { height: 340px; }
+  .brand { gap: 12px; }
+  .brand-logo { height: 64px; width: 64px; }
+  .brand-name { font-size: 1.3rem; }
+  .brand-tagline { font-size: 0.85rem; }
 }
 
 /* Marqueurs carte (POI, photo, panoramax) */
@@ -693,4 +520,686 @@ body.gm-modal-lock { overflow: hidden; }
 }
 @keyframes gm-spin {
   to { transform: rotate(360deg); }
+}
+
+/* =====================================================================
+   Accueil : carte des sorties, filtres, cartouches
+   ===================================================================== */
+.explore { padding-top: 24px; padding-bottom: 32px; }
+.explore-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.explore-title { font-size: 1.6rem; margin: 0; }
+.explore-count { margin: 0; color: var(--ink-soft); font-size: 0.95rem; }
+
+/* Filtres (difficulté + tags) */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 18px;
+  margin: 14px 0 16px;
+}
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.filter-group--tags { flex: 1 1 100%; align-items: flex-start; }
+.filter-group-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+.filter-toggle {
+  border: none;
+  background: none;
+  padding: 7px 4px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.filter-toggle::after {
+  content: '▾';
+  font-size: 0.9rem;
+  transition: transform 0.15s ease;
+}
+.filter-toggle[aria-expanded="false"]::after { transform: rotate(-90deg); }
+.filter-toggle-count { color: var(--terracotta-dark); }
+
+.tag-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+.tag-filter-btn {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.tag-filter-btn:hover { border-color: var(--terracotta); color: var(--ink); }
+.tag-filter-btn.is-active {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+  color: #fff;
+}
+.tag-filter-btn--all { font-weight: 600; }
+.tag-filter-empty {
+  display: none;
+  color: var(--ink-soft);
+  padding: 24px 0 48px;
+  text-align: center;
+}
+
+/* Pastilles de difficulté (filtre, cartouches, fiche, popups) */
+.diff-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--diff-color, var(--ink-soft));
+  flex-shrink: 0;
+}
+.diff-btn.is-active .diff-dot { box-shadow: 0 0 0 2px #fff; }
+.diff-dot--facile, .diff-badge--facile                 { --diff-color: #3f8f4f; }
+.diff-dot--moyenne, .diff-badge--moyenne               { --diff-color: #c98a1f; }
+.diff-dot--difficile, .diff-badge--difficile           { --diff-color: #c4462b; }
+.diff-dot--tres-difficile, .diff-badge--tres-difficile { --diff-color: #7a1f1f; }
+
+/* Carte d'accueil */
+.home-map-wrap { position: relative; }
+.home-map {
+  height: clamp(380px, 62vh, 640px);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: #e8e2d6;
+  box-shadow: 0 8px 30px rgba(43, 38, 32, 0.08);
+}
+.home-map--unavailable {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft);
+  height: auto;
+  min-height: 120px;
+}
+.home-map-hint {
+  margin: 8px 2px 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.home-map-hit { cursor: pointer; }
+.home-map-hit:focus { outline: none; }
+.home-map-tooltip {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* Popup d'une sortie sur la carte d'accueil */
+.ride-popup-wrap .leaflet-popup-content-wrapper {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 12px;
+}
+.ride-popup-wrap .leaflet-popup-content { margin: 0; width: auto !important; }
+.ride-popup {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--ink);
+  width: min(270px, calc(100vw - 72px));
+}
+.ride-popup-photo {
+  display: block;
+  width: 100%;
+  height: 128px;
+  object-fit: cover;
+  background: #ddd2bd;
+}
+.ride-popup-body { padding: 12px 14px 14px; }
+.ride-popup-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 1.02rem;
+  margin: 0 0 8px;
+}
+.ride-popup-title .ride-swatch { margin-top: 4px; }
+.ride-popup-summary {
+  margin: 8px 0 12px !important;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ride-popup-wrap a.leaflet-popup-close-button {
+  color: #fff;
+  background: rgba(20, 17, 13, 0.45);
+  border-radius: 50%;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  line-height: 24px;
+  font-size: 18px;
+}
+
+/* Couleur d'une sortie (même couleur que sa trace sur la carte d'accueil) */
+.ride-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--ride-color, var(--terracotta));
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(43, 38, 32, 0.15);
+  flex-shrink: 0;
+}
+
+/* Informations clés : difficulté, durée, D+, distance */
+.ride-facts {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  font-size: 0.85rem;
+}
+.ride-fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f1eadc;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.ride-fact-icon { color: var(--ink-soft); }
+.diff-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--diff-color, var(--ink-soft));
+  white-space: nowrap;
+}
+.ride-facts--compact { font-size: 0.78rem; margin: 0; }
+
+/* Grille de cartouches */
+.ride-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 22px;
+  padding: 28px 0 24px;
+}
+.ride-card {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--ride-color, var(--terracotta));
+  border-radius: var(--radius);
+  overflow: hidden;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, outline-color 0.15s ease;
+  outline: 3px solid transparent;
+  outline-offset: 2px;
+}
+.ride-card:hover,
+.ride-card:focus-within {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(43, 38, 32, 0.1);
+}
+.ride-card.is-selected { outline-color: var(--ride-color, var(--terracotta)); }
+.ride-card-photo {
+  position: relative;
+  height: 180px;
+  overflow: hidden;
+  background-color: #ddd2bd;
+}
+.ride-card-photo-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.ride-card-photo-layer.is-active { opacity: 1; }
+.ride-card-photo--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  color: var(--olive);
+}
+.ride-card-body {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.ride-card-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 1.15rem;
+  margin-bottom: 10px;
+}
+.ride-card-title .ride-swatch { margin-top: 5px; }
+.ride-card-link { color: var(--ink); }
+.ride-card-link:hover { text-decoration: none; }
+/* Lien étendu : tout le cartouche est cliquable, avec un seul lien pour les lecteurs d'écran */
+.ride-card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.ride-card-link:focus-visible { outline: none; }
+.ride-card:has(.ride-card-link:focus-visible) { outline-color: var(--terracotta); }
+.ride-card-date { color: var(--ink-soft); font-size: 0.8rem; margin: 0 0 8px; }
+.ride-card-summary {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ride-card-cta {
+  margin-top: auto;
+  padding-top: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--terracotta-dark);
+}
+.ride-card-cta-arrow { display: inline-block; transition: transform 0.15s ease; }
+.ride-card:hover .ride-card-cta-arrow { transform: translateX(4px); }
+
+.ride-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.tag {
+  background: #efe6d4;
+  color: var(--terracotta-dark);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+/* Boutons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.92rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn:hover { text-decoration: none; }
+.btn--primary { background: var(--terracotta); color: #fff; }
+.btn--primary:hover { background: var(--terracotta-dark); }
+.leaflet-container a.btn--primary { color: #fff; }
+.btn--small { padding: 7px 14px; font-size: 0.84rem; }
+
+/* =====================================================================
+   Fiche d'une sortie
+   ===================================================================== */
+.ride-header { margin-bottom: 20px; }
+.ride-header h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); margin: 4px 0 14px; }
+.ride-header .ride-facts { font-size: 0.95rem; gap: 8px; }
+.ride-header .diff-badge,
+.ride-header .ride-fact { padding: 5px 13px; }
+.ride-meta {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  padding: 0;
+  margin: 4px 0 12px;
+  font-size: 0.92rem;
+}
+.ride-meta-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin-right: 4px;
+}
+
+/* Carrousel */
+.carousel {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #1f1b16;
+  margin: 8px 0 18px;
+}
+.carousel:focus-visible { outline-offset: 3px; }
+.carousel-viewport {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  max-height: 72vh;
+  width: 100%;
+}
+.carousel-slide {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.8s ease, visibility 0s linear 0.8s;
+  background-size: 0 0; /* l'image de fond ne sert qu'au flou ci-dessous */
+}
+.carousel-slide.is-active {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.8s ease, visibility 0s;
+}
+/* Fond flou (miniature) : remplit le cadre sans déformer ni rogner la photo */
+.carousel-slide::before {
+  content: '';
+  position: absolute;
+  inset: -24px;
+  background-image: inherit;
+  background-size: cover;
+  background-position: center;
+  filter: blur(18px) brightness(0.65);
+}
+.carousel-link { position: absolute; inset: 0; display: block; cursor: zoom-in; }
+.carousel-link img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 253, 249, 0.88);
+  color: var(--ink);
+  font-size: 2rem;
+  line-height: 1;
+  padding-bottom: 4px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  transition: background 0.15s ease;
+}
+.carousel-btn:hover { background: #fff; }
+.carousel-btn--prev { left: 12px; }
+.carousel-btn--next { right: 12px; }
+.carousel-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 14px 10px;
+  background: linear-gradient(transparent, rgba(20, 17, 13, 0.6));
+  color: #fff;
+  pointer-events: none;
+}
+.carousel-bar > * { pointer-events: auto; }
+.carousel-dots { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; justify-content: center; }
+.carousel-dot {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.carousel-dot::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.carousel-dot.is-active::before { background: #fff; transform: scale(1.3); }
+.carousel-counter { font-size: 0.82rem; font-variant-numeric: tabular-nums; min-width: 3.5em; text-align: right; }
+.carousel-toggle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(20, 17, 13, 0.35);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.carousel-toggle-icon::before { content: '❚❚'; font-size: 0.6rem; letter-spacing: -1px; }
+.carousel-toggle.is-paused .carousel-toggle-icon::before { content: '▶'; font-size: 0.7rem; letter-spacing: 0; }
+
+/* Partage et téléchargement */
+.ride-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.ride-actions .share-bar { margin: 0; }
+.share-btn--native:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+/* Légende de la colorisation par pente */
+.slope-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin: 0 0 12px;
+}
+.slope-legend-title { font-weight: 600; color: var(--ink); }
+.slope-legend ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.slope-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.slope-swatch {
+  display: inline-block;
+  width: 22px;
+  height: 6px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(31, 27, 22, 0.35);
+}
+.gm-slope-tooltip { font-size: 0.8rem; }
+.map-error {
+  margin: -4px 0 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fbe9e5;
+  color: #7a2a1a;
+  font-size: 0.9rem;
+}
+
+/* Description */
+.ride-body { margin-top: 28px; font-size: 1.02rem; }
+.ride-lead {
+  font-size: 1.1rem;
+  line-height: 1.65;
+  color: var(--ink);
+  padding-left: 16px;
+  border-left: 4px solid var(--ride-color, var(--terracotta));
+}
+.ride-body a { text-decoration: underline; }
+
+/* Liste des POI */
+.poi-section {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  max-width: 720px;
+}
+.poi-summary-title { font-size: 1.35rem; margin-bottom: 4px; }
+.poi-hint { margin: 0 0 12px; color: var(--ink-soft); font-size: 0.88rem; }
+.poi-subtitle { font-size: 1.05rem; margin: 22px 0 8px; }
+.poi-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 14px;
+  border-left: 2px solid var(--line);
+}
+.poi-row { margin: 0; }
+.poi-endcap {
+  position: relative;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  padding: 6px 10px;
+}
+.poi-endcap::before {
+  content: '';
+  position: absolute;
+  left: -21px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+  border: 2px solid var(--cream);
+}
+.poi-item {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  border: 1px solid transparent;
+  background: none;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.poi-item:hover { background: var(--paper); border-color: var(--line); }
+.poi-item.is-current { background: var(--paper); border-color: var(--terracotta); }
+.poi-km {
+  flex: 0 0 4.6em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--terracotta-dark);
+  font-size: 0.9rem;
+  padding-top: 2px;
+}
+.poi-icon { flex-shrink: 0; width: 1.4em; text-align: center; font-size: 1.05rem; line-height: 1.4; }
+.poi-icon::before { content: '📍'; }
+.poi-icon--water::before        { content: '💧'; }
+.poi-icon--food::before         { content: '🥐'; }
+.poi-icon--grocery::before      { content: '🛒'; }
+.poi-icon--camping::before      { content: '🏕️'; }
+.poi-icon--bar::before          { content: '🍺'; }
+.poi-icon--restaurant::before   { content: '🍽️'; }
+.poi-icon--bike-repair::before  { content: '🔧'; }
+.poi-icon--danger::before       { content: '⚠️'; }
+.poi-icon--viewpoint::before    { content: '👁️'; }
+.poi-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.poi-label { font-weight: 500; }
+.poi-kind { font-size: 0.82rem; color: var(--ink-soft); }
+
+/* Popup d'un POI sur la carte */
+.gm-poi-popup-meta {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--terracotta-dark);
+  margin-bottom: 2px;
+}
+.gm-poi-popup p { margin: 6px 0 0; }
+
+@media (max-width: 700px) {
+  .explore-title { font-size: 1.35rem; }
+  .home-map { height: 58vh; min-height: 320px; }
+  .ride { padding-top: 20px; }
+  .carousel-viewport { aspect-ratio: 4 / 3; }
+  .carousel-btn { width: 38px; height: 38px; font-size: 1.6rem; }
+  .carousel-btn--prev { left: 6px; }
+  .carousel-btn--next { right: 6px; }
+  .ride-actions { padding: 12px; }
+  .ride-actions .btn { width: 100%; }
+  .wrap { padding: 0 16px; }
+}
+
+/* Réduction des animations demandée par l'utilisateur */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  .ride-card:hover, .ride-card:focus-within { transform: none; }
 }

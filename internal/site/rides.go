@@ -19,10 +19,6 @@ var imageExts = map[string]bool{
 // on ne lui attribue pas de point kilométrique.
 const maxPointToTrackKm = 3.0
 
-// poiTimelineGapPx : écart fixe (px) entre deux points consécutifs sur la
-// frise chronologique de la page de sortie, quel que soit leur nombre.
-const poiTimelineGapPx = 56
-
 // LoadRides parcourt ridesDir (un sous-dossier par sortie) et construit
 // la liste des sorties, triée par date décroissante (les plus récentes en premier).
 //
@@ -58,9 +54,14 @@ func LoadRides(ridesDir string) ([]*Ride, error) {
 		rides = append(rides, ride)
 	}
 
-	sort.Slice(rides, func(i, j int) bool {
-		return rides[i].SortKey > rides[j].SortKey // plus récent en premier
+	sort.SliceStable(rides, func(i, j int) bool {
+		if rides[i].SortKey != rides[j].SortKey {
+			return rides[i].SortKey > rides[j].SortKey // plus récent en premier
+		}
+		return rides[i].Slug < rides[j].Slug
 	})
+
+	assignColors(rides)
 
 	return rides, nil
 }
@@ -76,14 +77,22 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 		return nil, err
 	}
 
+	summary, rest := splitSummary(body)
 	ride := &Ride{
-		Slug:       slug,
-		Title:      firstNonEmpty(fields["title"], slug),
-		DateRaw:    fields["date"],
-		SortKey:    fields["date"],
-		Difficulty: fields["difficulty"],
-		Departure:  fields["departure"],
-		Body:       Markdown(body),
+		Slug:        slug,
+		Title:       firstNonEmpty(fields["title"], slug),
+		DateRaw:     fields["date"],
+		SortKey:     dateSortKey(fields["date"]),
+		Difficulty:  fields["difficulty"],
+		Departure:   fields["departure"],
+		Color:       strings.TrimSpace(fields["color"]),
+		Summary:     Markdown(summary),
+		SummaryText: markdownToPlainText(summary),
+		Body:        Markdown(rest),
+	}
+	if d, ok := normalizeDifficulty(ride.Difficulty); ok {
+		ride.DifficultyKey = d.Key
+		ride.DifficultyLevel = d.Level
 	}
 
 	if fields["distance_km"] != "" {
@@ -119,6 +128,7 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 			}
 		}
 	}
+	ride.Duration = rideDuration(fields["duration"], ride.Tags)
 	if len(ride.Tags) > 0 {
 		normalized := make([]string, len(ride.Tags))
 		for i, t := range ride.Tags {
@@ -154,6 +164,13 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 			ride.StartPoint = points[0]
 			ride.EndPoint = points[len(points)-1]
 			ride.IsLoop = PointDistanceKm(ride.StartPoint, ride.EndPoint) < 0.05 // < 50 m : boucle
+
+			// Trace colorisée selon la pente, pré-calculée par tools/slope_colors.py.
+			if legend, ok := loadSlopeData(slug, dir, gpxPath); ok {
+				ride.HasSlope = true
+				ride.SlopeFile = slopeFileName
+				ride.SlopeLegend = legend
+			}
 		}
 	}
 
@@ -173,6 +190,7 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 		sort.Strings(names)
 		for _, n := range names {
 			ride.Photos = append(ride.Photos, "photos/"+n)
+			ride.PhotoThumbs = append(ride.PhotoThumbs, thumbRel("photos/"+n))
 			validPhotoNames[n] = true
 		}
 	}
@@ -230,27 +248,25 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 		}
 	}
 
+	for i := range points {
+		points[i].ID = i
+	}
 	ride.Points = points
 	for _, p := range points {
 		if p.Type == PointPanoramax {
 			ride.HasPanoramax = true
 		}
-		if p.Type == PointPOI && p.HasKmMark {
-			ride.RoutePOIs = append(ride.RoutePOIs, p)
+		if p.Type == PointPOI {
+			if p.HasKmMark {
+				ride.RoutePOIs = append(ride.RoutePOIs, p)
+			} else {
+				ride.OffRoutePOIs = append(ride.OffRoutePOIs, p)
+			}
 		}
 	}
-	sort.Slice(ride.RoutePOIs, func(i, j int) bool {
+	sort.SliceStable(ride.RoutePOIs, func(i, j int) bool {
 		return ride.RoutePOIs[i].KmMark < ride.RoutePOIs[j].KmMark
 	})
-	// Écart fixe entre les points sur la frise (pas de répartition en %,
-	// qui étire ou tasse selon le nombre de points) : chaque point est à
-	// poiTimelineGapPx du précédent, quel que soit leur nombre.
-	for i := range ride.RoutePOIs {
-		ride.RoutePOIs[i].TimelineOffsetPx = i * poiTimelineGapPx
-	}
-	if n := len(ride.RoutePOIs); n > 0 {
-		ride.TimelineHeightPx = (n-1)*poiTimelineGapPx + poiTimelineGapPx
-	}
 
 	ride.POIKinds = collectPOIKinds(points)
 	ride.HasPOIFilter = len(ride.POIKinds) > 1

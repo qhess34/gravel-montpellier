@@ -23,7 +23,14 @@ type Ride struct {
 	Tags       []string
 	TagsAttr   string // tags en minuscules, séparés par des virgules, pour le filtre côté client
 
-	Body template.HTML // description au format HTML (convertie depuis markdown)
+	DifficultyKey   string // difficulté normalisée (facile, moyenne...), pour le filtre et la pastille de couleur
+	DifficultyLevel int    // 1 (facile) à 4 (très difficile), 0 si inconnue
+	Duration        string // durée : champ « duration » ou déduite des tags « N jour(s) » ; vide si inconnue
+	Color           string // couleur de la trace sur la carte d'accueil (stable, voir assignColors)
+
+	Summary     template.HTML // synthèse : début de description.md jusqu'à « ## Le parcours » (HTML)
+	SummaryText string        // même synthèse en texte brut (cartouches, popups, meta description)
+	Body        template.HTML // suite de la description (à partir de « ## Le parcours »), au format HTML
 
 	HasGPX    bool
 	GPXPoints []GPXPoint
@@ -45,12 +52,17 @@ type Ride struct {
 	ElevationProfileDataJSON template.JS   // [{km,ele,lat,lon}, ...] pour la synchro survol carte/profil
 	HasElevationProfile      bool
 
-	Photos []string // chemins relatifs des photos copiées (ex: photos/1.jpg)
+	Photos      []string // chemins relatifs des photos copiées (ex: photos/1.jpg)
+	PhotoThumbs []string // miniatures correspondantes (ex: photos/thumbs/1.jpg), même ordre que Photos
+
+	HasSlope    bool         // true si slope.geojson (tools/slope_colors.py) existe et correspond au GPX
+	SlopeFile   string       // chemin relatif du GeoJSON publié (ex: slope.geojson)
+	SlopeLegend []SlopeClass // classes de pente présentes sur la trace, pour la légende
 
 	Points       []Point // POI, photos géolocalisées et points panoramax (points.md)
 	HasPanoramax bool    // true si au moins un Point de type panoramax
 	RoutePOIs    []Point // POI de type "poi" situés sur le parcours (tous types), triés par PK croissant
-	TimelineHeightPx int // hauteur (px) de la frise chronologique, calculée selon le nombre de RoutePOIs
+	OffRoutePOIs []Point // POI de type "poi" trop loin de la trace pour avoir un PK
 
 	POIKinds     []POIKind // types de points présents sur cette sortie, pour le filtre carte/profil
 	HasPOIFilter bool      // true si au moins deux types différents sont présents

@@ -1,50 +1,95 @@
+{{define "head"}}
+{{if .Rides}}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{{end}}
+{{end}}
+
 {{define "content"}}
 <h1 class="sr-only">Sorties vélo &amp; gravel autour de Montpellier</h1>
 
+{{if not .Rides}}
 <section class="wrap">
-  {{if not .Rides}}
-    <p class="empty">Aucune sortie pour le moment. Ajoutez un dossier dans <code>rides/</code> pour commencer.</p>
-  {{else}}
-  {{if .AllTags}}
-  <div class="tag-filter" data-tag-filter>
-    <button type="button" class="tag-filter-btn tag-filter-btn--all is-active" data-tag-all>Toutes les sorties</button>
-    {{range .AllTags}}
-    <button type="button" class="tag-filter-btn" data-tag="{{.}}">{{.}}</button>
+  <p class="empty">Aucune sortie pour le moment. Ajoutez un dossier dans <code>rides/</code> pour commencer.</p>
+</section>
+{{else}}
+<section class="explore wrap wrap--wide" aria-labelledby="explore-title" data-explore>
+  <div class="explore-head">
+    <h2 class="explore-title" id="explore-title">Explorer les sorties</h2>
+    <p class="explore-count" data-ride-count aria-live="polite">{{len .Rides}} sorties</p>
+  </div>
+
+  <div class="filters" data-filters>
+    <button type="button" class="tag-filter-btn tag-filter-btn--all is-active" data-tag-all aria-pressed="true">Toutes les sorties</button>
+
+    {{if .AllDifficulties}}
+    <div class="filter-group" role="group" aria-label="Filtrer par difficulté">
+      <span class="filter-group-label" aria-hidden="true">Difficulté</span>
+      {{range .AllDifficulties}}
+      <button type="button" class="tag-filter-btn diff-btn" data-difficulty="{{.Key}}" aria-pressed="false">
+        <span class="diff-dot diff-dot--{{.Key}}" aria-hidden="true"></span>{{.Label}}
+      </button>
+      {{end}}
+    </div>
+    {{end}}
+
+    {{if .AllTags}}
+    <div class="filter-group filter-group--tags">
+      <button type="button" class="filter-toggle" data-tags-toggle aria-expanded="true" aria-controls="tag-filter">
+        Tags<span class="filter-toggle-count" data-tags-count></span>
+      </button>
+      <div class="tag-filter" id="tag-filter" data-tag-filter role="group" aria-label="Filtrer par tags (cumulatif)">
+        {{range .AllTags}}
+        <button type="button" class="tag-filter-btn" data-tag="{{.}}" aria-pressed="false">{{.}}</button>
+        {{end}}
+      </div>
+    </div>
     {{end}}
   </div>
-  {{end}}
 
-  <div class="ride-grid">
+  <div class="home-map-wrap">
+    <div id="home-map" class="home-map" role="region"
+         aria-label="Carte de toutes les sorties : cliquez sur une trace pour afficher son résumé"></div>
+    <p class="home-map-hint">Cliquez sur une trace pour afficher la sortie · survolez une fiche pour la repérer sur la carte.</p>
+  </div>
+  <script type="application/json" id="home-map-data">{{.HomeMapJSON}}</script>
+
+  <div class="ride-grid" data-ride-grid>
     {{range .Rides}}
     {{$ride := .}}
-    <a class="ride-card" data-tags="{{.TagsAttr}}" href="{{$.Root}}rides/{{.Slug}}/index.html">
-      {{if .Photos}}
-        <div class="ride-card-photo" data-photo-carousel>
-          {{range $i, $p := .Photos}}
-          <div class="ride-card-photo-layer{{if eq $i 0}} is-active{{end}}" style="background-image:url('{{$.Root}}rides/{{$ride.Slug}}/{{$p}}')"></div>
-          {{end}}
-        </div>
+    <article class="ride-card" data-slug="{{.Slug}}" data-tags="{{.TagsAttr}}" data-difficulty="{{.DifficultyKey}}" style="--ride-color: {{.Color}}">
+      {{if .PhotoThumbs}}
+      <div class="ride-card-photo" data-photo-carousel>
+        {{range $i, $p := .PhotoThumbs}}
+        {{if eq $i 0}}
+        <img class="ride-card-photo-layer is-active" src="{{$.Root}}rides/{{$ride.Slug}}/{{$p}}" alt="" loading="lazy" decoding="async">
+        {{else}}
+        <img class="ride-card-photo-layer" data-src="{{$.Root}}rides/{{$ride.Slug}}/{{$p}}" alt="" decoding="async">
+        {{end}}
+        {{end}}
+      </div>
       {{else}}
-        <div class="ride-card-photo ride-card-photo--placeholder">⛰</div>
+      <div class="ride-card-photo ride-card-photo--placeholder" aria-hidden="true">⛰</div>
       {{end}}
       <div class="ride-card-body">
-        <h2>{{.Title}}</h2>
+        <h2 class="ride-card-title">
+          <span class="ride-swatch" aria-hidden="true"></span>
+          <a class="ride-card-link" href="{{$.Root}}rides/{{.Slug}}/index.html">{{.Title}}</a>
+        </h2>
+        {{template "ride-facts" .}}
         {{if .DateRaw}}<p class="ride-card-date">{{.DateRaw}}</p>{{end}}
-        <ul class="ride-stats">
-          {{if gt .DistanceKm 0.0}}<li>{{printf "%.0f" .DistanceKm}} km</li>{{end}}
-          {{if gt .ElevationM 0}}<li>+{{.ElevationM}} m D+</li>{{end}}
-          {{if .Difficulty}}<li>{{.Difficulty}}</li>{{end}}
-        </ul>
+        {{if .SummaryText}}<p class="ride-card-summary">{{.SummaryText}}</p>{{end}}
         {{if .Tags}}
         <div class="ride-tags">
           {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
         </div>
         {{end}}
+        <span class="ride-card-cta" aria-hidden="true">Voir la sortie <span class="ride-card-cta-arrow">→</span></span>
       </div>
-    </a>
+    </article>
     {{end}}
   </div>
-  <p class="tag-filter-empty" data-tag-empty>Aucune sortie ne correspond à ces tags.</p>
-  {{end}}
+  <p class="tag-filter-empty" data-tag-empty role="status">Aucune sortie ne correspond à ces filtres.</p>
 </section>
+{{end}}
 {{end}}

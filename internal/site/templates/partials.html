@@ -1,0 +1,9 @@
+{{/* Difficulté, durée, D+ et distance : mêmes informations sur les cartouches, la fiche et les popups. */}}
+{{define "ride-facts"}}
+<ul class="ride-facts">
+  {{if .Difficulty}}<li class="diff-badge diff-badge--{{.DifficultyKey}}"><span class="sr-only">Difficulté : </span>{{.Difficulty}}</li>{{end}}
+  {{if .Duration}}<li class="ride-fact ride-fact--duration"><span class="ride-fact-icon" aria-hidden="true">⏱</span><span class="sr-only">Durée estimée : </span>{{.Duration}}</li>{{end}}
+  {{if gt .ElevationM 0}}<li class="ride-fact ride-fact--elevation"><span class="ride-fact-icon" aria-hidden="true">↗</span><span class="sr-only">Dénivelé positif : </span>{{.ElevationM}} m D+</li>{{end}}
+  {{if gt .DistanceKm 0.0}}<li class="ride-fact ride-fact--distance"><span class="ride-fact-icon" aria-hidden="true">↔</span><span class="sr-only">Distance : </span>{{printf "%.0f" .DistanceKm}} km</li>{{end}}
+</ul>
+{{end}}

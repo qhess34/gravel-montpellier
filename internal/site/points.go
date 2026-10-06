@@ -35,9 +35,9 @@ type Point struct {
 	Sequence string // panoramax uniquement : identifiant de séquence (optionnel)
 	Endpoint string // panoramax uniquement : URL de l'API (optionnel)
 
-	KmMark           float64 // point kilométrique sur la trace (si HasKmMark)
-	HasKmMark        bool    // true si le point est assez proche de la trace GPX pour qu'un PK ait du sens
-	TimelineOffsetPx int     // position sur la frise, en px depuis le haut (écart fixe entre points, pas de km)
+	ID        int     // position dans Ride.Points : relie la liste des POI à son marqueur sur la carte
+	KmMark    float64 // point kilométrique sur la trace (si HasKmMark)
+	HasKmMark bool    // true si le point est assez proche de la trace GPX pour qu'un PK ait du sens
 }
 
 // poiKindOrder associe chaque icône reconnue à un libellé, dans l'ordre
@@ -57,6 +57,31 @@ var poiKindOrder = []POIKind{
 	{Icon: "generic", Label: "Autres POI"},
 	{Icon: "photo", Label: "Photos"},
 	{Icon: "panoramax", Label: "Vues 360°"},
+}
+
+// poiKindSingular : libellé d'un point isolé (liste des POI, popups).
+var poiKindSingular = map[string]string{
+	"water":       "Point d'eau",
+	"food":        "Boulangerie",
+	"grocery":     "Alimentation",
+	"bar":         "Bar",
+	"restaurant":  "Restaurant",
+	"camping":     "Camping",
+	"bike-repair": "Réparation vélo",
+	"viewpoint":   "Point de vue",
+	"danger":      "Danger",
+	"generic":     "Point d'intérêt",
+	"photo":       "Photo",
+	"panoramax":   "Vue 360°",
+}
+
+// poiKindLabel renvoie le libellé lisible d'une icône de points.md (la
+// valeur brute pour une icône libre non répertoriée).
+func poiKindLabel(icon string) string {
+	if l, ok := poiKindSingular[icon]; ok {
+		return l
+	}
+	return icon
 }
 
 // collectPOIKinds renvoie, dans l'ordre canonique ci-dessus, les types de

@@ -1,80 +1,145 @@
+{{define "head"}}
+{{with .Ride}}{{if or .HasGPX .Points}}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{{end}}{{end}}
+{{end}}
+
 {{define "content"}}
 {{with .Ride}}
-<article class="ride wrap">
+<article class="ride wrap" style="--ride-color: {{.Color}}">
   <p class="back"><a href="{{$.Root}}index.html">&larr; Toutes les sorties</a></p>
-  <h1>{{.Title}}</h1>
 
-  <ul class="ride-stats ride-stats--big">
-    {{if .DateRaw}}<li>{{.DateRaw}}</li>{{end}}
-    {{if gt .DistanceKm 0.0}}<li>{{printf "%.0f" .DistanceKm}} km</li>{{end}}
-    {{if gt .ElevationM 0}}<li>+{{.ElevationM}} m D+</li>{{end}}
-    {{if .Difficulty}}<li>{{.Difficulty}}</li>{{end}}
-    {{if .Departure}}<li>Départ : {{.Departure}}</li>{{end}}
-  </ul>
-
-  {{if .Tags}}
-  <div class="ride-tags">
-    {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
-  </div>
-  {{end}}
-
-  {{if or $.MetaURL .HasInstagramImage}}
-  <div class="share-bar">
-    <span class="share-label">Partager :</span>
-    {{if $.MetaURL}}
-    <a class="share-btn share-btn--fb" href="{{$.ShareFacebook}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur Facebook">Facebook</a>
-    <a class="share-btn share-btn--wa" href="{{$.ShareWhatsApp}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur WhatsApp">WhatsApp</a>
-    <a class="share-btn share-btn--x" href="{{$.ShareTwitter}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur X">X</a>
-    <a class="share-btn share-btn--mail" href="{{$.ShareEmail}}" aria-label="Partager par e-mail">E-mail</a>
-    <button type="button" class="share-btn share-btn--copy" data-copy-link="{{$.MetaURL}}">Copier le lien</button>
-    {{end}}
-    {{if .HasInstagramImage}}
-    <a class="share-btn share-btn--ig" href="{{$.Root}}rides/{{.Slug}}/instagram.jpg" download
-       data-ig-share="{{$.Root}}rides/{{.Slug}}/instagram.jpg" data-ig-title="{{.Title}}"
-       aria-label="Partager l'image sur Instagram">Instagram</a>
-    {{end}}
-  </div>
-  {{end}}
-
-  {{if .HasPOIFilter}}
-  <div class="poi-filter" data-poi-filter>
-    <span class="poi-filter-label">Afficher :</span>
-    {{range .POIKinds}}
-    <button type="button" class="poi-filter-btn is-active" data-poi-kind="{{.Icon}}">
-      <span class="poi-filter-swatch poi-filter-swatch--{{.Icon}}" aria-hidden="true"></span>{{.Label}}
-    </button>
-    {{end}}
-  </div>
-  {{end}}
-
-  {{if or .HasGPX .Points}}
-  <div id="map" class="ride-map"></div>
-  {{end}}
-  {{if .HasGPX}}
-  <p class="gpx-download"><a href="{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}" download>Télécharger la trace GPX</a></p>
-  {{end}}
-
-  {{if .HasSurfaceStats}}
-  <div class="surface-stats">
-    <h2 class="surface-stats-title">Revêtement</h2>
-    <div class="surface-bar">
-      {{if gt .SurfacePavedKm 0.0}}<span class="surface-bar-seg surface-bar-seg--paved" style="width:{{.SurfacePavedPct}}%"></span>{{end}}
-      {{if gt .SurfaceUnpavedKm 0.0}}<span class="surface-bar-seg surface-bar-seg--unpaved" style="width:{{.SurfaceUnpavedPct}}%"></span>{{end}}
-      {{if gt .SurfaceUnknownKm 0.0}}<span class="surface-bar-seg surface-bar-seg--unknown" style="width:{{.SurfaceUnknownPct}}%"></span>{{end}}
-    </div>
-    <ul class="surface-legend">
-      {{if gt .SurfacePavedKm 0.0}}<li><span class="surface-swatch surface-swatch--paved"></span>Route / piste cyclable — {{printf "%.0f" .SurfacePavedKm}} km ({{.SurfacePavedPct}} %)</li>{{end}}
-      {{if gt .SurfaceUnpavedKm 0.0}}<li><span class="surface-swatch surface-swatch--unpaved"></span>Chemin / sentier — {{printf "%.0f" .SurfaceUnpavedKm}} km ({{.SurfaceUnpavedPct}} %)</li>{{end}}
-      {{if gt .SurfaceUnknownKm 0.0}}<li><span class="surface-swatch surface-swatch--unknown"></span>Indéterminé — {{printf "%.0f" .SurfaceUnknownKm}} km ({{.SurfaceUnknownPct}} %)</li>{{end}}
+  <!-- 1. En-tête -->
+  <header class="ride-header">
+    <h1>{{.Title}}</h1>
+    {{template "ride-facts" .}}
+    <ul class="ride-meta">
+      {{if .Departure}}<li><span class="ride-meta-label">Départ</span> {{.Departure}}</li>{{end}}
+      {{if .DateRaw}}<li><span class="ride-meta-label">Date</span> {{.DateRaw}}</li>{{end}}
+      {{if and .HasGPX (not .IsLoop)}}<li><span class="ride-meta-label">Type</span> Aller simple</li>{{end}}
     </ul>
+    {{if .Tags}}
+    <div class="ride-tags">
+      {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
+    </div>
+    {{end}}
+  </header>
+
+  <!-- 2. Carrousel de photos -->
+  {{if .Photos}}
+  {{$n := len .Photos}}
+  <section class="carousel" data-carousel aria-roledescription="carrousel" aria-label="Photos de la sortie" tabindex="0">
+    <div class="carousel-viewport">
+      {{range $i, $p := .Photos}}
+      <figure class="carousel-slide{{if eq $i 0}} is-active{{end}}" role="group" aria-roledescription="diapositive"
+              aria-label="Photo {{inc $i}} sur {{$n}}" style="background-image:url('{{$.Root}}rides/{{$.Ride.Slug}}/{{index $.Ride.PhotoThumbs $i}}')"
+              {{if ne $i 0}}aria-hidden="true" inert{{end}}>
+        <a class="carousel-link" href="{{$.Root}}rides/{{$.Ride.Slug}}/{{$p}}" data-lightbox data-caption="{{$.Ride.Title}} — photo {{inc $i}} sur {{$n}}">
+          {{if eq $i 0}}
+          <img src="{{$.Root}}rides/{{$.Ride.Slug}}/{{$p}}" alt="{{$.Ride.Title}} — photo {{inc $i}} sur {{$n}}" fetchpriority="high" decoding="async">
+          {{else}}
+          <img data-src="{{$.Root}}rides/{{$.Ride.Slug}}/{{$p}}" alt="{{$.Ride.Title}} — photo {{inc $i}} sur {{$n}}" decoding="async">
+          {{end}}
+        </a>
+      </figure>
+      {{end}}
+    </div>
+    {{if gt $n 1}}
+    <button type="button" class="carousel-btn carousel-btn--prev" data-carousel-prev aria-label="Photo précédente">&#8249;</button>
+    <button type="button" class="carousel-btn carousel-btn--next" data-carousel-next aria-label="Photo suivante">&#8250;</button>
+    <div class="carousel-bar">
+      <button type="button" class="carousel-toggle" data-carousel-toggle aria-label="Mettre en pause le défilement automatique">
+        <span class="carousel-toggle-icon" aria-hidden="true"></span>
+      </button>
+      <div class="carousel-dots">
+        {{range $i, $p := .Photos}}
+        <button type="button" class="carousel-dot{{if eq $i 0}} is-active{{end}}" data-carousel-dot="{{$i}}" aria-label="Afficher la photo {{inc $i}}"{{if eq $i 0}} aria-current="true"{{end}}></button>
+        {{end}}
+      </div>
+      <span class="carousel-counter" data-carousel-counter aria-live="polite">1 / {{$n}}</span>
+    </div>
+    {{end}}
+  </section>
+  {{end}}
+
+  <!-- 3. Partage et téléchargement -->
+  {{if or $.MetaURL .HasInstagramImage .HasGPX}}
+  <div class="ride-actions">
+    {{if .HasGPX}}
+    <a class="btn btn--primary" href="{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}" download>
+      <span aria-hidden="true">⬇</span> Télécharger le GPX
+    </a>
+    {{end}}
+    {{if or $.MetaURL .HasInstagramImage}}
+    <div class="share-bar" role="group" aria-label="Partager cette sortie">
+      <span class="share-label">Partager :</span>
+      {{if $.MetaURL}}
+      <button type="button" class="share-btn share-btn--native" data-native-share="{{$.MetaURL}}" data-share-title="{{.Title}}" data-share-text="{{$.ShareText}}" hidden>Partager…</button>
+      <a class="share-btn share-btn--fb" href="{{$.ShareFacebook}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur Facebook (nouvelle fenêtre)">Facebook</a>
+      <a class="share-btn share-btn--x" href="{{$.ShareTwitter}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur X (nouvelle fenêtre)">X</a>
+      <a class="share-btn share-btn--wa" href="{{$.ShareWhatsApp}}" target="_blank" rel="noopener noreferrer" aria-label="Partager sur WhatsApp (nouvelle fenêtre)">WhatsApp</a>
+      <a class="share-btn share-btn--mail" href="{{$.ShareEmail}}" aria-label="Partager par e-mail">E-mail</a>
+      <button type="button" class="share-btn share-btn--copy" data-copy-link="{{$.MetaURL}}">Copier le lien</button>
+      {{end}}
+      {{if .HasInstagramImage}}
+      <a class="share-btn share-btn--ig" href="{{$.Root}}rides/{{.Slug}}/instagram.jpg" download
+         data-ig-share="{{$.Root}}rides/{{.Slug}}/instagram.jpg" data-ig-title="{{.Title}}"
+         aria-label="Partager l'image sur Instagram">Instagram</a>
+      {{end}}
+      <span class="share-status sr-only" data-share-status aria-live="polite"></span>
+    </div>
+    {{end}}
   </div>
   {{end}}
 
-  {{if .HasElevationProfile}}
-  <div class="elevation-wrap">
-    <h2 class="elevation-title">Profil altimétrique</h2>
-    {{.ElevationProfileSVG}}
-  </div>
+  <!-- 4. Carte détaillée -->
+  {{if or .HasGPX .Points}}
+  <section class="ride-map-section" aria-label="Carte du parcours">
+    {{if .HasPOIFilter}}
+    <div class="poi-filter" data-poi-filter>
+      <span class="poi-filter-label">Afficher :</span>
+      {{range .POIKinds}}
+      <button type="button" class="poi-filter-btn is-active" data-poi-kind="{{.Icon}}" aria-pressed="true">
+        <span class="poi-filter-swatch poi-filter-swatch--{{.Icon}}" aria-hidden="true"></span>{{.Label}}
+      </button>
+      {{end}}
+    </div>
+    {{end}}
+
+    <div id="map" class="ride-map"></div>
+
+    {{if .HasSlope}}
+    <div class="slope-legend" aria-label="Légende : couleur de la trace selon la pente">
+      <span class="slope-legend-title">Pente :</span>
+      <ul>
+        {{range .SlopeLegend}}<li><span class="slope-swatch" style="background: {{.Color}}" aria-hidden="true"></span>{{.Label}}</li>{{end}}
+      </ul>
+    </div>
+    {{end}}
+
+    {{if .HasSurfaceStats}}
+    <div class="surface-stats">
+      <h2 class="surface-stats-title">Revêtement</h2>
+      <div class="surface-bar">
+        {{if gt .SurfacePavedKm 0.0}}<span class="surface-bar-seg surface-bar-seg--paved" style="width:{{.SurfacePavedPct}}%"></span>{{end}}
+        {{if gt .SurfaceUnpavedKm 0.0}}<span class="surface-bar-seg surface-bar-seg--unpaved" style="width:{{.SurfaceUnpavedPct}}%"></span>{{end}}
+        {{if gt .SurfaceUnknownKm 0.0}}<span class="surface-bar-seg surface-bar-seg--unknown" style="width:{{.SurfaceUnknownPct}}%"></span>{{end}}
+      </div>
+      <ul class="surface-legend">
+        {{if gt .SurfacePavedKm 0.0}}<li><span class="surface-swatch surface-swatch--paved"></span>Route / piste cyclable — {{printf "%.0f" .SurfacePavedKm}} km ({{.SurfacePavedPct}} %)</li>{{end}}
+        {{if gt .SurfaceUnpavedKm 0.0}}<li><span class="surface-swatch surface-swatch--unpaved"></span>Chemin / sentier — {{printf "%.0f" .SurfaceUnpavedKm}} km ({{.SurfaceUnpavedPct}} %)</li>{{end}}
+        {{if gt .SurfaceUnknownKm 0.0}}<li><span class="surface-swatch surface-swatch--unknown"></span>Indéterminé — {{printf "%.0f" .SurfaceUnknownKm}} km ({{.SurfaceUnknownPct}} %)</li>{{end}}
+      </ul>
+    </div>
+    {{end}}
+
+    {{if .HasElevationProfile}}
+    <div class="elevation-wrap">
+      <h2 class="elevation-title">Profil altimétrique</h2>
+      {{.ElevationProfileSVG}}
+    </div>
+    {{end}}
+  </section>
   {{end}}
 
   <p class="disclaimer">
@@ -86,46 +151,36 @@
     <a href="{{$.Root}}mentions-legales.html">mentions légales</a>.
   </p>
 
-  <div class="ride-body">
+  <!-- 5. Description -->
+  <section class="ride-body" aria-label="Description de la sortie">
+    {{if .Summary}}<div class="ride-lead">{{.Summary}}</div>{{end}}
     {{.Body}}
-  </div>
+  </section>
 
-  {{if .RoutePOIs}}
-  <div class="poi-timeline-wrap">
-    <h2 class="poi-summary-title">Points d'intérêt sur le parcours</h2>
-    <div class="poi-timeline-endcap">Départ · 0 km</div>
-    <div class="poi-timeline" style="height:{{.TimelineHeightPx}}px">
-      <div class="poi-timeline-track"></div>
-      {{range .RoutePOIs}}
-      <div class="poi-timeline-item" style="top:{{.TimelineOffsetPx}}px" {{if .Note}}title="{{.Note}}"{{end}}>
-        <span class="poi-timeline-dot poi-filter-swatch--{{.Icon}}"></span>
-        <span class="poi-timeline-label">
-          <span class="poi-timeline-km">{{printf "%.0f" .KmMark}} km</span>
-          <span class="poi-timeline-icon poi-timeline-icon--{{.Icon}}" aria-hidden="true"></span>
-          <span class="poi-timeline-name">{{.Label}}</span>
-        </span>
-      </div>
-      {{end}}
-    </div>
-    <div class="poi-timeline-endcap poi-timeline-endcap--finish">Arrivée · {{printf "%.0f" .DistanceKm}} km</div>
-  </div>
-  {{end}}
-
-  {{if .Photos}}
-  <div class="gallery">
-    {{range .Photos}}
-    <a class="gallery-item" href="{{$.Root}}rides/{{$.Ride.Slug}}/{{.}}" data-lightbox>
-      <img src="{{$.Root}}rides/{{$.Ride.Slug}}/{{.}}" alt="{{$.Ride.Title}}" loading="lazy">
-    </a>
+  <!-- 6. Points d'intérêt -->
+  {{if or .RoutePOIs .OffRoutePOIs}}
+  <section class="poi-section" aria-labelledby="poi-title">
+    <h2 class="poi-summary-title" id="poi-title">Points d'intérêt</h2>
+    {{if .RoutePOIs}}
+    <p class="poi-hint">Dans l'ordre du parcours · cliquez sur un point pour le situer sur la carte.</p>
+    <ol class="poi-list">
+      <li class="poi-endcap">Départ · 0 km</li>
+      {{range .RoutePOIs}}{{template "poi-item" .}}{{end}}
+      {{if $.Ride.HasGPX}}<li class="poi-endcap">Arrivée · {{printf "%.1f" $.Ride.DistanceKm}} km</li>{{end}}
+    </ol>
     {{end}}
-  </div>
+    {{if .OffRoutePOIs}}
+    <h3 class="poi-subtitle">{{if .RoutePOIs}}À l'écart du parcours (plus de 3 km){{else}}Sur la carte{{end}}</h3>
+    <ul class="poi-list">
+      {{range .OffRoutePOIs}}{{template "poi-item" .}}{{end}}
+    </ul>
+    {{end}}
+  </section>
   {{end}}
 </article>
 
 {{if or .HasGPX .Points}}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-{{if .HasGPX}}<script src="https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/gpx.min.js"></script>{{end}}
 <script>window.exports = window.exports || {};</script>
 <script src="https://cdn.jsdelivr.net/npm/@panoramax/web-viewer@5.0.0-develop-025b014a/build/cjs/index.js"></script>
 <script>
@@ -137,9 +192,11 @@
 
   var gmMarkers = [];
   var gmMarkersByKind = {};
-  function gmTrackMarker(kind, marker) {
+  var gmPoiMarkers = {};
+  function gmTrackMarker(kind, marker, id) {
     gmMarkers.push(marker);
     (gmMarkersByKind[kind] = gmMarkersByKind[kind] || []).push(marker);
+    if (id !== undefined) gmPoiMarkers[id] = { marker: marker, kind: kind };
     return marker;
   }
 
@@ -158,36 +215,23 @@
   map.on('click', function (ev) { window.gmHandleTrackClick(ev, map, gmPanoramaxPoints); });
 
   {{if .HasGPX}}
-  new L.GPX('{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}', {
-    async: true,
-    // On ne parse que la trace elle-même : les waypoints (<wpt>) créeraient
-    // un marqueur cliquable par point de cheminement du fichier GPX, ce qui
-    // intercepte les clics destinés à la carte/trace (nos propres POI
-    // viennent de points.md, pas des waypoints du GPX).
-    gpx_options: { parseElements: ['track', 'route'] },
-    marker_options: {
-      startIconUrl: null,
-      endIconUrl: null,
-      shadowUrl: null
-    },
-    polyline_options: { color: '#b8562f', weight: 4, opacity: 0.9 }
-  }).on('loaded', function (e) {
-    map.fitBounds(e.target.getBounds());
-    window.gmEachPolyline(e.target, function (layer) {
-      layer.on('mousemove', function (ev) { map.fire('gm:track-hover', { latlng: ev.latlng }); });
-      layer.on('mouseout', function () { map.fire('gm:track-hover-end'); });
-    });
-  }).addTo(map);
+  // Trace colorisée selon la pente (slope.geojson, pré-calculé par
+  // tools/slope_colors.py), avec repli sur le GPX d'origine en couleur unie.
+  window.gmLoadRideTrack(map, {
+    slopeUrl: {{if .HasSlope}}'{{$.Root}}rides/{{.Slug}}/{{.SlopeFile}}'{{else}}null{{end}},
+    gpxUrl: '{{$.Root}}rides/{{.Slug}}/{{.GPXFile}}',
+    color: '#b8562f'
+  });
 
   {{if .IsLoop}}
-  L.marker([{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], { icon: window.gmIcon('start-finish') })
+  L.marker([{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], { icon: window.gmIcon('start-finish'), title: 'Départ / Arrivée' })
     .bindPopup('Départ / Arrivée')
     .addTo(map);
   {{else}}
-  L.marker([{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], { icon: window.gmIcon('start') })
+  L.marker([{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], { icon: window.gmIcon('start'), title: 'Départ' })
     .bindPopup('Départ')
     .addTo(map);
-  L.marker([{{.EndPoint.Lat}}, {{.EndPoint.Lon}}], { icon: window.gmIcon('finish') })
+  L.marker([{{.EndPoint.Lat}}, {{.EndPoint.Lon}}], { icon: window.gmIcon('finish'), title: 'Arrivée' })
     .bindPopup('Arrivée')
     .addTo(map);
   {{end}}
@@ -196,19 +240,20 @@
   {{range .Points}}
   {{if eq .Type "poi"}}
   gmTrackMarker('{{.Icon}}',
-    L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('{{.Icon}}') })
-      .bindPopup(window.gmPoiPopup('{{.Label}}', '{{.Note}}', {{.Lat}}, {{.Lon}}))
-      .addTo(map)
+    L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('{{.Icon}}'), title: '{{.Label}}' })
+      .bindPopup(window.gmPoiPopup('{{.Label}}', '{{.Note}}', {{.Lat}}, {{.Lon}}, {{if .HasKmMark}}{{.KmMark}}{{else}}null{{end}}, '{{poiKindLabel .Icon}}'))
+      .addTo(map),
+    {{.ID}}
   );
   {{else if eq .Type "photo"}}
   gmTrackMarker('photo',
-    L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('photo') })
+    L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('photo'), title: 'Photo' })
       .on('click', function () { window.gmOpenPhoto('{{$.Root}}rides/{{$.Ride.Slug}}/{{.PhotoRel}}', '{{.Caption}}'); })
       .addTo(map)
   );
   {{else if eq .Type "panoramax"}}
   gmTrackMarker('panoramax',
-    L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('panoramax') })
+    L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('panoramax'), title: '{{.Label}}' })
       .bindPopup(window.gmPoiPopup('{{.Label}}', '360° · cliquez le marqueur pour ouvrir la visionneuse'))
       .on('click', function () { window.gmOpenPanoramax('{{.Endpoint}}', '{{.Sequence}}', '{{.Picture}}'); })
       .addTo(map)
@@ -230,8 +275,22 @@
   window.gmInitPOIFilter(document.querySelector('[data-poi-filter]'), gmMarkersByKind, document.querySelector('.elevation-profile'), map);
   {{end}}
 
+  window.gmInitPOIList(document.querySelector('.poi-section'), map, gmPoiMarkers, document.querySelector('[data-poi-filter]'));
   window.gmInitLocateMe(map);
 </script>
 {{end}}
 {{end}}
+{{end}}
+
+{{define "poi-item"}}
+<li class="poi-row">
+  <button type="button" class="poi-item" data-poi-id="{{.ID}}">
+    {{if .HasKmMark}}<span class="poi-km">{{printf "%.1f" .KmMark}} km</span>{{end}}
+    <span class="poi-icon poi-icon--{{.Icon}}" aria-hidden="true"></span>
+    <span class="poi-text">
+      <span class="poi-label">{{.Label}}</span>
+      <span class="poi-kind">{{poiKindLabel .Icon}}{{if .Note}} · {{.Note}}{{end}}</span>
+    </span>
+  </button>
+</li>
 {{end}}

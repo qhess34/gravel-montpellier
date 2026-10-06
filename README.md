@@ -15,10 +15,28 @@ Créez un dossier dans `rides/`, avec un nom court sans espace ni accent
 rides/tour-du-pic-saint-loup/
 ├── description.md      (obligatoire)
 ├── track.gpx            (optionnel, un seul fichier .gpx par sortie)
+├── points.md            (optionnel, POI / photos / vues 360°)
+├── slope.geojson        (généré par tools/slope_colors.py — ne pas éditer)
 └── photos/               (optionnel)
-    ├── depart.jpg
+    ├── 0.jpg             (la 1re par ordre alphabétique sert de couverture)
     └── single.jpg
 ```
+
+**Checklist pour ajouter une sortie :**
+
+1. Créer `rides/<slug>/` et y déposer le `.gpx` (export Komoot, Strava…).
+2. Écrire `description.md` : frontmatter (`title`, `date`, `difficulty`,
+   `departure`, `tags`…), puis un court texte d'introduction — **la
+   synthèse** — suivi d'un titre `## Le parcours` et du détail (voir
+   ci-dessous).
+3. Ajouter les photos dans `photos/` (préfixez la photo de couverture par
+   `0` pour qu'elle passe en premier, ex : `0.jpg`).
+4. Optionnel : générer les POI avec `python3 tools/find_supplies.py rides/<slug>`
+   et le revêtement avec `python3 tools/surface_stats.py rides/<slug>`.
+5. Générer la trace colorisée selon la pente :
+   `python3 tools/slope_colors.py rides/<slug>` (et commiter `slope.geojson`).
+6. Vérifier en local : `go run ./cmd/generator` puis
+   `python3 -m http.server --directory public`.
 
 ### description.md
 
@@ -43,41 +61,60 @@ Champs du frontmatter (toutes optionnelles sauf `title`) :
 | `date`        | Date affichée (texte libre) et utilisée pour trier les sorties     |
 | `distance_km` | Distance en km. **Si absent, calculée automatiquement depuis le GPX** |
 | `elevation_m` | Dénivelé positif en m. **Si absent, calculé depuis le GPX**        |
-| `difficulty`  | Ex : Facile / Modéré / Difficile                                   |
+| `difficulty`  | Facile / Moyenne / Difficile / Très difficile (les variantes « Moyen », « Modéré »… sont regroupées dans le filtre ; la valeur saisie reste affichée telle quelle) |
+| `duration`    | Durée estimée, texte libre (ex : `4 h 30`). **Si absent, déduite des tags « 1 jour », « 2 jours »…** (ex : « 2 à 5 jours ») ; sans l'un ni l'autre, aucune durée n'est affichée |
+| `color`       | Couleur de la trace sur la carte d'accueil (`#rrggbb`). Optionnel : une couleur stable est attribuée automatiquement |
 | `departure`   | Lieu de départ                                                     |
 | `tags`        | Liste séparée par des virgules                                     |
 | `surface_paved_km` / `surface_unpaved_km` | Km revêtu/non revêtu — généralement pas saisis à la main, voir `tools/surface_stats.py` plus bas |
 
-> Astuce tri : pour un tri chronologique fiable, utilisez un format
-> `date: 2026-06-15` (les sorties sont triées par ordre alphabétique
-> décroissant de ce champ).
+> Tri : les sorties sont triées de la plus récente à la plus ancienne.
+> Les formats `2026-06-15`, `15/06/2026` et `15 juin 2026` sont reconnus.
 
-**Filtre par tags sur l'accueil :** dès qu'au moins une sortie a des
-`tags`, une barre de filtre apparaît automatiquement sur la page
-d'accueil (aucune configuration à faire). Cliquer sur un ou plusieurs
-tags affiche uniquement les sorties qui les ont tous (filtrage cumulatif,
-pas de rechargement de page) ; « Toutes les sorties » réinitialise. Le
-filtre actif est mémorisé dans l'URL (`#tags=...`), donc partageable ou
-rechargeable tel quel.
+**Synthèse (accroche) :** le texte situé entre la fin du frontmatter (la
+ligne `---` qui le referme) et le titre `## Le parcours` est extrait
+automatiquement comme synthèse de la sortie. Elle est affichée dans la
+popup de la carte d'accueil, sur le cartouche de la sortie (tronquée
+visuellement) et sert de meta description. Sur la fiche, elle apparaît
+une seule fois, en chapô, juste avant `## Le parcours`. Sans titre
+`## Le parcours`, la synthèse s'arrête au premier titre ; sans aucun
+titre, c'est le premier paragraphe.
+
+**Filtres sur l'accueil :** une barre de filtres par **difficulté** et par
+**tags** apparaît automatiquement. Les tags sont cumulatifs (une sortie
+doit les avoir tous), les difficultés au choix (Facile *ou* Moyenne…).
+Les filtres agissent à la fois sur les traces de la carte et sur les
+cartouches ; « Toutes les sorties » réinitialise. L'état est mémorisé
+dans l'URL (`#tags=...&difficulte=...`), donc partageable. Sur mobile, la
+liste des tags est repliée derrière le bouton « Tags ».
+
 
 ### track.gpx
 
 Un seul fichier `.gpx` par dossier de sortie. S'il est présent :
-- il est affiché tel quel sur une carte (OpenStreetMap + Leaflet) sur la page de la sortie, avec un bouton **« Me localiser »** intégré à la carte à côté du zoom (géolocalisation du navigateur, avec son autorisation) pour voir sa propre position dessus,
+- sa trace (simplifiée) apparaît sur la **carte d'accueil**, avec une couleur propre à la sortie ; cliquer dessus ouvre une popup (photo, synthèse, difficulté, durée, D+, bouton « Voir la sortie »), survoler un cartouche met sa trace en évidence,
+- il est affiché sur une carte (OpenStreetMap + Leaflet) sur la page de la sortie, **colorisé selon la pente** (voir « Colorisation des traces selon la pente »), avec un bouton **« Me localiser »** intégré à la carte à côté du zoom (géolocalisation du navigateur, avec son autorisation) pour voir sa propre position dessus,
 - une **estimation du revêtement** (route/piste cyclable vs chemin/sentier) peut être affichée sous forme de barre + pourcentages sous la carte, si `description.md` contient les champs `surface_paved_km`/`surface_unpaved_km` — voir `tools/surface_stats.py` ci-dessous pour les calculer automatiquement,
 - un **profil altimétrique** est généré automatiquement (SVG, sans JavaScript) sous la carte, avec les points d'eau/boulangeries repérés au bon endroit ; survoler la carte ou le profil affiche le point correspondant sur l'autre (et inversement),
-- il est proposé au téléchargement,
+- il est proposé au téléchargement (fichier original, non modifié),
 - la distance et le dénivelé sont calculés automatiquement si vous ne les
   avez pas renseignés dans `description.md`.
 
 ### photos/
 
 Toutes les images (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`) placées dans
-ce dossier sont listées en galerie sur la page de la sortie. La première
-(ordre alphabétique) sert de vignette sur la page d'accueil — et s'il y a
-plusieurs photos, elles défilent automatiquement au survol de la carte de
-la sortie sur l'accueil (repos = retour à la première). Cliquer sur
-une photo de la galerie l'ouvre en grand (lightbox).
+ce dossier sont présentées dans un **carrousel** en haut de la page de la
+sortie : une photo à la fois, défilement automatique en fondu (en boucle),
+flèches, points de navigation, clavier (← →) et balayage tactile. Le
+défilement s'interrompt dès qu'on interagit et reprend après 10 s
+d'inactivité ; un bouton permet de le mettre en pause, et il ne démarre
+pas si le système demande de réduire les animations. Cliquer sur une
+photo l'ouvre en grand (lightbox). La première photo (ordre alphabétique)
+sert de vignette sur l'accueil et dans la popup de la carte — et s'il y a
+plusieurs photos, elles défilent au survol du cartouche.
+
+**Miniatures :** au build, une miniature (640 px) de chaque photo est
+générée dans `photos/thumbs/` du site publié, pour alléger l'accueil.
 
 **Allègement automatique :** au moment du build, les photos `.jpg`/`.jpeg`
 et `.png` dont le plus grand côté dépasse **1024 px** sont réduites à
@@ -174,16 +211,13 @@ le masque à la fois sur la carte et sur le profil altimétrique (et
 inversement pour le réafficher) — pratique pour isoler par exemple
 seulement les points d'eau sur une longue sortie chargée en POI.
 
-**Liste compacte sur le parcours :** pour une sortie avec trace GPX,
-tout point `type: poi` (quel que soit son `icon`) est automatiquement
-projeté sur la trace pour en déduire son point kilométrique (PK), et
-listé sous forme de petites étiquettes compactes (« PK 22 · Ravitaillement »)
-sous la description — rien à écrire en plus, ça vient uniquement de ce
-que vous avez déjà mis dans `points.md`. Un point à plus de 3 km de la
-trace n'est pas considéré comme « sur le parcours » et n'apparaît pas
-dans cette liste (il reste affiché sur la carte). La note, si présente,
-s'affiche au survol de l'étiquette plutôt que de prendre de la place en
-permanence.
+**Liste des points d'intérêt :** pour une sortie avec trace GPX, tout
+point `type: poi` (quel que soit son `icon`) est automatiquement projeté
+sur la trace pour en déduire son point kilométrique (PK), et listé sous la
+description dans l'ordre du parcours : PK, icône, label, type et note.
+Cliquer sur un point de la liste centre la carte dessus et ouvre sa popup.
+Un point à plus de 3 km de la trace n'a pas de PK : il est listé à part
+(« À l'écart du parcours »).
 
 Une sortie sans trace GPX peut quand même afficher une carte si elle
 contient des points dans `points.md` — la carte se cadre alors
@@ -311,6 +345,58 @@ python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --out apercu.
 > API n'est pas disponible, le bouton télécharge simplement l'image :
 > à vous de la partager depuis l'app Instagram.
 
+## Colorisation des traces selon la pente
+
+Sur la page d'une sortie, la trace est colorée selon la **pente locale** :
+bleu foncé/bleu clair pour les descentes, gris pour le plat, puis vert,
+jaune, orange et rouge pour les montées de plus en plus raides (une
+légende est affichée sous la carte, et survoler un tronçon affiche sa
+pente et ses kilomètres). Sur la carte d'accueil, chaque sortie garde au
+contraire sa propre couleur.
+
+Les pentes sont **pré-calculées** par `tools/slope_colors.py` (Python 3.8+,
+bibliothèque standard uniquement, aucun accès réseau), qui écrit
+`rides/<sortie>/slope.geojson` : un GeoJSON de tronçons (`LineString`),
+chacun avec `slope_pct`, `start_km`, `end_km`, `ele_start`, `ele_end`,
+`class`, `label` et `color`. Le navigateur se contente de l'afficher.
+
+```bash
+# (Re)générer toutes les sorties — à relancer après toute modification d'un GPX
+python3 tools/slope_colors.py
+
+# Une sortie précise
+python3 tools/slope_colors.py rides/clapiers-corconne
+
+# Vérifier que tout est à jour, sans rien écrire (code de sortie 1 sinon)
+python3 tools/slope_colors.py --check
+
+# Forcer la régénération (après avoir modifié les seuils, par exemple)
+python3 tools/slope_colors.py --force
+```
+
+Le script ne touche jamais aux GPX. Il enregistre l'empreinte SHA-256 du
+GPX dans le GeoJSON : si le GPX change sans que le script soit relancé, le
+générateur Go le détecte, affiche un avertissement, et la fiche montre la
+trace d'origine en couleur unie (repli également utilisé si le fichier
+est absent ou ne se charge pas, avec un message dans la console du
+navigateur). En CI, le script est relancé avant chaque build.
+
+**Réglages** (en tête du script) : `SLOPE_CLASSES` (seuils, libellés,
+couleurs), `SEGMENT_LENGTH_M` (100 m), `SMOOTHING_WINDOW_M` (150 m),
+`MAX_MERGED_LENGTH_M`, `MIN_VALID_ELEVATION_RATIO`.
+
+**Méthode et limites :** distance cumulée (haversine) ; altitudes
+manquantes ou aberrantes interpolées ; altitude ré-échantillonnée tous les
+10 m puis lissée par moyenne glissante sur 150 m (le bruit altimétrique
+d'un point à l'autre donnerait sinon des pentes fantaisistes) ; pente
+calculée sur des tronçons d'au moins 100 m ; tronçons consécutifs de même
+classe fusionnés. Si moins de la moitié des points ont une altitude, la
+trace est sortie en gris « Altitude indisponible » plutôt qu'avec de
+fausses pentes. Les GPX Komoot actuels ont des altitudes issues d'un
+modèle de terrain, assez régulières ; un enregistrement GPS brut est plus
+bruité. Un mur très court (< 100 m) est lissé : c'est une indication de
+l'effort, pas une mesure topographique.
+
 ## Le footer
 
 Le contenu de `content/footer.md` (markdown simple, pas de frontmatter)
@@ -377,8 +463,11 @@ visites de test — seul le build via la CI (déploiement réel) l'active.
 
 ## Partage (Facebook, WhatsApp, X, e-mail) et aperçu d'image
 
-Chaque page de sortie affiche automatiquement des boutons de partage —
-rien à faire dans `description.md`. Ça repose sur l'URL publique du
+Chaque page de sortie affiche automatiquement des boutons de partage
+(Facebook, X, WhatsApp, e-mail, « Copier le lien » avec confirmation, et
+« Partager… » via le partage natif du navigateur quand il est disponible,
+essentiellement sur mobile) ainsi que le téléchargement du GPX — rien à
+faire dans `description.md`. Ça repose sur l'URL publique du
 site, connue via `-site-url` — par défaut déjà réglée sur
 `https://montpellier.cycloexplore.fr` (inutile d'y toucher sauf pour
 tester ailleurs) :
@@ -401,8 +490,9 @@ par ailleurs configurer une fois le DNS (enregistrement CNAME de
 *Settings → Pages* du dépôt.
 
 L'image d'aperçu utilisée est la première photo (ordre alphabétique) du
-dossier `photos/` de la sortie ; sans photo, seuls le titre et un court
-résumé (distance, dénivelé, difficulté) sont utilisés dans l'aperçu.
+dossier `photos/` de la sortie. La description d'aperçu (et la meta
+description) est la synthèse de `description.md`, à défaut un court
+résumé (distance, dénivelé, difficulté).
 
 ## Générer le site localement
 
@@ -480,13 +570,49 @@ seule fois puis réutilise le cache.
 Aucun token à configurer : le workflow utilise les permissions
 `pages`/`id-token` fournies automatiquement par GitHub Actions.
 
+## Tests
+
+```bash
+go vet ./... && go test ./...                          # générateur Go
+python3 -m unittest discover -s tools -p "test_*.py"   # script des pentes
+```
+
+Les deux sont aussi exécutés par la CI avant chaque déploiement.
+
+## Architecture
+
+- **Générateur Go sans dépendance** : lit `rides/`, calcule les données
+  dérivées (synthèse, durée, difficulté normalisée, couleur, PK des POI,
+  profil), publie photos + miniatures, GPX d'origine et `slope.geojson`,
+  puis rend les gabarits `html/template`. Toutes les pages sont statiques
+  et indexables (titres, meta description issue de la synthèse, Open
+  Graph, JSON-LD, sitemap).
+- **Accueil** : la carte Leaflet reçoit les traces simplifiées (≤ 300
+  points) directement intégrées à la page en JSON — aucun GPX téléchargé ;
+  les cartouches sont du HTML classique. `script.js` synchronise filtres,
+  carte et cartouches.
+- **Fiche** : un seul fichier de trace téléchargé (`slope.geojson`, ou le
+  GPX en repli). Le profil altimétrique est un SVG généré au build.
+- **Couleurs stables** : chaque sortie vise la couleur désignée par un hash
+  de son slug dans une palette de 12 couleurs contrastées, et prend la
+  suivante libre si elle est prise ; les sorties sont servies de la plus
+  ancienne à la plus récente, donc ajouter une sortie ne change pas les
+  couleurs existantes. Le champ `color` permet d'imposer une couleur.
+- **Bibliothèques externes** (CDN, inchangées) : Leaflet 1.9.4 et la
+  visionneuse Panoramax. Le plugin leaflet-gpx n'est plus nécessaire (la
+  trace est lue en GeoJSON, ou le GPX analysé directement en repli).
+
 ## Structure du projet
 
 ```
 cmd/generator/        point d'entrée (main.go)
 internal/site/         logique du générateur (frontmatter, markdown, gpx, build)
+internal/site/meta.go     synthèse, difficulté, durée, dates, couleurs des sorties
+internal/site/slope.go    lecture/vérification de slope.geojson
+internal/site/homemap.go  données de la carte d'accueil
+internal/site/images.go   réduction des photos et miniatures
 internal/site/templates/  gabarits HTML (mise en forme, à ne modifier que si besoin)
-internal/site/static/     CSS du site
+internal/site/static/     CSS et JavaScript du site
 content/footer.md      pied de page, modifiable
 content/mentions-legales.md  page mentions légales, modifiable
 rides/                  une sortie = un dossier
@@ -496,6 +622,7 @@ docker-compose.yml      boucle de dev : régénération + aperçu local
 tools/find_supplies.py  recherche interactive de POI utiles (OSM)
 tools/surface_stats.py  estimation du revêtement, écrit dans description.md (OSM)
 tools/make_instagram_image.py  image de partage Instagram (nécessite Pillow)
+tools/slope_colors.py   colorisation des traces selon la pente (écrit slope.geojson)
 ```
 
 Vous n'avez normalement besoin de toucher qu'à `rides/`,
