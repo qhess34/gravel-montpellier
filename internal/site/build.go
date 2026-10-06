@@ -5,9 +5,11 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+	"math"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -37,6 +39,7 @@ type pageData struct {
 	Ride      *Ride
 	AllTags   []string
 
+	Hero            *heroData          // bandeau de l'accueil (photo, chiffres clés)
 	AllDifficulties []DifficultyOption // valeurs du filtre par difficulté (accueil)
 	HomeMapJSON     template.JS        // traces simplifiées + infos des popups (carte d'accueil)
 	UmamiID         string
@@ -234,6 +237,7 @@ func Build(opts Options) error {
 		UmamiID:   opts.UmamiID,
 		BuildInfo: buildInfo,
 
+		Hero:            buildHero(rides),
 		AllDifficulties: collectDifficulties(rides),
 		HomeMapJSON:     homeMapJSON(rides, ""),
 	}
@@ -357,6 +361,49 @@ func loadMarkdownFile(path string) (template.HTML, error) {
 		return "", err
 	}
 	return Markdown(string(data)), nil
+}
+
+// heroData : contenu du bandeau de la page d'accueil.
+type heroData struct {
+	Image     string // photo de fond (couverture de la sortie la plus récente), chemin relatif
+	Rides     int
+	Km        string // distance cumulée de toutes les traces, ex « 618 »
+	Elevation string // dénivelé positif cumulé, ex « 5 371 »
+}
+
+// buildHero calcule le bandeau de l'accueil ; nil sans aucune sortie.
+func buildHero(rides []*Ride) *heroData {
+	if len(rides) == 0 {
+		return nil
+	}
+	h := &heroData{Rides: len(rides)}
+	km, ele := 0.0, 0
+	for _, r := range rides {
+		km += r.DistanceKm
+		ele += r.ElevationM
+		if h.Image == "" && len(r.Photos) > 0 {
+			h.Image = "rides/" + r.Slug + "/" + urlPathEscape(r.Photos[0])
+		}
+	}
+	if km > 0 {
+		h.Km = thousands(int(math.Round(km)))
+	}
+	if ele > 0 {
+		h.Elevation = thousands(ele)
+	}
+	return h
+}
+
+// thousands formate un entier à la française (espace insécable fine
+// comme séparateur de milliers) : 5371 -> « 5 371 ».
+func thousands(n int) string {
+	s := strconv.Itoa(n)
+	var out []string
+	for len(s) > 3 {
+		out = append([]string{s[len(s)-3:]}, out...)
+		s = s[:len(s)-3]
+	}
+	return strings.Join(append([]string{s}, out...), "\u202f")
 }
 
 // writeNotFoundPage génère 404.html, servie par GitHub Pages (et nginx en
