@@ -31,39 +31,39 @@ label: Route fréquentée
 note: Attention à la circulation
 
 
----
-
-type: panoramax
-picture: fc628a5a-4080-4828-80b8-1db1e84d2562
-label: Vue à 360
-
-
----
-
-type: panoramax
-picture: 50df6e29-088a-4ec9-83de-df443210d348
-label: Belle piste
-
----
-
-type: panoramax
-picture: 42f30aa1-e038-47d0-90e3-a3130c0d50dd
-label: Coin pause
-
----
-
-type: panoramax
-picture: cc7507e1-1053-4ad0-80d2-ec8e0f655b70
-label: Traversée dans les vignes
-
----
-
-type: panoramax
-picture: a75d8b18-2b8e-441b-b922-9e2b043eb06f
-label: Jolie vue sur Montpellier et la mer
-
-
-
+#---
+#
+#type: panoramax
+#picture: fc628a5a-4080-4828-80b8-1db1e84d2562
+#label: Vue à 360
+#
+#
+#---
+#
+#type: panoramax
+#picture: 50df6e29-088a-4ec9-83de-df443210d348
+#label: Belle piste
+#
+#---
+#
+#type: panoramax
+#picture: 42f30aa1-e038-47d0-90e3-a3130c0d50dd
+#label: Coin pause
+#
+#---
+#
+#type: panoramax
+#picture: cc7507e1-1053-4ad0-80d2-ec8e0f655b70
+#label: Traversée dans les vignes
+#
+#---
+#
+#type: panoramax
+#picture: a75d8b18-2b8e-441b-b922-9e2b043eb06f
+#label: Jolie vue sur Montpellier et la mer
+#
+#
+#
 ---
 
 type: poi

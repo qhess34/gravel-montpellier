@@ -372,27 +372,27 @@ lat: 43.496152
 lon: 2.402094
 label: Bout-du-Pont-de-Larn — Mazbike
 
----
-type: panoramax
-picture: 52f3ce88-9606-49b4-91e3-b77e58eb3f40
-
----
-type: panoramax
-picture: 22817860-65f6-4c24-bd57-ad159fb076a3
-
---- 
-type: panoramax
-picture: 2d1c3d47-1460-4bb4-8663-0a702695dff7
-
----
-type: panoramax
-picture: ccd3f624-8a5f-42f2-9a1c-a3105ff5c3b6
-
----
-type: panoramax
-picture: 732433d4-3e9d-4382-8227-b5fa8bb340c6
-
-
+#---
+#type: panoramax
+#picture: 52f3ce88-9606-49b4-91e3-b77e58eb3f40
+#
+#---
+#type: panoramax
+#picture: 22817860-65f6-4c24-bd57-ad159fb076a3
+#
+#--- 
+#type: panoramax
+#picture: 2d1c3d47-1460-4bb4-8663-0a702695dff7
+#
+#---
+#type: panoramax
+#picture: ccd3f624-8a5f-42f2-9a1c-a3105ff5c3b6
+#
+#---
+#type: panoramax
+#picture: 732433d4-3e9d-4382-8227-b5fa8bb340c6
+#
+#
 ---
 
 type: poi

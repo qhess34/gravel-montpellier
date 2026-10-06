@@ -382,66 +382,66 @@ lon: 3.895493
 label: Montpellier — Point d'eau
 
 
----
-
-type: panoramax
-picture: d57d0140-61b5-4fb2-af56-9815444b0ce1
-label: Hotel de ville de Montpellier
-
----
-
-type: panoramax
-picture: e418a88b-4a30-4db1-ae0b-1c0740bfdc76
-label: Retro litorale
-
----
-
-type: panoramax
-picture: aec31b2f-4d87-45b3-b9f8-7b550a2c300a
-label: Une pause à Poussan
-
----
-
-type: panoramax
-picture: 3391343b-b244-4b7c-9370-b0c431eb2609
-label: Passerelle D613
-
----
-
-type: panoramax
-picture: e9e46d05-8f47-493b-9d06-8846d9947978
-label: Corniche de Sète
-
----
-
-type: panoramax
-picture: b51b30f7-6f73-4b46-b0df-09429b12dc30
-label: Quais de Sète
-
----
-
-type: panoramax
-picture: 8e9f7aef-984d-44ab-8efa-b6cdcb509bc8
-label: Etangs à Frontignan
-
----
-
-type: panoramax
-picture: 1e402c1d-c016-4b42-839e-d13347748afd
-label: Aresquiers
-
----
-
-type: panoramax
-picture: cc698c46-68a3-475d-a294-c29d8dcc816f
-label: Canal du Rhône à Sète
-
----
-type: panoramax
-picture: 2033a9fe-a627-4fd1-b47d-86f2f0382985
-label: Villeneuve-lès-Maguelone
-
----
-type: panoramax
-picture: 340cb7fa-8970-416c-b663-e4f6dc79b313
-label: Voie verte Palavas - Montpellier
+#---
+#
+#type: panoramax
+#picture: d57d0140-61b5-4fb2-af56-9815444b0ce1
+#label: Hotel de ville de Montpellier
+#
+#---
+#
+#type: panoramax
+#picture: e418a88b-4a30-4db1-ae0b-1c0740bfdc76
+#label: Retro litorale
+#
+#---
+#
+#type: panoramax
+#picture: aec31b2f-4d87-45b3-b9f8-7b550a2c300a
+#label: Une pause à Poussan
+#
+#---
+#
+#type: panoramax
+#picture: 3391343b-b244-4b7c-9370-b0c431eb2609
+#label: Passerelle D613
+#
+#---
+#
+#type: panoramax
+#picture: e9e46d05-8f47-493b-9d06-8846d9947978
+#label: Corniche de Sète
+#
+#---
+#
+#type: panoramax
+#picture: b51b30f7-6f73-4b46-b0df-09429b12dc30
+#label: Quais de Sète
+#
+#---
+#
+#type: panoramax
+#picture: 8e9f7aef-984d-44ab-8efa-b6cdcb509bc8
+#label: Etangs à Frontignan
+#
+#---
+#
+#type: panoramax
+#picture: 1e402c1d-c016-4b42-839e-d13347748afd
+#label: Aresquiers
+#
+#---
+#
+#type: panoramax
+#picture: cc698c46-68a3-475d-a294-c29d8dcc816f
+#label: Canal du Rhône à Sète
+#
+#---
+#type: panoramax
+#picture: 2033a9fe-a627-4fd1-b47d-86f2f0382985
+#label: Villeneuve-lès-Maguelone
+#
+#---
+#type: panoramax
+#picture: 340cb7fa-8970-416c-b663-e4f6dc79b313
+#label: Voie verte Palavas - Montpellier

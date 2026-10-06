@@ -190,29 +190,29 @@ lon: 3.895493
 label: Montpellier — Point d'eau
 
 
----
-
-type: panoramax
-picture: d57d0140-61b5-4fb2-af56-9815444b0ce1
-label: Hotel de ville de Montpellier
-
-
----
-
-type: panoramax
-picture: 277206c1-e719-419d-bdb5-7ddcb2e877e7
-label: Canal du Rhône à Sète
-
----
-
-type: panoramax
-picture: acabfa11-c0e8-4358-9e9b-e497597bb523
-label: Petit Travers
-
----
-
-type: panoramax
-picture: 794d0b3d-cb95-4944-87a4-f1852d310b0f
-label: Piste jusqu'à Aigues-Mortes
-
-
+#---
+#
+#type: panoramax
+#picture: d57d0140-61b5-4fb2-af56-9815444b0ce1
+#label: Hotel de ville de Montpellier
+#
+#
+#---
+#
+#type: panoramax
+#picture: 277206c1-e719-419d-bdb5-7ddcb2e877e7
+#label: Canal du Rhône à Sète
+#
+#---
+#
+#type: panoramax
+#picture: acabfa11-c0e8-4358-9e9b-e497597bb523
+#label: Petit Travers
+#
+#---
+#
+#type: panoramax
+#picture: 794d0b3d-cb95-4944-87a4-f1852d310b0f
+#label: Piste jusqu'à Aigues-Mortes
+#
+#

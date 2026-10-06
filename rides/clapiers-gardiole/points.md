@@ -1,45 +1,45 @@
----
-type: panoramax
-picture: 6f4ab080-f47c-482a-a261-4581208fad3b
-label: Émetteur de Bionne
-
----
-type: panoramax
-picture: ce4b1984-b08d-481b-8ed0-26ca9b620ac6
-label: Belle piste
-
----
-type: panoramax
-picture: 48c4fa00-ee5a-458e-a922-65aafa7dad1a
-label: Chemin de traverse
-
----
-type: panoramax
-picture: e532955a-949c-4767-b61c-099bdb54ea32
-label: Montée de l'Abbaye
-
----
-type: panoramax
-picture: 50ee271c-9393-48d7-b1f8-578be9d27ce5
-label: Belle vue
-
----
-type: panoramax
-picture: d5c2d2ca-6598-4382-8817-013126ae75d1
-label: Circuit GoodYear
-
----
-type: panoramax
-picture: 352a2d73-34ae-4610-94d9-f6d564d1f58e
-label: Sous l'autoroute
-
----
-type: panoramax
-picture: 90df4f79-20c2-49a6-be3b-62ee9fdec226
-label: Ancienne route sous les platanes
-
-
-
+#---
+#type: panoramax
+#picture: 6f4ab080-f47c-482a-a261-4581208fad3b
+#label: Émetteur de Bionne
+#
+#---
+#type: panoramax
+#picture: ce4b1984-b08d-481b-8ed0-26ca9b620ac6
+#label: Belle piste
+#
+#---
+#type: panoramax
+#picture: 48c4fa00-ee5a-458e-a922-65aafa7dad1a
+#label: Chemin de traverse
+#
+#---
+#type: panoramax
+#picture: e532955a-949c-4767-b61c-099bdb54ea32
+#label: Montée de l'Abbaye
+#
+#---
+#type: panoramax
+#picture: 50ee271c-9393-48d7-b1f8-578be9d27ce5
+#label: Belle vue
+#
+#---
+#type: panoramax
+#picture: d5c2d2ca-6598-4382-8817-013126ae75d1
+#label: Circuit GoodYear
+#
+#---
+#type: panoramax
+#picture: 352a2d73-34ae-4610-94d9-f6d564d1f58e
+#label: Sous l'autoroute
+#
+#---
+#type: panoramax
+#picture: 90df4f79-20c2-49a6-be3b-62ee9fdec226
+#label: Ancienne route sous les platanes
+#
+#
+#
 
 ---
 
