@@ -77,25 +77,91 @@
     }
   };
 
-  window.gmOpenPanoramax = function (endpoint, sequence, picture) {
-    // Le composant se base sur la query string de la page (ex: ?focus=pic&pic=...)
-    // avant l'attribut "picture" si elle est présente. On la vide pour être
-    // certain qu'il utilise bien la photo qu'on lui demande.
-    if (window.location.search) {
-      window.history.replaceState(null, "", window.location.pathname + window.location.hash);
-    }
+  // Visionneuse Panoramax : même principe que le userscript
+  // tampermonkey-komoot-panoramax — une grande fenêtre en superposition
+  // (bandeau « Panoramax » + ✕) qui affiche dans une iframe l'interface web
+  // officielle de Panoramax, centrée sur la photo (?focus=pic&pic=<id>).
+  // Fermeture : ✕, Échap ou clic à côté de la fenêtre.
+  var gmPanoramaxPopup = null;
+  var gmPanoramaxReturnFocus = null;
 
-    var wrap = document.createElement("div");
-    wrap.className = "gm-panoramax";
+  // URL de l'interface web d'une instance à partir de son API
+  // (https://api.panoramax.xyz/api -> https://api.panoramax.xyz/).
+  function gmPanoramaxViewerURL(endpoint, picture) {
+    var base = (endpoint || "https://api.panoramax.xyz/api").replace(/\/+$/, "").replace(/\/api$/, "");
+    return base + "/?focus=pic&pic=" + encodeURIComponent(picture);
+  }
 
-    var el = document.createElement("pnx-photo-viewer");
-    el.setAttribute("endpoint", endpoint);
-    if (sequence) el.setAttribute("sequence", sequence);
-    el.setAttribute("picture", picture);
-    el.setAttribute("widgets", "false");
-    wrap.appendChild(el);
+  function gmClosePanoramax() {
+    if (!gmPanoramaxPopup) return;
+    gmPanoramaxPopup.remove();
+    gmPanoramaxPopup = null;
+    document.body.classList.remove("gm-modal-lock");
+    if (gmPanoramaxReturnFocus && gmPanoramaxReturnFocus.focus) gmPanoramaxReturnFocus.focus();
+    gmPanoramaxReturnFocus = null;
+  }
 
-    openModal(wrap);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") gmClosePanoramax();
+  });
+
+  // sequence est conservé dans la signature (points.md le fournit) mais
+  // l'interface web retrouve la séquence à partir de la photo seule.
+  window.gmOpenPanoramax = function (endpoint, sequence, picture, label) {
+    gmClosePanoramax();
+    var url = gmPanoramaxViewerURL(endpoint, picture);
+    gmPanoramaxReturnFocus = document.activeElement;
+
+    var popup = document.createElement("div");
+    popup.id = "panoramax-popup";
+    popup.setAttribute("role", "dialog");
+    popup.setAttribute("aria-modal", "true");
+    popup.setAttribute("aria-label", "Vue 360° Panoramax" + (label ? " — " + label : ""));
+
+    var overlay = document.createElement("div");
+    overlay.className = "pmx-overlay";
+
+    var header = document.createElement("div");
+    header.className = "pmx-header";
+    var title = document.createElement("span");
+    title.className = "pmx-title";
+    title.textContent = "Panoramax" + (label ? " · " + label : "");
+    var actions = document.createElement("span");
+    actions.className = "pmx-actions";
+    var open = document.createElement("a");
+    open.href = url;
+    open.target = "_blank";
+    open.rel = "noopener noreferrer";
+    open.textContent = "↗";
+    open.title = "Ouvrir dans Panoramax (nouvel onglet)";
+    open.setAttribute("aria-label", "Ouvrir dans Panoramax (nouvel onglet)");
+    var close = document.createElement("button");
+    close.type = "button";
+    close.textContent = "✕";
+    close.setAttribute("aria-label", "Fermer la vue Panoramax");
+    close.addEventListener("click", gmClosePanoramax);
+    actions.appendChild(open);
+    actions.appendChild(close);
+    header.appendChild(title);
+    header.appendChild(actions);
+
+    var iframe = document.createElement("iframe");
+    iframe.src = url;
+    iframe.title = "Visionneuse Panoramax";
+    iframe.setAttribute("allowfullscreen", "");
+    iframe.setAttribute("allow", "fullscreen; geolocation");
+
+    overlay.appendChild(header);
+    overlay.appendChild(iframe);
+    popup.appendChild(overlay);
+    popup.addEventListener("click", function (e) {
+      if (e.target === popup) gmClosePanoramax();
+    });
+
+    document.body.appendChild(popup);
+    document.body.classList.add("gm-modal-lock");
+    gmPanoramaxPopup = popup;
+    close.focus();
   };
 
   // Clic sur la trace : si une vue Panoramax existe à proximité du point
@@ -128,7 +194,7 @@
     btn.className = "gm-track-panoramax-btn";
     btn.textContent = "🧭 Voir en 360°" + (label ? " · " + label : "");
     btn.addEventListener("click", function () {
-      window.gmOpenPanoramax(endpoint, sequence, picture);
+      window.gmOpenPanoramax(endpoint, sequence, picture, label);
     });
     wrap.appendChild(btn);
     return wrap;

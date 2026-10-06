@@ -538,16 +538,53 @@ body.gm-modal-lock { overflow: hidden; }
   font-size: 0.95rem;
 }
 
-.gm-panoramax {
-  width: min(880px, 90vw);
-  height: min(560px, 70vh);
+/* Visionneuse Panoramax (même rendu que le userscript tampermonkey-komoot-panoramax) */
+#panoramax-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(0, 0, 0, 0.6);
 }
-.gm-panoramax pnx-photo-viewer {
-  width: 100%;
-  height: 100%;
-  display: block;
-  border-radius: 8px;
+.pmx-overlay {
+  position: absolute;
+  inset: 5%;
+  background: #000;
+  border-radius: 12px;
   overflow: hidden;
+}
+.pmx-header {
+  height: 40px;
+  background: #111;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.pmx-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pmx-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.pmx-header button,
+.pmx-header a {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+  text-decoration: none;
+}
+#panoramax-popup iframe {
+  display: block;
+  width: 100%;
+  height: calc(100% - 40px);
+  border: none;
+}
+@media (max-width: 700px) {
+  .pmx-overlay { inset: 0; border-radius: 0; }
 }
 
 .gm-track-panoramax-btn {

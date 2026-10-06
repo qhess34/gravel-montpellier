@@ -181,8 +181,6 @@
 
 {{if or .HasGPX .Points}}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>window.exports = window.exports || {};</script>
-<script src="https://cdn.jsdelivr.net/npm/@panoramax/web-viewer@5.0.0-develop-025b014a/build/cjs/index.js"></script>
 <script>
   var map = L.map('map');
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -255,7 +253,7 @@
   gmTrackMarker('panoramax',
     L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('panoramax'), title: '{{.Label}}' })
       .bindPopup(window.gmPoiPopup('{{.Label}}', '360° · cliquez le marqueur pour ouvrir la visionneuse'))
-      .on('click', function () { window.gmOpenPanoramax('{{.Endpoint}}', '{{.Sequence}}', '{{.Picture}}'); })
+      .on('click', function () { window.gmOpenPanoramax('{{.Endpoint}}', '{{.Sequence}}', '{{.Picture}}', '{{.Label}}'); })
       .addTo(map)
   );
   {{end}}
