@@ -651,7 +651,7 @@
   // Fonds proposés (tous gratuits, sans clé). swatch : aperçu dans le menu.
   var GM_BASEMAPS = [
     { key: "plan", label: "Plan", hint: "OpenStreetMap", swatch: "linear-gradient(135deg,#f2efe9 55%,#aad3df 55%)",
-      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", opts: { maxZoom: 19, attribution: OSM_ATTR } },
+      url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", opts: { maxZoom: 19, attribution: OSM_ATTR } },
     { key: "velo", label: "Vélo", hint: "CyclOSM : pistes et revêtements", swatch: "linear-gradient(135deg,#f6f2ea 45%,#2f7fe0 45% 55%,#f6f2ea 55%)",
       url: "https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
       opts: { maxZoom: 20, attribution: '<a href="https://www.cyclosm.org/">CyclOSM</a> | ' + OSM_ATTR } },

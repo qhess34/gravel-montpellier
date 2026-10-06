@@ -463,7 +463,7 @@ TILE_PROVIDERS = {
     "osm": dict(url="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 attribution="© OpenStreetMap", max_zoom=18),
     "topo": dict(url="https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
-                 attribution="© OpenStreetMap · OpenTopoMap (CC-BY-SA)", max_zoom=16),
+                 attribution="© OpenStreetMap, SRTM · OpenTopoMap (CC-BY-SA)", max_zoom=16),
     "velo": dict(url="https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
                  attribution="© OpenStreetMap · CyclOSM", max_zoom=18),
 }
@@ -590,9 +590,14 @@ def draw_route(canvas, box, ride, width=8, casing=(255, 255, 255), fallback=TERR
 
     if ride["basemap_ok"]:
         text = TILE_PROVIDERS[provider]["attribution"]
-        f = font("sans", 11 * scale, 500)
-        tw = d.textlength(text, font=f)
         pad = 5 * scale
+        size = 11
+        f = font("sans", int(size * scale), 500)
+        tw = d.textlength(text, font=f)
+        while tw > W - 4 * pad and size > 7:  # mention complète, réduite pour tenir dans la carte
+            size -= 0.5
+            f = font("sans", int(size * scale), 500)
+            tw = d.textlength(text, font=f)
         d.rounded_rectangle((W - tw - 3 * pad, H - 22 * scale, W - pad, H - pad), radius=6 * scale, fill=(255, 255, 255, 200))
         d.text((W - 2 * pad, H - 13.5 * scale), text, font=f, fill=(*INK_SOFT, 255), anchor="rm")
 

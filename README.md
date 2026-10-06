@@ -338,12 +338,13 @@ python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --format carr
 python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --photo photos/sommet.jpg --out apercu.jpg
 ```
 
-La trace est posée sur un **fond de carte** atténué (OpenTopoMap
-par défaut : données OpenStreetMap avec courbes de niveau et ombrage du
-relief), avec l'attribution de la source imprimée sur l'image. Les
+La trace est posée sur un **fond de carte** atténué (Plan IGN par
+défaut, sous Licence Ouverte Etalab : réutilisation libre, y compris
+commerciale), avec l'attribution de la source imprimée sur l'image. Les
 tuiles sont téléchargées à la génération puis gardées en cache
 (`~/.cache/cycloexplore/tiles`) ; sans réseau, la trace reste sur fond
-uni. Autres fonds : `--fond osm`, `--fond ign`, `--fond velo`, ou
+uni. Autres fonds : `--fond topo` (OpenTopoMap, licence CC-BY-SA : le
+visuel produit hérite de cette licence de partage), `--fond osm`, `--fond velo`, ou
 `--fond aucun`.
 
 `instagram.jpg` (format post) est repris automatiquement par le site :
