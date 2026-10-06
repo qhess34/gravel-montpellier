@@ -453,6 +453,23 @@ modèle de terrain, assez régulières ; un enregistrement GPS brut est plus
 bruité. Un mur très court (< 100 m) est lissé : c'est une indication de
 l'effort, pas une mesure topographique.
 
+## Fonds de carte et boutons des cartes
+
+Les cartes (accueil et fiches) proposent plusieurs fonds, au choix dans
+le menu « Fond de carte » (icône de calques, en haut à droite) ; le choix
+est mémorisé d'une page à l'autre dans le navigateur :
+
+| Fond            | Source                                   | Intérêt                                         |
+|-----------------|------------------------------------------|-------------------------------------------------|
+| Plan            | OpenStreetMap                             | fond général (par défaut)                        |
+| Vélo            | CyclOSM                                   | pistes cyclables, revêtements, chemins           |
+| Relief          | OpenTopoMap                               | courbes de niveau, ombrage du relief             |
+| IGN             | Plan IGN (Géoplateforme, sans clé)        | cartographie française détaillée                 |
+| Photo aérienne  | Orthophotos IGN (Géoplateforme, sans clé) | repérer pistes et chemins vus du ciel            |
+
+Les boutons de zoom, « Me localiser » et « Fond de carte » partagent le
+même style (pastilles claires, icônes, survol terracotta).
+
 ## En-tête et bandeau d'accueil
 
 L'en-tête (fixe en haut de l'écran) affiche l'emblème du logo

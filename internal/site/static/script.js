@@ -617,6 +617,118 @@
     });
   };
 
+  // --- Fonds de carte -------------------------------------------------------
+
+  var GM_ICONS = {
+    layers: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 8 12 13l9.5-5L12 3Z"/><path d="m2.5 12 9.5 5 9.5-5M2.5 16l9.5 5 9.5-5"/></svg>',
+    locate: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/><circle cx="12" cy="12" r="8"/></svg>',
+    check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  };
+  window.GM_ICONS = GM_ICONS;
+
+  var IGN_WMTS = "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+  var OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+  var IGN_ATTR = '&copy; <a href="https://www.ign.fr/">IGN</a> – <a href="https://geoservices.ign.fr/">Géoplateforme</a>';
+
+  // Fonds proposés (tous gratuits, sans clé). swatch : aperçu dans le menu.
+  var GM_BASEMAPS = [
+    { key: "plan", label: "Plan", hint: "OpenStreetMap", swatch: "linear-gradient(135deg,#f2efe9 55%,#aad3df 55%)",
+      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", opts: { maxZoom: 19, attribution: OSM_ATTR } },
+    { key: "velo", label: "Vélo", hint: "CyclOSM : pistes et revêtements", swatch: "linear-gradient(135deg,#f6f2ea 45%,#2f7fe0 45% 55%,#f6f2ea 55%)",
+      url: "https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
+      opts: { maxZoom: 20, attribution: '<a href="https://www.cyclosm.org/">CyclOSM</a> | ' + OSM_ATTR } },
+    { key: "relief", label: "Relief", hint: "OpenTopoMap : courbes de niveau", swatch: "repeating-radial-gradient(circle at 70% 70%,#cfe0b4 0 4px,#b9a37e 4px 5px)",
+      url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+      opts: { maxZoom: 17, attribution: OSM_ATTR + ', SRTM | style &copy; <a href="https://opentopomap.org/">OpenTopoMap</a> (CC-BY-SA)' } },
+    { key: "ign", label: "IGN", hint: "Plan IGN", swatch: "linear-gradient(135deg,#f7f4ec 50%,#e3c48d 50% 60%,#9cc28e 60%)",
+      url: IGN_WMTS + "&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&FORMAT=image/png",
+      opts: { maxZoom: 19, attribution: IGN_ATTR } },
+    { key: "photo", label: "Photo aérienne", hint: "Orthophotos IGN", swatch: "linear-gradient(135deg,#5d6b45,#8a8a62 50%,#3f4a35)",
+      url: IGN_WMTS + "&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&FORMAT=image/jpeg",
+      opts: { maxZoom: 19, attribution: IGN_ATTR } },
+  ];
+
+  function gmStoredBasemap() {
+    try { return localStorage.getItem("gm-basemap"); } catch (e) { return null; }
+  }
+
+  // Ajoute à la carte le fond choisi (mémorisé d'une page à l'autre) et un
+  // menu « Fond de carte » pour en changer.
+  window.gmInitBasemaps = function (map, position) {
+    var layers = {};
+    var current = null;
+    var stored = gmStoredBasemap();
+    var initial = GM_BASEMAPS.some(function (b) { return b.key === stored; }) ? stored : "plan";
+
+    function layerFor(b) {
+      if (!layers[b.key]) {
+        var opts = Object.assign({ subdomains: "abc" }, b.opts);
+        layers[b.key] = L.tileLayer(b.url, opts);
+      }
+      return layers[b.key];
+    }
+
+    function select(key, list) {
+      var b = GM_BASEMAPS.filter(function (x) { return x.key === key; })[0] || GM_BASEMAPS[0];
+      if (current) map.removeLayer(current);
+      current = layerFor(b).addTo(map);
+      current.bringToBack();
+      try { localStorage.setItem("gm-basemap", b.key); } catch (e) { /* stockage indisponible */ }
+      if (list) {
+        list.querySelectorAll("[data-basemap]").forEach(function (el) {
+          var on = el.getAttribute("data-basemap") === b.key;
+          el.classList.toggle("is-active", on);
+          el.setAttribute("aria-checked", on ? "true" : "false");
+        });
+      }
+      map.getContainer().setAttribute("data-basemap", b.key);
+    }
+
+    var Ctl = L.Control.extend({
+      options: { position: position || "topright" },
+      onAdd: function () {
+        var box = L.DomUtil.create("div", "gm-basemap-control");
+        var btn = L.DomUtil.create("button", "gm-map-btn gm-basemap-toggle", box);
+        btn.type = "button";
+        btn.innerHTML = GM_ICONS.layers;
+        btn.title = "Fond de carte";
+        btn.setAttribute("aria-label", "Changer de fond de carte");
+        btn.setAttribute("aria-expanded", "false");
+        var list = L.DomUtil.create("div", "gm-basemap-list", box);
+        list.setAttribute("role", "radiogroup");
+        list.setAttribute("aria-label", "Fond de carte");
+        list.hidden = true;
+        GM_BASEMAPS.forEach(function (b) {
+          var item = L.DomUtil.create("button", "gm-basemap-item", list);
+          item.type = "button";
+          item.setAttribute("role", "radio");
+          item.setAttribute("data-basemap", b.key);
+          item.innerHTML = '<span class="gm-basemap-swatch" style="background:' + b.swatch + '"></span>' +
+            '<span class="gm-basemap-text"><strong>' + b.label + "</strong><small>" + b.hint + "</small></span>" +
+            '<span class="gm-basemap-check">' + GM_ICONS.check + "</span>";
+          L.DomEvent.on(item, "click", function () { select(b.key, list); close(); });
+        });
+        function open() {
+          // hauteur disponible : le menu défile s'il est plus haut que la carte
+          box.style.setProperty("--gm-map-h", map.getContainer().clientHeight + "px");
+          list.hidden = false;
+          btn.setAttribute("aria-expanded", "true");
+          box.classList.add("is-open");
+        }
+        function close() { list.hidden = true; btn.setAttribute("aria-expanded", "false"); box.classList.remove("is-open"); }
+        L.DomEvent.on(btn, "click", function () { list.hidden ? open() : close(); });
+        document.addEventListener("click", function (e) { if (!box.contains(e.target)) close(); });
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+        L.DomEvent.disableClickPropagation(box);
+        L.DomEvent.disableScrollPropagation(box);
+        select(initial, list);
+        return box;
+      },
+    });
+    new Ctl().addTo(map);
+    return { select: function (key) { select(key, map.getContainer().querySelector(".gm-basemap-list")); } };
+  };
+
   // Contrôle "Me localiser" intégré à la carte (même famille que les
   // boutons de zoom) : demande la position du visiteur (API de
   // géolocalisation du navigateur, nécessite son autorisation) et place un
@@ -633,7 +745,7 @@
         link.title = "Me localiser sur la carte";
         link.setAttribute("role", "button");
         link.setAttribute("aria-label", "Me localiser sur la carte");
-        link.innerHTML = "📍";
+        link.innerHTML = GM_ICONS.locate;
 
         L.DomEvent.disableClickPropagation(container);
         L.DomEvent.disableScrollPropagation(container);
@@ -1122,10 +1234,7 @@
     }
 
     var map = L.map(container, { scrollWheelZoom: false, zoomSnap: 0.25 });
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 18,
-    }).addTo(map);
+    window.gmInitBasemaps(map, "topright");
 
     // Molette active seulement après un clic sur la carte : faire défiler la
     // page ne doit pas zoomer par accident.
@@ -1136,7 +1245,10 @@
     var visible = {};
     var highlighted = null;
     var selected = null;
-    var popup = L.popup({ maxWidth: 300, minWidth: 240, className: "ride-popup-wrap", autoPanPadding: [20, 20] });
+    // Marges de recentrage : la popup ne doit pas passer sous les boutons de
+    // la carte (zoom à gauche, fond de carte à droite).
+    var popup = L.popup({ maxWidth: 300, minWidth: 240, className: "ride-popup-wrap",
+      autoPanPaddingTopLeft: [64, 66], autoPanPaddingBottomRight: [64, 30] });
 
     rides.forEach(function (r) {
       var casing = L.polyline(r.coords, { color: "#ffffff", weight: 7, opacity: 0.85, interactive: false });
