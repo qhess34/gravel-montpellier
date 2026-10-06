@@ -171,7 +171,7 @@ func Build(opts Options) error {
 				name := filepath.Base(rel)
 				src := filepath.Join(opts.RidesDir, ride.Slug, "photos", name)
 				dst := filepath.Join(dstPhotosDir, name)
-				if err := copyFile(src, dst); err != nil {
+				if err := processPhotoFile(src, dst, maxPhotoSide); err != nil {
 					return fmt.Errorf("copie photo (%s/%s) : %w", ride.Slug, name, err)
 				}
 			}

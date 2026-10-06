@@ -79,6 +79,26 @@ plusieurs photos, elles défilent automatiquement au survol de la carte de
 la sortie sur l'accueil (repos = retour à la première). Cliquer sur
 une photo de la galerie l'ouvre en grand (lightbox).
 
+**Allègement automatique :** au moment du build, les photos `.jpg`/`.jpeg`
+et `.png` dont le plus grand côté dépasse **1024 px** sont réduites à
+cette taille (proportions conservées, JPEG ré-encodé en qualité 85) dans
+le site généré — vos fichiers d'origine, dans `rides/`, ne sont jamais
+modifiés (et restent donc disponibles en pleine résolution pour
+`tools/make_instagram_image.py`). L'orientation EXIF des JPEG (photos
+prises en portrait au smartphone, par exemple) est corrigée dans les
+pixels avant ré-encodage, pour que la photo reste dans le bon sens. Les
+photos déjà assez petites sont copiées telles quelles, et les formats
+`.webp`/`.gif` aussi (la bibliothèque standard Go ne les gère pas, et
+cette fonctionnalité n'utilise volontairement aucune dépendance
+externe).
+
+> Effet de bord : le ré-encodage supprime les métadonnées EXIF (dont les
+> coordonnées GPS et les infos d'appareil) des photos réduites — un petit
+> plus pour la vie privée côté site public. Mais ça ne vaut **pas** pour
+> les photos copiées telles quelles (déjà petites, `.webp`, `.gif`), qui
+> gardent leurs métadonnées d'origine : à garder en tête si certaines
+> photos contiennent un lieu que vous ne souhaitez pas exposer.
+
 **Géolocalisation automatique :** si une photo `.jpg`/`.jpeg` contient des
 coordonnées GPS dans ses métadonnées EXIF (cas courant pour une photo prise
 au smartphone ou avec un appareil GPS activé), un marqueur est

@@ -19,8 +19,41 @@ func PhotoGPS(path string) (lat, lon float64, ok bool) {
 }
 
 func parseJPEGGPS(data []byte) (lat, lon float64, ok bool) {
+	tiff := findExifTIFF(data)
+	if tiff == nil {
+		return 0, 0, false
+	}
+	return parseTIFFGPS(tiff)
+}
+
+// PhotoOrientation lit le tag EXIF Orientation (0x0112) d'une photo JPEG.
+// Renvoie 1 (normal, aucune correction à apporter) si absent, illisible,
+// ou si le fichier n'est pas un JPEG.
+func PhotoOrientation(path string) int {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return 1
+	}
+	return parseJPEGOrientation(data)
+}
+
+func parseJPEGOrientation(data []byte) int {
+	tiff := findExifTIFF(data)
+	if tiff == nil {
+		return 1
+	}
+	if o, ok := parseTIFFOrientation(tiff); ok {
+		return o
+	}
+	return 1
+}
+
+// findExifTIFF parcourt les segments d'un JPEG à la recherche du bloc EXIF
+// (APP1 préfixé "Exif\0\0"), et renvoie les octets TIFF qu'il contient
+// (nil si le fichier n'est pas un JPEG ou n'a pas de bloc EXIF).
+func findExifTIFF(data []byte) []byte {
 	if len(data) < 4 || data[0] != 0xFF || data[1] != 0xD8 {
-		return 0, 0, false // pas un JPEG (SOI manquant)
+		return nil // pas un JPEG (SOI manquant)
 	}
 
 	pos := 2
@@ -47,9 +80,7 @@ func parseJPEGGPS(data []byte) (lat, lon float64, ok bool) {
 		if marker == 0xE1 { // APP1 : c'est ici que vit l'EXIF
 			seg := data[segStart:segEnd]
 			if bytes.HasPrefix(seg, []byte("Exif\x00\x00")) {
-				if lt, ln, found := parseTIFFGPS(seg[6:]); found {
-					return lt, ln, true
-				}
+				return seg[6:]
 			}
 		}
 
@@ -60,7 +91,7 @@ func parseJPEGGPS(data []byte) (lat, lon float64, ok bool) {
 		pos = segEnd
 	}
 
-	return 0, 0, false
+	return nil
 }
 
 // --- Lecture d'un mini sous-ensemble de la structure TIFF/EXIF ---
@@ -76,28 +107,53 @@ func (e ifdEntry) offset(order binary.ByteOrder) uint32 {
 	return order.Uint32(e.raw[:])
 }
 
-func parseTIFFGPS(tiff []byte) (lat, lon float64, found bool) {
+// tiffHeader lit l'ordre des octets et l'offset de l'IFD0 en tête d'un bloc TIFF.
+func tiffHeader(tiff []byte) (order binary.ByteOrder, ifd0Offset uint32, ok bool) {
 	if len(tiff) < 8 {
-		return 0, 0, false
+		return nil, 0, false
 	}
-
-	var order binary.ByteOrder
 	switch string(tiff[0:2]) {
 	case "II":
 		order = binary.LittleEndian
 	case "MM":
 		order = binary.BigEndian
 	default:
+		return nil, 0, false
+	}
+	return order, order.Uint32(tiff[4:8]), true
+}
+
+func parseTIFFGPS(tiff []byte) (lat, lon float64, found bool) {
+	order, ifd0Offset, ok := tiffHeader(tiff)
+	if !ok {
 		return 0, 0, false
 	}
 
-	ifd0Offset := order.Uint32(tiff[4:8])
 	gpsOffset, ok := findIFDTagOffset(tiff, order, ifd0Offset, 0x8825) // GPS Info IFD pointer
 	if !ok {
 		return 0, 0, false
 	}
 
 	return readGPSIFD(tiff, order, gpsOffset)
+}
+
+// parseTIFFOrientation lit le tag Orientation (0x0112, type SHORT) de l'IFD0.
+func parseTIFFOrientation(tiff []byte) (int, bool) {
+	order, ifd0Offset, ok := tiffHeader(tiff)
+	if !ok {
+		return 0, false
+	}
+
+	entries, ok := readIFDEntries(tiff, order, ifd0Offset)
+	if !ok {
+		return 0, false
+	}
+	for _, e := range entries {
+		if e.tag == 0x0112 {
+			return int(order.Uint16(e.raw[:2])), true
+		}
+	}
+	return 0, false
 }
 
 func readIFDEntries(tiff []byte, order binary.ByteOrder, offset uint32) ([]ifdEntry, bool) {
