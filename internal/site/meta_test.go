@@ -137,17 +137,29 @@ func TestLoadSlopeDataDetectsStaleFile(t *testing.T) {
 	geo := `{"type":"FeatureCollection","source_sha256":"` + sum + `","legend":[{"key":"plat","label":"Plat","color":"#999"},{"key":"montee-forte","label":"Forte","color":"#f00"}],"features":[{"type":"Feature","properties":{"class":"plat"},"geometry":null}]}`
 	os.WriteFile(filepath.Join(dir, slopeFileName), []byte(geo), 0o644)
 
-	legend, ok := loadSlopeData("t", dir, gpx)
+	legend, _, ok := loadSlopeData("t", dir, gpx)
 	if !ok || len(legend) != 1 || legend[0].Key != "plat" {
 		t.Fatalf("fichier à jour non reconnu : %v %v", ok, legend)
 	}
 	os.WriteFile(gpx, []byte("<gpx>modifié</gpx>"), 0o644)
-	if _, ok := loadSlopeData("t", dir, gpx); ok {
+	if _, _, ok := loadSlopeData("t", dir, gpx); ok {
 		t.Error("fichier obsolète accepté")
 	}
 	os.Remove(filepath.Join(dir, slopeFileName))
-	if _, ok := loadSlopeData("t", dir, gpx); ok {
+	if _, _, ok := loadSlopeData("t", dir, gpx); ok {
 		t.Error("fichier absent accepté")
+	}
+}
+
+func TestSlopeProfileUsesSegmentColors(t *testing.T) {
+	profile := []profilePoint{{Km: 0, Ele: 10}, {Km: 1, Ele: 50}, {Km: 2, Ele: 20}}
+	svg := string(renderElevationProfileSVG(profile, nil, []slopeSegment{{0, 1, "#dc2626"}, {1, 2, "#2563eb"}}))
+	if !strings.Contains(svg, `stroke="#dc2626"`) || !strings.Contains(svg, `stroke="#2563eb"`) {
+		t.Errorf("couleurs de pente absentes du profil : %s", svg)
+	}
+	plain := string(renderElevationProfileSVG(profile, nil, nil))
+	if !strings.Contains(plain, "elevation-line") || strings.Contains(plain, "elevation-seg") {
+		t.Error("profil sans pente : rendu uniforme attendu")
 	}
 }
 

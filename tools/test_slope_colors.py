@@ -39,7 +39,8 @@ class TempRide:
 class ClassifyTest(unittest.TestCase):
     def test_bounds(self):
         self.assertEqual(sc.classify(-10)[0], "descente-forte")
-        self.assertEqual(sc.classify(-6)[0], "descente")       # borne basse incluse
+        self.assertEqual(sc.classify(-8)[0], "descente")       # borne basse incluse
+        self.assertEqual(sc.classify(-3)[0], "descente-legere")
         self.assertEqual(sc.classify(0)[0], "plat")
         self.assertEqual(sc.classify(2)[0], "montee-faible")
         self.assertEqual(sc.classify(5.5)[0], "montee-moderee")
@@ -128,7 +129,7 @@ class ProcessRideTest(unittest.TestCase):
                 self.assertIn(key, props)
             classes = {f["properties"]["class"] for f in data["features"]}
             self.assertIn("montee-moderee", classes)
-            self.assertIn("descente", classes)
+            self.assertTrue(any(c.startswith("descente") for c in classes))
 
             self.assertEqual(sc.process_ride(ride.dir)[0], "up-to-date")
             self.assertEqual(sc.process_ride(ride.dir, check=True)[0], "up-to-date")

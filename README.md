@@ -348,10 +348,12 @@ python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --out apercu.
 ## Colorisation des traces selon la pente
 
 Sur la page d'une sortie, la trace est colorée selon la **pente locale** :
-bleu foncé/bleu clair pour les descentes, gris pour le plat, puis vert,
-jaune, orange et rouge pour les montées de plus en plus raides (une
-légende est affichée sous la carte, et survoler un tronçon affiche sa
-pente et ses kilomètres). Sur la carte d'accueil, chaque sortie garde au
+vert pour le plat (couleur par défaut), du bleu clair au bleu foncé pour
+les descentes de plus en plus raides, et du jaune au rouge (jaune,
+orangé, orange, rouge) pour les montées de plus en plus raides. Les
+mêmes couleurs sont appliquées au **profil altimétrique**. Une légende
+est affichée sous la carte, et survoler un tronçon affiche sa pente et
+ses kilomètres. Sur la carte d'accueil, chaque sortie garde au
 contraire sa propre couleur.
 
 Les pentes sont **pré-calculées** par `tools/slope_colors.py` (Python 3.8+,

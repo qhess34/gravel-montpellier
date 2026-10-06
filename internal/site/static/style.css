@@ -187,6 +187,8 @@ a:hover { text-decoration: underline; }
 .elevation-axis { stroke: var(--line); stroke-width: 1; }
 .elevation-area { fill: rgba(184, 86, 47, 0.16); }
 .elevation-line { stroke: var(--terracotta); stroke-width: 2; }
+.elevation-seg-area { opacity: 0.3; }
+.elevation-seg-line { stroke-width: 2.5; stroke-linejoin: round; }
 .elevation-label {
   font-size: 10px;
   fill: var(--ink-soft);

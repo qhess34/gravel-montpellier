@@ -142,14 +142,6 @@
   </section>
   {{end}}
 
-  <p class="disclaimer">
-    ⚠ Trace fournie à titre indicatif : le terrain peut avoir changé depuis
-    la reconnaissance (obstacles, travaux, balisage), certains passages
-    peuvent traverser des propriétés privées sans autorisation garantie, et
-    des dangers peuvent ne pas être signalés. Vous empruntez cet itinéraire
-    sous votre propre responsabilité —
-    <a href="{{$.Root}}mentions-legales.html">mentions légales</a>.
-  </p>
 
   <!-- 5. Description -->
   <section class="ride-body" aria-label="Description de la sortie">
@@ -177,6 +169,14 @@
     {{end}}
   </section>
   {{end}}
+  <p class="disclaimer">
+    ⚠ Trace fournie à titre indicatif : le terrain peut avoir changé depuis
+    la reconnaissance (obstacles, travaux, balisage), certains passages
+    peuvent traverser des propriétés privées sans autorisation garantie, et
+    des dangers peuvent ne pas être signalés. Vous empruntez cet itinéraire
+    sous votre propre responsabilité —
+    <a href="{{$.Root}}mentions-legales.html">mentions légales</a>.
+  </p>
 </article>
 
 {{if or .HasGPX .Points}}

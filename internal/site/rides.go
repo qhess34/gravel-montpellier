@@ -139,6 +139,7 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 
 	// Trace GPX : on prend le premier fichier .gpx trouvé dans le dossier.
 	var trackPoints []GPXPoint
+	var slopeSegments []slopeSegment
 	gpxPath, err := findFirstGPX(dir)
 	if err != nil {
 		return nil, err
@@ -166,10 +167,11 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 			ride.IsLoop = PointDistanceKm(ride.StartPoint, ride.EndPoint) < 0.05 // < 50 m : boucle
 
 			// Trace colorisée selon la pente, pré-calculée par tools/slope_colors.py.
-			if legend, ok := loadSlopeData(slug, dir, gpxPath); ok {
+			if legend, segments, ok := loadSlopeData(slug, dir, gpxPath); ok {
 				ride.HasSlope = true
 				ride.SlopeFile = slopeFileName
 				ride.SlopeLegend = legend
+				slopeSegments = segments
 			}
 		}
 	}
@@ -273,7 +275,7 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 
 	if len(trackPoints) > 0 {
 		profile := buildElevationProfile(trackPoints, 1000)
-		if svg := renderElevationProfileSVG(profile, ride.RoutePOIs); svg != "" {
+		if svg := renderElevationProfileSVG(profile, ride.RoutePOIs, slopeSegments); svg != "" {
 			ride.ElevationProfileSVG = svg
 			ride.ElevationProfileDataJSON = elevationProfileDataJSON(profile)
 			ride.HasElevationProfile = true
