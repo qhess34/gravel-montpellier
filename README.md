@@ -31,12 +31,12 @@ rides/tour-du-pic-saint-loup/
    ci-dessous).
 3. Ajouter les photos dans `photos/` (préfixez la photo de couverture par
    `0` pour qu'elle passe en premier, ex : `0.jpg`).
-4. Optionnel : générer les POI avec `python3 tools/find_supplies.py rides/<slug>`
-   et le revêtement avec `python3 tools/surface_stats.py rides/<slug>`.
-5. Générer la trace colorisée selon la pente :
-   `python3 tools/slope_colors.py rides/<slug>` (et commiter `slope.geojson`).
-6. Vérifier en local : `go run ./cmd/generator` puis
-   `python3 -m http.server --directory public`.
+4. Lancer `python3 tools/new_ride.py rides/<slug>` : il enchaîne POI,
+   revêtement, pentes (`slope.geojson`), visuels Instagram et QR code, et
+   génère le site pour vérifier la fiche (voir « Tout enchaîner » plus bas).
+   Chaque script reste utilisable seul.
+5. Relire `description.md`, puis commiter le dossier (dont `slope.geojson`
+   et `instagram.jpg`).
 
 ### description.md
 
@@ -310,43 +310,85 @@ python3 tools/surface_stats.py rides/tour-du-pic-saint-loup --dry-run
 Relancer le script écrase simplement les valeurs précédentes (pas de
 doublon), par exemple après avoir mis à jour la trace d'une sortie.
 
-### Générer une image de partage Instagram
+### Visuels de partage : Instagram et QR code
 
-`tools/make_instagram_image.py` compose une image au format Instagram
-(portrait 1080×1350) pour une sortie : une de ses photos en fond, la
-silhouette de la trace GPX en médaillon, le titre, les stats (distance,
-dénivelé, difficulté) et le logo Cyclo Explore.
+Deux générateurs produisent des visuels aux couleurs du site (fond crème,
+vert forêt et terracotta, polices Fraunces et Inter fournies dans
+`tools/fonts/`, emblème du logo). Toutes les informations sont lues
+dans les fichiers de la sortie (titre, difficulté, durée, distance, D+,
+photos, trace, `slope.geojson`) : rien à ressaisir.
 
-Dépend de [Pillow](https://pillow.readthedocs.io/) (pas dans la
-bibliothèque standard, contrairement aux autres scripts) :
-
-```bash
-pip install Pillow
-# si erreur "externally-managed-environment" :
-pip install Pillow --break-system-packages
-```
+Ils dépendent de [Pillow](https://pillow.readthedocs.io/) et
+[segno](https://segno.readthedocs.io/) :
 
 ```bash
-python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup
+pip install -r tools/requirements.txt
+# si erreur "externally-managed-environment" : ajouter --break-system-packages
 ```
 
-Écrit `instagram.jpg` à la racine du dossier de la sortie par défaut —
-dès qu'il existe, le générateur le reprend automatiquement (copié sur le
-site, et un bouton **Instagram** apparaît dans le bloc de partage de la
-page). Sans photo dans `photos/`, un dégradé aux couleurs du site est
-utilisé à la place ; sans trace GPX, le médaillon est simplement omis —
-le script ne bloque jamais, il fait de son mieux avec ce qui est
-disponible.
-
-Options utiles :
+**Instagram** — `tools/make_instagram_image.py` : photo de la sortie,
+emblème et nom du site, pastille de difficulté, titre, chiffres clés
+(distance, D+, durée), silhouette de la trace et profil altimétrique
+colorés selon la pente, adresse de la fiche en pied de page.
 
 ```bash
-# Choisir une photo précise plutôt que la première du dossier
-python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --photo photos/sommet.jpg
-
-# Écrire ailleurs (pour prévisualiser avant de valider)
-python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --out apercu.jpg
+python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup                 # post 1080×1350 -> instagram.jpg
+python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --format story   # 1080×1920 -> instagram-story.jpg
+python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --format carre   # 1080×1080
+python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --photo photos/sommet.jpg --out apercu.jpg
 ```
+
+`instagram.jpg` (format post) est repris automatiquement par le site :
+copié avec la fiche, il fait apparaître un bouton **Instagram** dans le
+bloc de partage. Sans photo, un dégradé aux couleurs du site la remplace ;
+sans `slope.geojson`, la trace est en couleur unie.
+
+**QR code** — `tools/generate_qrcode.py` : visuel avec photo, titre,
+chiffres clés et QR code stylé (modules arrondis vert forêt, repères
+d'angle terracotta, emblème au centre). Le QR utilise la correction
+d'erreur maximale pour rester lisible malgré l'emblème ; si OpenCV est
+installé (`pip install opencv-python-headless`), le script vérifie qu'il
+se relit bien. Testez-le tout de même avec un téléphone avant une
+impression.
+
+```bash
+python3 tools/generate_qrcode.py rides/tour-du-pic-saint-loup                     # 1080×1080 -> qrcode.jpg
+python3 tools/generate_qrcode.py rides/tour-du-pic-saint-loup --format affiche    # 1080×1350
+python3 tools/generate_qrcode.py rides/tour-du-pic-saint-loup --plain             # QR seul, PNG 1200 px (impression)
+python3 tools/generate_qrcode.py rides/tour-du-pic-saint-loup --utm               # + ?utm_source=qrcode (statistiques)
+# n'importe quelle URL, textes en options (usage d'origine) :
+python3 tools/generate_qrcode.py https://montpellier.cycloexplore.fr --title "Toutes nos sorties" --photos rides/clapiers-corconne/photos -o accueil.jpg
+```
+
+Les visuels autres que `instagram.jpg` (`instagram-story.jpg`,
+`qrcode.jpg`…) sont ignorés par git : régénérez-les quand vous en avez
+besoin.
+
+### Tout enchaîner : `tools/new_ride.py`
+
+Pour ajouter une sortie (ou rafraîchir une sortie existante), ce script
+lance toutes les étapes dans l'ordre et affiche un récapitulatif :
+préparation du dossier (copie du GPX et des photos, `description.md`
+pré-rempli), contrôle du contenu (titre, synthèse, « ## Le parcours »,
+difficulté, GPX, photos), POI (`find_supplies.py`, interactif), revêtement
+(`surface_stats.py`), pentes (`slope_colors.py`), visuels Instagram et QR
+code, puis génération du site en local.
+
+```bash
+# nouvelle sortie
+python3 tools/new_ride.py tour-du-pic --gpx ~/Téléchargements/trace.gpx --photos ~/Photos/pic/
+
+# sortie existante, sans question ni accès réseau
+python3 tools/new_ride.py rides/clapiers-corconne --yes --no-network
+
+# seulement certaines étapes, ou en sauter
+python3 tools/new_ride.py rides/clapiers-corconne --only pentes,instagram,qrcode
+python3 tools/new_ride.py rides/clapiers-corconne --skip poi,surface
+```
+
+Une étape impossible (dépendance absente, pas de réseau, Go non installé)
+est signalée et sautée sans bloquer les suivantes. Le code de sortie vaut
+1 seulement si une étape échoue.
 
 > Partage réel vers Instagram : il n'existe pas de lien web universel
 > pour poster directement sur Instagram (contrairement à
@@ -677,7 +719,12 @@ Dockerfile              build + service du site via nginx (voir ci-dessus)
 docker-compose.yml      boucle de dev : régénération + aperçu local
 tools/find_supplies.py  recherche interactive de POI utiles (OSM)
 tools/surface_stats.py  estimation du revêtement, écrit dans description.md (OSM)
-tools/make_instagram_image.py  image de partage Instagram (nécessite Pillow)
+tools/make_instagram_image.py  visuels Instagram (post, story, carré)
+tools/generate_qrcode.py  visuel QR code (et QR seul pour l'impression)
+tools/brand.py          charte graphique et lecture des sorties, partagées par les visuels
+tools/new_ride.py       enchaîne tous les scripts pour ajouter une sortie
+tools/fonts/            polices Fraunces et Inter (licence OFL)
+tools/requirements.txt  dépendances Python des visuels (Pillow, segno)
 tools/slope_colors.py   colorisation des traces selon la pente (écrit slope.geojson)
 ```
 
