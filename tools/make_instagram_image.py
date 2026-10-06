@@ -62,7 +62,7 @@ def stat_blocks(ride):
     return blocks
 
 
-def render(ride, fmt, photo_path=None, basemap="ign", fetch=None):
+def render(ride, fmt, photo_path=None, basemap="topo", fetch=None):
     L = FORMATS[fmt]
     W, H = L["w"], L["h"]
     canvas = Image.new("RGBA", (W, H), (*B.CREAM, 255))
@@ -185,8 +185,8 @@ def main():
     parser.add_argument("--photo", help="Photo à utiliser (chemin relatif au dossier de la sortie, ou absolu). Défaut : la première de photos/")
     parser.add_argument("--out", help="Fichier de sortie (défaut : instagram.jpg, ou instagram-<format>.jpg, dans le dossier de la sortie)")
     parser.add_argument("--site-url", default=B.DEFAULT_SITE_URL, help="URL publique du site (adresse affichée)")
-    parser.add_argument("--fond", choices=sorted(B.TILE_PROVIDERS) + ["aucun"], default="ign",
-                        help="fond de carte sous la trace : ign (Plan IGN, défaut), osm, topo, velo, ou aucun ; "
+    parser.add_argument("--fond", choices=sorted(B.TILE_PROVIDERS) + ["aucun"], default="topo",
+                        help="fond de carte sous la trace : topo (OpenTopoMap, données OSM, défaut), osm, ign, velo, ou aucun ; "
                              "tuiles téléchargées puis gardées en cache (~/.cache/cycloexplore/tiles)")
     parser.add_argument("--logo", help=argparse.SUPPRESS)  # ancienne option, l'emblème du site est utilisé
     args = parser.parse_args()
