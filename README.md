@@ -338,6 +338,14 @@ python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --format carr
 python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --photo photos/sommet.jpg --out apercu.jpg
 ```
 
+La trace est posée sur un **fond de carte** atténué (OpenTopoMap
+par défaut : données OpenStreetMap avec courbes de niveau et ombrage du
+relief), avec l'attribution de la source imprimée sur l'image. Les
+tuiles sont téléchargées à la génération puis gardées en cache
+(`~/.cache/cycloexplore/tiles`) ; sans réseau, la trace reste sur fond
+uni. Autres fonds : `--fond osm`, `--fond ign`, `--fond velo`, ou
+`--fond aucun`.
+
 `instagram.jpg` (format post) est repris automatiquement par le site :
 copié avec la fiche, il fait apparaître un bouton **Instagram** dans le
 bloc de partage. Sans photo, un dégradé aux couleurs du site la remplace ;
@@ -452,6 +460,31 @@ fausses pentes. Les GPX Komoot actuels ont des altitudes issues d'un
 modèle de terrain, assez régulières ; un enregistrement GPS brut est plus
 bruité. Un mur très court (< 100 m) est lissé : c'est une indication de
 l'effort, pas une mesure topographique.
+
+## Fonds de carte et boutons des cartes
+
+Les cartes (accueil et fiches) proposent plusieurs fonds, au choix dans
+le menu « Fond de carte » (icône de calques, en haut à droite) ; le choix
+est mémorisé d'une page à l'autre dans le navigateur :
+
+| Fond            | Source                                   | Intérêt                                         |
+|-----------------|------------------------------------------|-------------------------------------------------|
+| Plan            | OpenStreetMap                             | fond général (par défaut)                        |
+| Vélo            | CyclOSM                                   | pistes cyclables, revêtements, chemins           |
+| Relief          | OpenTopoMap                               | courbes de niveau, ombrage du relief             |
+| IGN             | Plan IGN (Géoplateforme, sans clé)        | cartographie française détaillée                 |
+| Photo aérienne  | Orthophotos IGN (Géoplateforme, sans clé) | repérer pistes et chemins vus du ciel            |
+
+Les boutons de zoom, « Me localiser » et « Fond de carte » partagent le
+même style (pastilles claires, icônes, survol terracotta).
+
+Sur la fiche d'une sortie, le bouton **Plein écran** (sous « Me
+localiser ») agrandit la carte à tout l'écran, recadrée sur la trace,
+pour la parcourir confortablement ; Échap ou le même bouton en sortent.
+Il utilise le mode plein écran du navigateur, et sur les appareils qui ne
+le permettent pas pour un élément (iPhone), la carte occupe tout l'écran
+de la page. La visionneuse 360° et l'agrandissement des photos restent
+accessibles en plein écran.
 
 ## En-tête et bandeau d'accueil
 

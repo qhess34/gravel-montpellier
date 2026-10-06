@@ -23,8 +23,25 @@
     return modal;
   }
 
+  // Conteneur des fenêtres superposées : l'élément en plein écran s'il y en
+  // a un (sinon elles s'ouvriraient derrière la carte en plein écran).
+  function gmOverlayHost() {
+    return document.fullscreenElement || document.webkitFullscreenElement || document.body;
+  }
+
+  // Une fenêtre insérée dans la carte (plein écran) ne doit pas transmettre
+  // ses clics, glisser ou molette à la carte.
+  function gmIsolateFromMap(el) {
+    if (window.L && L.DomEvent) {
+      L.DomEvent.disableClickPropagation(el);
+      L.DomEvent.disableScrollPropagation(el);
+    }
+  }
+
   function openModal(contentEl) {
     var modal = ensureModal();
+    if (modal.parentNode !== gmOverlayHost()) gmOverlayHost().appendChild(modal);
+    if (!modal.gmIsolated) { gmIsolateFromMap(modal); modal.gmIsolated = true; }
     var body = modal.querySelector(".gm-modal-body");
     body.innerHTML = "";
     body.appendChild(contentEl);
@@ -158,7 +175,8 @@
       if (e.target === popup) gmClosePanoramax();
     });
 
-    document.body.appendChild(popup);
+    gmOverlayHost().appendChild(popup);
+    gmIsolateFromMap(popup);
     document.body.classList.add("gm-modal-lock");
     gmPanoramaxPopup = popup;
     close.focus();
@@ -617,6 +635,201 @@
     });
   };
 
+  // --- Fonds de carte -------------------------------------------------------
+
+  var GM_ICONS = {
+    layers: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 8 12 13l9.5-5L12 3Z"/><path d="m2.5 12 9.5 5 9.5-5M2.5 16l9.5 5 9.5-5"/></svg>',
+    locate: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/><circle cx="12" cy="12" r="8"/></svg>',
+    check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  };
+  window.GM_ICONS = GM_ICONS;
+
+  var IGN_WMTS = "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+  var OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+  var IGN_ATTR = '&copy; <a href="https://www.ign.fr/">IGN</a> – <a href="https://geoservices.ign.fr/">Géoplateforme</a>';
+
+  // Fonds proposés (tous gratuits, sans clé). swatch : aperçu dans le menu.
+  var GM_BASEMAPS = [
+    { key: "plan", label: "Plan", hint: "OpenStreetMap", swatch: "linear-gradient(135deg,#f2efe9 55%,#aad3df 55%)",
+      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", opts: { maxZoom: 19, attribution: OSM_ATTR } },
+    { key: "velo", label: "Vélo", hint: "CyclOSM : pistes et revêtements", swatch: "linear-gradient(135deg,#f6f2ea 45%,#2f7fe0 45% 55%,#f6f2ea 55%)",
+      url: "https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
+      opts: { maxZoom: 20, attribution: '<a href="https://www.cyclosm.org/">CyclOSM</a> | ' + OSM_ATTR } },
+    { key: "relief", label: "Relief", hint: "OpenTopoMap : courbes de niveau", swatch: "repeating-radial-gradient(circle at 70% 70%,#cfe0b4 0 4px,#b9a37e 4px 5px)",
+      url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+      opts: { maxZoom: 17, attribution: OSM_ATTR + ', SRTM | style &copy; <a href="https://opentopomap.org/">OpenTopoMap</a> (CC-BY-SA)' } },
+    { key: "ign", label: "IGN", hint: "Plan IGN", swatch: "linear-gradient(135deg,#f7f4ec 50%,#e3c48d 50% 60%,#9cc28e 60%)",
+      url: IGN_WMTS + "&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&FORMAT=image/png",
+      opts: { maxZoom: 19, attribution: IGN_ATTR } },
+    { key: "photo", label: "Photo aérienne", hint: "Orthophotos IGN", swatch: "linear-gradient(135deg,#5d6b45,#8a8a62 50%,#3f4a35)",
+      url: IGN_WMTS + "&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&FORMAT=image/jpeg",
+      opts: { maxZoom: 19, attribution: IGN_ATTR } },
+  ];
+
+  function gmStoredBasemap() {
+    try { return localStorage.getItem("gm-basemap"); } catch (e) { return null; }
+  }
+
+  // Ajoute à la carte le fond choisi (mémorisé d'une page à l'autre) et un
+  // menu « Fond de carte » pour en changer.
+  window.gmInitBasemaps = function (map, position) {
+    var layers = {};
+    var current = null;
+    var stored = gmStoredBasemap();
+    var initial = GM_BASEMAPS.some(function (b) { return b.key === stored; }) ? stored : "plan";
+
+    function layerFor(b) {
+      if (!layers[b.key]) {
+        var opts = Object.assign({ subdomains: "abc" }, b.opts);
+        layers[b.key] = L.tileLayer(b.url, opts);
+      }
+      return layers[b.key];
+    }
+
+    function select(key, list) {
+      var b = GM_BASEMAPS.filter(function (x) { return x.key === key; })[0] || GM_BASEMAPS[0];
+      if (current) map.removeLayer(current);
+      current = layerFor(b).addTo(map);
+      current.bringToBack();
+      try { localStorage.setItem("gm-basemap", b.key); } catch (e) { /* stockage indisponible */ }
+      if (list) {
+        list.querySelectorAll("[data-basemap]").forEach(function (el) {
+          var on = el.getAttribute("data-basemap") === b.key;
+          el.classList.toggle("is-active", on);
+          el.setAttribute("aria-checked", on ? "true" : "false");
+        });
+      }
+      map.getContainer().setAttribute("data-basemap", b.key);
+    }
+
+    var Ctl = L.Control.extend({
+      options: { position: position || "topright" },
+      onAdd: function () {
+        var box = L.DomUtil.create("div", "gm-basemap-control");
+        var btn = L.DomUtil.create("button", "gm-map-btn gm-basemap-toggle", box);
+        btn.type = "button";
+        btn.innerHTML = GM_ICONS.layers;
+        btn.title = "Fond de carte";
+        btn.setAttribute("aria-label", "Changer de fond de carte");
+        btn.setAttribute("aria-expanded", "false");
+        var list = L.DomUtil.create("div", "gm-basemap-list", box);
+        list.setAttribute("role", "radiogroup");
+        list.setAttribute("aria-label", "Fond de carte");
+        list.hidden = true;
+        GM_BASEMAPS.forEach(function (b) {
+          var item = L.DomUtil.create("button", "gm-basemap-item", list);
+          item.type = "button";
+          item.setAttribute("role", "radio");
+          item.setAttribute("data-basemap", b.key);
+          item.innerHTML = '<span class="gm-basemap-swatch" style="background:' + b.swatch + '"></span>' +
+            '<span class="gm-basemap-text"><strong>' + b.label + "</strong><small>" + b.hint + "</small></span>" +
+            '<span class="gm-basemap-check">' + GM_ICONS.check + "</span>";
+          L.DomEvent.on(item, "click", function () { select(b.key, list); close(); });
+        });
+        function open() {
+          // hauteur disponible : le menu défile s'il est plus haut que la carte
+          box.style.setProperty("--gm-map-h", map.getContainer().clientHeight + "px");
+          list.hidden = false;
+          btn.setAttribute("aria-expanded", "true");
+          box.classList.add("is-open");
+        }
+        function close() { list.hidden = true; btn.setAttribute("aria-expanded", "false"); box.classList.remove("is-open"); }
+        L.DomEvent.on(btn, "click", function () { list.hidden ? open() : close(); });
+        document.addEventListener("click", function (e) { if (!box.contains(e.target)) close(); });
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+        L.DomEvent.disableClickPropagation(box);
+        L.DomEvent.disableScrollPropagation(box);
+        select(initial, list);
+        return box;
+      },
+    });
+    new Ctl().addTo(map);
+    return { select: function (key) { select(key, map.getContainer().querySelector(".gm-basemap-list")); } };
+  };
+
+  // --- Plein écran de la carte ---------------------------------------------
+
+  GM_ICONS.expand = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+  GM_ICONS.collapse = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+
+  // Bouton « Plein écran » : utilise l'API Fullscreen du navigateur quand
+  // elle existe pour un élément ; sinon (iPhone notamment), la carte occupe
+  // tout l'écran en CSS. Échap ou le même bouton en sortent.
+  window.gmInitFullscreen = function (map) {
+    if (!map || !window.L) return;
+    var el = map.getContainer();
+    var nativeOK = !!(el.requestFullscreen || el.webkitRequestFullscreen);
+    var link;
+
+    function isNative() {
+      return (document.fullscreenElement || document.webkitFullscreenElement) === el;
+    }
+    function isOn() {
+      return isNative() || el.classList.contains("gm-map-fullscreen");
+    }
+    function refresh() {
+      var on = isOn();
+      document.body.classList.toggle("gm-map-fullscreen-lock", el.classList.contains("gm-map-fullscreen"));
+      if (link) {
+        link.innerHTML = on ? GM_ICONS.collapse : GM_ICONS.expand;
+        link.title = on ? "Quitter le plein écran" : "Afficher la carte en plein écran";
+        link.setAttribute("aria-label", link.title);
+        link.setAttribute("aria-pressed", on ? "true" : "false");
+      }
+      if (!map._loaded) return; // pas encore de vue (trace en cours de chargement)
+      var center = map.getCenter();
+      setTimeout(function () {
+        map.invalidateSize({ pan: false });
+        // En entrant en plein écran : toute la trace, à la taille de l'écran.
+        if (on && map.gmTrackBounds) map.fitBounds(map.gmTrackBounds, { padding: [40, 40] });
+        else map.panTo(center, { animate: false });
+      }, 60);
+    }
+    function enter() {
+      if (nativeOK) {
+        var req = el.requestFullscreen || el.webkitRequestFullscreen;
+        var p = req.call(el);
+        if (p && p.catch) p.catch(function () { el.classList.add("gm-map-fullscreen"); refresh(); });
+      } else {
+        el.classList.add("gm-map-fullscreen");
+        refresh();
+      }
+      map.scrollWheelZoom.enable();
+    }
+    function exit() {
+      if (isNative()) {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      } else {
+        el.classList.remove("gm-map-fullscreen");
+        refresh();
+      }
+    }
+
+    document.addEventListener("fullscreenchange", refresh);
+    document.addEventListener("webkitfullscreenchange", refresh);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && el.classList.contains("gm-map-fullscreen") && !document.querySelector("#panoramax-popup, .gm-modal--open")) exit();
+    });
+
+    var Ctl = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd: function () {
+        var box = L.DomUtil.create("div", "leaflet-bar gm-fullscreen-control");
+        link = L.DomUtil.create("a", "gm-fullscreen-btn", box);
+        link.href = "#";
+        link.setAttribute("role", "button");
+        L.DomEvent.disableClickPropagation(box);
+        L.DomEvent.on(link, "click", function (e) {
+          L.DomEvent.stop(e);
+          isOn() ? exit() : enter();
+        });
+        refresh();
+        return box;
+      },
+    });
+    new Ctl().addTo(map);
+  };
+
   // Contrôle "Me localiser" intégré à la carte (même famille que les
   // boutons de zoom) : demande la position du visiteur (API de
   // géolocalisation du navigateur, nécessite son autorisation) et place un
@@ -633,7 +846,7 @@
         link.title = "Me localiser sur la carte";
         link.setAttribute("role", "button");
         link.setAttribute("aria-label", "Me localiser sur la carte");
-        link.innerHTML = "📍";
+        link.innerHTML = GM_ICONS.locate;
 
         L.DomEvent.disableClickPropagation(container);
         L.DomEvent.disableScrollPropagation(container);
@@ -772,7 +985,10 @@
 
     function fit(layer) {
       var b = layer.getBounds();
-      if (b.isValid()) map.fitBounds(b, { padding: [24, 24] });
+      if (b.isValid()) {
+        map.gmTrackBounds = b; // réutilisé pour recadrer en plein écran
+        map.fitBounds(b, { padding: [24, 24] });
+      }
     }
 
     function addSlope(data) {
@@ -1122,10 +1338,7 @@
     }
 
     var map = L.map(container, { scrollWheelZoom: false, zoomSnap: 0.25 });
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 18,
-    }).addTo(map);
+    window.gmInitBasemaps(map, "topright");
 
     // Molette active seulement après un clic sur la carte : faire défiler la
     // page ne doit pas zoomer par accident.
@@ -1136,7 +1349,10 @@
     var visible = {};
     var highlighted = null;
     var selected = null;
-    var popup = L.popup({ maxWidth: 300, minWidth: 240, className: "ride-popup-wrap", autoPanPadding: [20, 20] });
+    // Marges de recentrage : la popup ne doit pas passer sous les boutons de
+    // la carte (zoom à gauche, fond de carte à droite).
+    var popup = L.popup({ maxWidth: 300, minWidth: 240, className: "ride-popup-wrap",
+      autoPanPaddingTopLeft: [64, 66], autoPanPaddingBottomRight: [64, 30] });
 
     rides.forEach(function (r) {
       var casing = L.polyline(r.coords, { color: "#ffffff", weight: 7, opacity: 0.85, interactive: false });

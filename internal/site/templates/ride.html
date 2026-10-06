@@ -193,10 +193,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   var map = L.map('map');
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 18
-  }).addTo(map);
+  window.gmInitBasemaps(map, 'topright');
 
   var gmMarkers = [];
   var gmMarkersByKind = {};
@@ -285,6 +282,7 @@
 
   window.gmInitPOIList(document.querySelector('.poi-section'), map, gmPoiMarkers, document.querySelector('[data-poi-filter]'));
   window.gmInitLocateMe(map);
+  window.gmInitFullscreen(map);
   {{if .HasGPX}}window.gmInit360Control(map, [{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], gmPanoramaxPoints);{{end}}
 </script>
 {{end}}

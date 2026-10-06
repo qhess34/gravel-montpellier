@@ -49,6 +49,39 @@ class BrandTest(unittest.TestCase):
         self.assertTrue(ride["track"] and ride["slope"] and ride["photos"])
         self.assertTrue(ride["url"].endswith("/rides/clapiers-corconne/"))
 
+    def test_basemap_aligned_with_route(self):
+        """Le fond de carte (tuiles Web Mercator) et la trace se superposent."""
+        import math
+        from PIL import Image, ImageDraw
+        ride = self.B.load_ride(RIDE)
+        pts = [(p[0], p[1]) for p in ride["track"]]
+        target = pts[len(pts) // 2]
+
+        def fake(provider, z, x, y):
+            im = Image.new("RGB", (256, 256), (236, 232, 220))
+            px, py = self.B._merc(*target)
+            lx, ly = px * 2 ** z - x * 256, py * 2 ** z - y * 256
+            ImageDraw.Draw(im).ellipse((lx - 6, ly - 6, lx + 6, ly + 6), fill=(255, 0, 255))
+            return im
+
+        img, proj = self.B.basemap(pts, (600, 400), "ign", fetch=fake)
+        ex, ey = proj(*target)
+        hits = [(x, y) for x in range(int(ex) - 30, int(ex) + 30) for y in range(int(ey) - 30, int(ey) + 30)
+                if img.getpixel((x, y))[0] > 180 and img.getpixel((x, y))[2] > 180 and img.getpixel((x, y))[1] < 120]
+        cx = sum(h[0] for h in hits) / len(hits)
+        cy = sum(h[1] for h in hits) / len(hits)
+        self.assertLess(math.hypot(cx - ex, cy - ey), 2.0)
+
+    def test_basemap_unavailable_falls_back(self):
+        def offline(*args):
+            raise OSError("pas de réseau")
+        ride = self.B.load_ride(RIDE)
+        img, proj = self.B.basemap([(p[0], p[1]) for p in ride["track"]], (300, 300), "osm", fetch=offline)
+        self.assertIsNone(img)
+        import make_instagram_image as M
+        self.assertEqual(M.render(ride, "post", fetch=offline).size, (1080, 1350))
+        self.assertFalse(ride["basemap_ok"])
+
     def test_instagram_formats(self):
         import make_instagram_image as M
         ride = self.B.load_ride(RIDE)
