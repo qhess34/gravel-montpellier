@@ -57,7 +57,7 @@ func buildElevationProfile(track []GPXPoint, maxPoints int) []profilePoint {
 
 const (
 	profileWidth  = 800.0
-	profileHeight = 220.0
+	profileHeight = 170.0
 	profilePadL   = 42.0
 	profilePadR   = 16.0
 	profilePadTop = 16.0

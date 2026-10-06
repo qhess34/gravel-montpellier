@@ -1,2 +1,7 @@
 /public/
 __pycache__/
+
+# Visuels générés localement par tools/ (régénérables à la demande)
+rides/*/qrcode.jpg
+rides/*/qrcode.png
+rides/*/instagram-*.jpg

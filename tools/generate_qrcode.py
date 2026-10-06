@@ -1,977 +1,305 @@
 #!/usr/bin/env python3
+"""
+Génère un visuel « QR code » aux couleurs de Cyclo Explore, à partager sur
+Instagram ou à imprimer (flyer, autocollant au départ d'une sortie…) :
+
+  - photo de la sortie, emblème et nom du site, pastille de difficulté ;
+  - titre en Fraunces, chiffres clés (distance, D+, durée) ;
+  - QR code stylé (modules arrondis vert forêt, repères d'angle terracotta,
+    emblème du logo au centre — correction d'erreur maximale « H », pour
+    rester lisible malgré le logo) ;
+  - invitation à scanner et adresse de la fiche en pied de page.
+
+Deux façons de l'utiliser :
+
+  1. Avec un dossier de sortie : URL, titre, distance, D+, durée, difficulté
+     et photo sont lus dans les fichiers de la sortie (rien à ressaisir) :
+         python3 tools/generate_qrcode.py rides/clapiers-corconne
+     -> rides/clapiers-corconne/qrcode.jpg
+
+  2. Avec une URL quelconque (usage d'origine du script), les textes étant
+     passés en options :
+         python3 tools/generate_qrcode.py https://montpellier.cycloexplore.fr \\
+             --title "Toutes nos sorties" --photos rides/clapiers-corconne/photos -o accueil.jpg
+
+Options utiles :
+    --format carre|affiche     1080×1080 (défaut) ou 1080×1350
+    --plain                    exporte seulement le QR code stylé (PNG
+                               transparent, 1200 px) pour l'impression
+    --utm                      ajoute ?utm_source=qrcode&utm_medium=print
+                               pour mesurer les visites dans les statistiques
+    --title/--distance/--dplus/--photo/--photos/--logo/--font/-o
+                               remplacent les valeurs lues dans la sortie
+
+Dépend de Pillow et segno :
+    pip install -r tools/requirements.txt
+"""
 
 import argparse
+import os
 import random
-import subprocess
+import sys
 from pathlib import Path
 
-import segno
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+try:
+    import segno
+    from PIL import Image, ImageDraw, ImageFont
+except ImportError:
+    sys.exit("Ce script a besoin de Pillow et segno : pip install -r tools/requirements.txt")
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import brand as B  # noqa: E402
+
+PHOTO_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+FOOTER_H = 90
+MARGIN = 64
 
 
 # ============================================================
-# CHARTE GRAPHIQUE CYCLO EXPLORE
+# QR CODE STYLÉ
 # ============================================================
 
-WIDTH = 1080
-HEIGHT = 1080
+def styled_qr(data, size, quiet=3, logo=True, background=None, scale=4):
+    """QR code aux couleurs du site, en image RGBA carrée de size px.
 
-HEADER_BG = "#E9DCC8"
-CONTENT_BG = "#F7F2EA"
-TEXT_COLOR = "#2B2620"
-WHITE = "#FFFFFF"
+    Modules arrondis vert forêt, repères d'angle terracotta (anneau) + vert
+    forêt (centre), emblème du logo au centre sur un disque blanc. La zone
+    de silence (quiet modules) est blanche ; background=None la rend
+    transparente autour du QR (utile pour l'impression).
+    """
+    qr = segno.make(data, error="h", boost_error=False)
+    matrix = [list(row) for row in qr.matrix]
+    n = len(matrix)
+    total = n + 2 * quiet
+    S = size * scale
+    m = S / total  # taille d'un module en px (sur-échantillonné)
 
-HEADER_HEIGHT = 230
-FOOTER_HEIGHT = 90
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    pad_px = 0  # zone de silence entièrement claire : meilleure lecture
+    d.rounded_rectangle((pad_px, pad_px, S - pad_px, S - pad_px), radius=m * 2.2,
+                        fill=(*(background or B.WHITE), 255))
 
-# QR exactement au centre
-QR_SIZE = 360
-QR_CENTER_X = WIDTH // 2
-QR_CENTER_Y = HEIGHT // 2 + 125
+    def cell(r, c):
+        return quiet * m + c * m, quiet * m + r * m
 
-# Logo environ 3x plus grand
-LOGO_MAX_WIDTH = 900
-LOGO_MAX_HEIGHT = 300
+    finders = [(0, 0), (0, n - 7), (n - 7, 0)]
 
-FONT_DIRS = [
-    Path("/usr/share/fonts"),
-    Path("/usr/local/share/fonts"),
-    Path.home() / ".fonts",
-    Path.home() / ".local/share/fonts",
-]
+    def in_finder(r, c):
+        return any(fr <= r < fr + 7 and fc <= c < fc + 7 for fr, fc in finders)
 
-PHOTO_EXTENSIONS = {
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".webp",
-}
+    # Zone réservée à l'emblème (disque au centre, ~22 % du côté)
+    center = quiet * m + n * m / 2
+    logo_r = n * m * 0.11 if logo else 0
+
+    def in_logo(r, c):
+        if not logo:
+            return False
+        x, y = cell(r, c)
+        cx, cy = x + m / 2, y + m / 2
+        return (cx - center) ** 2 + (cy - center) ** 2 <= (logo_r + m * 0.9) ** 2
+
+    inset = 0  # modules jointifs : un espace entre modules empêche certains lecteurs de décoder
+    for r in range(n):
+        for c in range(n):
+            if not matrix[r][c] or in_finder(r, c) or in_logo(r, c):
+                continue
+            x, y = cell(r, c)
+            d.rounded_rectangle((x + inset, y + inset, x + m - inset, y + m - inset),
+                                radius=m * 0.3, fill=(*B.FOREST, 255))
+
+    # Repères d'angle : coins seulement légèrement arrondis — trop ronds, ils
+    # ne sont plus reconnus par les lecteurs (vérifié avec OpenCV).
+    for fr, fc in finders:
+        x, y = cell(fr, fc)
+        d.rounded_rectangle((x, y, x + 7 * m, y + 7 * m), radius=m * 0.8, fill=(*B.TERRACOTTA, 255))
+        d.rounded_rectangle((x + m, y + m, x + 6 * m, y + 6 * m), radius=m * 0.5, fill=(*(background or B.WHITE), 255))
+        d.rounded_rectangle((x + 2 * m, y + 2 * m, x + 5 * m, y + 5 * m), radius=m * 0.4, fill=(*B.FOREST, 255))
+
+    if logo:
+        d.ellipse((center - logo_r - m * 0.5, center - logo_r - m * 0.5, center + logo_r + m * 0.5, center + logo_r + m * 0.5),
+                  fill=(*(background or B.WHITE), 255))
+        mark = B.logo_mark(int(logo_r * 2 * 0.92))
+        img.alpha_composite(mark, (int(center - mark.width / 2), int(center - mark.height / 2)))
+
+    return img.resize((size, size), Image.Resampling.LANCZOS)
 
 
-# ============================================================
-# OUTILS
-# ============================================================
-
-def hex_to_rgb(value):
-    value = value.lstrip("#")
-    return tuple(
-        int(value[i:i + 2], 16)
-        for i in (0, 2, 4)
-    )
-
-
-def find_font_with_fc(pattern):
+def verify(img, expected):
+    """Vérifie, si OpenCV est installé, que le QR code se décode bien (deux
+    lecteurs, plusieurs tailles). Renvoie True/False, ou None sans OpenCV."""
     try:
-        result = subprocess.run(
-            ["fc-match", "-f", "%{file}", pattern],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        path = result.stdout.strip()
-
-        if path and Path(path).exists():
-            return Path(path)
-
-    except Exception:
-        pass
-
-    return None
-
-
-def find_font_file(names):
-    names = [name.lower() for name in names]
-
-    for directory in FONT_DIRS:
-        if not directory.exists():
-            continue
-
-        try:
-            for path in directory.rglob("*"):
-                if not path.is_file():
-                    continue
-
-                if path.suffix.lower() not in {
-                    ".ttf",
-                    ".otf",
-                    ".ttc"
-                }:
-                    continue
-
-                filename = path.name.lower()
-
-                if any(name in filename for name in names):
-                    return path
-
-        except Exception:
-            pass
-
-    return None
-
-
-def resolve_fonts(explicit_font=None):
-
-    # --------------------------------------------------------
-    # Police explicitement fournie
-    # --------------------------------------------------------
-
-    if explicit_font:
-        path = Path(explicit_font)
-
-        if not path.exists():
-            raise FileNotFoundError(
-                f"Police introuvable : {path}"
-            )
-
-        return path, path
-
-    # --------------------------------------------------------
-    # Fraunces
-    # --------------------------------------------------------
-
-    regular = find_font_with_fc("Fraunces")
-    bold = find_font_with_fc(
-        "Fraunces:style=Bold"
-    )
-
-    if not regular:
-        regular = find_font_file([
-            "fraunces-regular",
-            "fraunces_regular",
-            "fraunces"
-        ])
-
-    if not bold:
-        bold = find_font_file([
-            "fraunces-bold",
-            "fraunces-semibold",
-            "fraunces-medium"
-        ])
-
-    if regular:
-        print(f"Police : Fraunces ({regular})")
-        return regular, bold or regular
-
-    # --------------------------------------------------------
-    # Georgia
-    # --------------------------------------------------------
-
-    regular = find_font_with_fc("Georgia")
-    bold = find_font_with_fc(
-        "Georgia:style=Bold"
-    )
-
-    if regular:
-        print(f"Police : Georgia ({regular})")
-        return regular, bold or regular
-
-    # --------------------------------------------------------
-    # DejaVu Serif
-    # --------------------------------------------------------
-
-    regular = find_font_with_fc("DejaVu Serif")
-    bold = find_font_with_fc(
-        "DejaVu Serif:style=Bold"
-    )
-
-    if regular:
-        print(
-            "Attention : Fraunces et Georgia "
-            "non trouvées, utilisation de DejaVu Serif."
-        )
-        return regular, bold or regular
-
-    raise RuntimeError(
-        "Aucune police compatible trouvée."
-    )
-
-
-def load_font(path, size):
-    return ImageFont.truetype(
-        str(path),
-        size=size
-    )
-
-
-def fit_font(
-    draw,
-    text,
-    font_path,
-    max_size,
-    max_width,
-    min_size=20
-):
-    for size in range(
-        max_size,
-        min_size - 1,
-        -1
-    ):
-        font = load_font(
-            font_path,
-            size
-        )
-
-        bbox = draw.textbbox(
-            (0, 0),
-            text,
-            font=font
-        )
-
-        width = bbox[2] - bbox[0]
-
-        if width <= max_width:
-            return font
-
-    return load_font(
-        font_path,
-        min_size
-    )
+        import cv2
+        import numpy as np
+    except ImportError:
+        return None
+    base = Image.new("RGBA", img.size, (*B.CREAM, 255))
+    base.alpha_composite(img.convert("RGBA"))
+    arr = np.array(base.convert("RGB"))[:, :, ::-1].copy()
+    readers = [cv2.QRCodeDetector()]
+    if hasattr(cv2, "QRCodeDetectorAruco"):
+        readers.append(cv2.QRCodeDetectorAruco())
+    for scale in (1.0, 0.5, 0.3):
+        x = cv2.resize(arr, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        if not any(r.detectAndDecode(x)[0] == expected for r in readers):
+            return False
+    return True
 
 
 # ============================================================
-# PHOTOS
+# PHOTOS (comportement d'origine conservé)
 # ============================================================
 
 def find_photos(directory):
-    """
-    Retourne toutes les photos présentes dans un dossier.
-    """
-
     directory = Path(directory)
-
-    if not directory.exists():
-        raise FileNotFoundError(
-            f"Dossier photos introuvable : {directory}"
-        )
-
     if not directory.is_dir():
-        raise NotADirectoryError(
-            f"Ce n'est pas un dossier : {directory}"
-        )
-
-    photos = [
-        p
-        for p in directory.iterdir()
-        if p.is_file()
-        and p.suffix.lower() in PHOTO_EXTENSIONS
-    ]
-
-    return sorted(photos)
+        raise FileNotFoundError(f"Dossier photos introuvable : {directory}")
+    return sorted(p for p in directory.iterdir() if p.is_file() and p.suffix.lower() in PHOTO_EXTENSIONS)
 
 
-def select_photo(photo=None, photos_dir=None):
-
-    # Une photo explicitement donnée
+def select_photo(photo=None, photos_dir=None, default=None):
     if photo:
-        path = Path(photo)
-
-        if not path.exists():
-            raise FileNotFoundError(
-                f"Photo introuvable : {path}"
-            )
-
-        return path
-
-    # Un dossier de photos
+        if not Path(photo).exists():
+            raise FileNotFoundError(f"Photo introuvable : {photo}")
+        return str(photo)
     if photos_dir:
-        photos = find_photos(
-            photos_dir
-        )
-
-        if not photos:
-            print(
-                f"Aucune photo trouvée dans "
-                f"{photos_dir}"
-            )
-            return None
-
-        selected = random.choice(
-            photos
-        )
-
-        print(
-            f"Photo sélectionnée : {selected}"
-        )
-
-        return selected
-
-    return None
-
-
-def crop_to_size(
-    image,
-    width,
-    height
-):
-    image = image.convert("RGB")
-
-    ratio = max(
-        width / image.width,
-        height / image.height
-    )
-
-    new_width = int(
-        image.width * ratio
-    )
-
-    new_height = int(
-        image.height * ratio
-    )
-
-    image = image.resize(
-        (new_width, new_height),
-        Image.Resampling.LANCZOS
-    )
-
-    left = (
-        new_width - width
-    ) // 2
-
-    top = (
-        new_height - height
-    ) // 2
-
-    return image.crop(
-        (
-            left,
-            top,
-            left + width,
-            top + height
-        )
-    )
-
-
-def add_background_photo(
-    canvas,
-    photo_path
-):
-
-    if not photo_path:
-        return
-
-    photo = Image.open(
-        photo_path
-    ).convert("RGB")
-
-    photo_height = (
-        HEIGHT
-        - HEADER_HEIGHT
-        - FOOTER_HEIGHT
-    )
-
-    photo = crop_to_size(
-        photo,
-        WIDTH,
-        photo_height
-    )
-
-    layer = Image.new(
-        "RGBA",
-        (WIDTH, photo_height),
-        (0, 0, 0, 0)
-    )
-
-    layer.paste(
-        photo,
-        (0, 0)
-    )
-
-    # Voile crème au lieu d'un voile noir
-    overlay = Image.new(
-        "RGBA",
-        (WIDTH, photo_height),
-        (
-            *hex_to_rgb(CONTENT_BG),
-            80
-        )
-    )
-
-    layer.alpha_composite(
-        overlay
-    )
-
-    canvas.alpha_composite(
-        layer,
-        (0, HEADER_HEIGHT)
-    )
+        photos = find_photos(photos_dir)
+        if photos:
+            chosen = random.choice(photos)
+            print(f"Photo sélectionnée : {chosen}")
+            return str(chosen)
+        print(f"Aucune photo trouvée dans {photos_dir}")
+    return default
 
 
 # ============================================================
-# OMBRE
+# MISE EN PAGE
 # ============================================================
 
-def add_shadow(
-    base,
-    box,
-    radius=30,
-    offset=(0, 10)
-):
-
-    x1, y1, x2, y2 = box
-
-    shadow = Image.new(
-        "RGBA",
-        base.size,
-        (0, 0, 0, 0)
-    )
-
-    draw = ImageDraw.Draw(
-        shadow
-    )
-
-    draw.rounded_rectangle(
-        (
-            x1 + offset[0],
-            y1 + offset[1],
-            x2 + offset[0],
-            y2 + offset[1]
-        ),
-        radius=radius,
-        fill=(43, 38, 32, 55)
-    )
-
-    shadow = shadow.filter(
-        ImageFilter.GaussianBlur(15)
-    )
-
-    base.alpha_composite(
-        shadow
-    )
-
-
-# ============================================================
-# LOGO
-# ============================================================
-
-def add_logo(
-    canvas,
-    logo_path,
-    font_bold
-):
-
-    if logo_path:
-
-        path = Path(logo_path)
-
-        if not path.exists():
-            raise FileNotFoundError(
-                f"Logo introuvable : {path}"
-            )
-
-        original = Image.open(path).convert("RGBA")
- 
-        alpha = original.getchannel("A")
-
-        logo = Image.new(
-            "RGBA",
-            original.size,
-            (*hex_to_rgb(TEXT_COLOR), 0)
-        )
-
-        logo.putalpha(alpha)
-
-        scale = min(
-            LOGO_MAX_WIDTH / logo.width,
-            LOGO_MAX_HEIGHT / logo.height
-        )
-
-        logo = logo.resize(
-            (
-                int(logo.width * scale),
-                int(logo.height * scale)
-            ),
-            Image.Resampling.LANCZOS
-        )
-
-        x = (
-            WIDTH - logo.width
-        ) // 2
-
-        y = (
-            HEADER_HEIGHT - logo.height
-        ) // 2
-
-        canvas.alpha_composite(
-            logo,
-            (x, y)
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # Fallback si aucun logo n'est fourni
-    # --------------------------------------------------------
-
-    draw = ImageDraw.Draw(
-        canvas
-    )
-
-    font = load_font(
-        font_bold,
-        150
-    )
-
-    text = "CYCLO EXPLORE"
-
-    bbox = draw.textbbox(
-        (0, 0),
-        text,
-        font=font
-    )
-
-    text_width = (
-        bbox[2] - bbox[0]
-    )
-
-    text_height = (
-        bbox[3] - bbox[1]
-    )
-
-    x = (
-        WIDTH - text_width
-    ) // 2
-
-    y = (
-        HEADER_HEIGHT - text_height
-    ) // 2 - bbox[1]
-
-    draw.text(
-        (x, y),
-        text,
-        font=font,
-        fill=TEXT_COLOR
-    )
-
-
-# ============================================================
-# TITRE
-# ============================================================
-
-def add_title(
-    canvas,
-    title,
-    font_bold
-):
-
-    if not title:
-        return
-
-    draw = ImageDraw.Draw(
-        canvas
-    )
-
-    font = fit_font(
-        draw,
-        title,
-        font_bold,
-        max_size=62,
-        max_width=920,
-        min_size=30
-    )
-
-    bbox = draw.textbbox(
-        (0, 0),
-        title,
-        font=font
-    )
-
-    text_width = (
-        bbox[2] - bbox[0]
-    )
-
-    x = (
-        WIDTH - text_width
-    ) // 2
-
-    y = HEADER_HEIGHT + 20
-
-    draw.text(
-        (x, y),
-        title,
-        font=font,
-        fill=TEXT_COLOR
-    )
-
-
-# ============================================================
-# DISTANCE / D+
-# ============================================================
-
-def add_metrics(
-    canvas,
-    distance,
-    dplus,
-    font_bold
-):
-
-    values = []
-
-    if distance:
-        values.append(distance)
-
-    if dplus:
-        values.append(
-            f"D+ {dplus}"
-        )
-
-    if not values:
-        return
-
-    draw = ImageDraw.Draw(
-        canvas
-    )
-
-    text = "   •   ".join(
-        values
-    )
-
-    font = load_font(
-        font_bold,
-        34
-    )
-
-    bbox = draw.textbbox(
-        (0, 0),
-        text,
-        font=font
-    )
-
-    text_width = (
-        bbox[2] - bbox[0]
-    )
-
-    x = (
-        WIDTH - text_width
-    ) // 2
-
-    y = HEADER_HEIGHT + 85
-
-    draw.text(
-        (x, y),
-        text,
-        font=font,
-        fill=TEXT_COLOR
-    )
-
-
-# ============================================================
-# QR CODE
-# ============================================================
-
-def create_qr(url):
-
-    qr = segno.make(
-        url,
-        error="h"
-    )
-
-    temp = Path(
-        "/tmp/cyclo_explore_qr.png"
-    )
-
-    qr.save(
-        temp,
-        kind="png",
-        scale=10,
-        border=4,
-        dark=TEXT_COLOR,
-        light=WHITE
-    )
-
-    image = Image.open(
-        temp
-    ).convert("RGBA")
-
-    image = image.resize(
-        (QR_SIZE, QR_SIZE),
-        Image.Resampling.NEAREST
-    )
-
-    return image
-
-
-def add_qr(
-    canvas,
-    url
-):
-
-    qr = create_qr(
-        url
-    )
-
-    # QR centré exactement à 540,540
-    qr_x = (
-        QR_CENTER_X
-        - QR_SIZE // 2
-    )
-
-    qr_y = (
-        QR_CENTER_Y
-        - QR_SIZE // 2
-    )
-
-    padding = 30
-
-    card = (
-        qr_x - padding,
-        qr_y - padding,
-        qr_x + QR_SIZE + padding,
-        qr_y + QR_SIZE + padding
-    )
-
-    add_shadow(
-        canvas,
-        card,
-        radius=35,
-        offset=(0, 10)
-    )
-
-    draw = ImageDraw.Draw(
-        canvas
-    )
-
-    draw.rounded_rectangle(
-        card,
-        radius=35,
-        fill=WHITE
-    )
-
-    canvas.alpha_composite(
-        qr,
-        (qr_x, qr_y)
-    )
-
-
-# ============================================================
-# FOOTER
-# ============================================================
-
-def add_footer(
-    canvas,
-    url,
-    font_regular
-):
-
-    draw = ImageDraw.Draw(
-        canvas
-    )
-
-    footer_y = (
-        HEIGHT - FOOTER_HEIGHT
-    )
-
-    draw.rectangle(
-        (
-            0,
-            footer_y,
-            WIDTH,
-            footer_y + 3
-        ),
-        fill=TEXT_COLOR
-    )
-
-    display_url = url
-
-    for prefix in (
-        "https://",
-        "http://"
-    ):
-        if display_url.startswith(prefix):
-            display_url = display_url[
-                len(prefix):
-            ]
-
-    display_url = display_url.rstrip(
-        "/"
-    )
-
-    font = fit_font(
-        draw,
-        display_url,
-        font_regular,
-        max_size=27,
-        max_width=950,
-        min_size=18
-    )
-
-    bbox = draw.textbbox(
-        (0, 0),
-        display_url,
-        font=font
-    )
-
-    text_width = (
-        bbox[2] - bbox[0]
-    )
-
-    text_height = (
-        bbox[3] - bbox[1]
-    )
-
-    x = (
-        WIDTH - text_width
-    ) // 2
-
-    y = (
-        footer_y
-        + (FOOTER_HEIGHT - text_height)
-        // 2
-        - bbox[1]
-    )
-
-    draw.text(
-        (x, y),
-        display_url,
-        font=font,
-        fill=TEXT_COLOR
-    )
-
-
-# ============================================================
-# GÉNÉRATION
-# ============================================================
-
-def generate(args):
-
-    font_regular, font_bold = resolve_fonts(
-        args.font
-    )
-
-    # --------------------------------------------------------
-    # Photo
-    # --------------------------------------------------------
-
-    photo = select_photo(
-        photo=args.photo,
-        photos_dir=args.photos
-    )
-
-    # --------------------------------------------------------
-    # Canvas
-    # --------------------------------------------------------
-
-    canvas = Image.new(
-        "RGBA",
-        (WIDTH, HEIGHT),
-        CONTENT_BG
-    )
-
-    draw = ImageDraw.Draw(
-        canvas
-    )
-
-    # --------------------------------------------------------
-    # Header
-    # --------------------------------------------------------
-
-    draw.rectangle(
-        (
-            0,
-            0,
-            WIDTH,
-            HEADER_HEIGHT
-        ),
-        fill=HEADER_BG
-    )
-
-    # --------------------------------------------------------
-    # Photo
-    # --------------------------------------------------------
-
-    add_background_photo(
-        canvas,
-        photo
-    )
-
-    # --------------------------------------------------------
-    # Logo
-    # --------------------------------------------------------
-
-    add_logo(
-        canvas,
-        args.logo,
-        font_bold
-    )
-
-    # --------------------------------------------------------
-    # Titre
-    # --------------------------------------------------------
-
-    add_title(
-        canvas,
-        args.title,
-        font_bold
-    )
-
-    # --------------------------------------------------------
-    # Distance / D+
-    # --------------------------------------------------------
-
-    add_metrics(
-        canvas,
-        args.distance,
-        args.dplus,
-        font_bold
-    )
-
-    # --------------------------------------------------------
-    # QR
-    # --------------------------------------------------------
-
-    add_qr(
-        canvas,
-        args.url
-    )
-
-    # --------------------------------------------------------
-    # Footer
-    # --------------------------------------------------------
-
-    add_footer(
-        canvas,
-        args.url,
-        font_regular
-    )
-
-    # --------------------------------------------------------
-    # Export
-    # --------------------------------------------------------
-
-    output = Path(
-        args.output
-    )
-
-    # PNG si demandé
-    if output.suffix.lower() == ".png":
-
-        canvas.save(
-            output,
-            "PNG",
-            optimize=True
-        )
-
+def title_font_override(path, size):
+    return ImageFont.truetype(str(path), size)
+
+
+def render(info, fmt, qr_url, custom_logo=None, custom_font=None):
+    W, H = (1080, 1080) if fmt == "carre" else (1080, 1350)
+    photo_h = 450 if fmt == "carre" else 480
+    canvas = Image.new("RGBA", (W, H), (*B.CREAM, 255))
+    d = ImageDraw.Draw(canvas)
+
+    # --- Photo + en-tête -----------------------------------------------------
+    if info["photo"]:
+        photo = B.cover(B.open_photo(info["photo"]), W, photo_h + 50, focus_y=0.55).convert("RGBA")
     else:
+        photo = B.vertical_gradient(W, photo_h + 50, (*B.OLIVE, 255), (*B.FOREST, 255))
+    canvas.alpha_composite(photo, (0, 0))
+    canvas.alpha_composite(B.vertical_gradient(W, 240, (*B.INK, 120), (*B.INK, 0)), (0, 0))
 
-        canvas.convert("RGB").save(
-            output,
-            "JPEG",
-            quality=95,
-            optimize=True
-        )
+    if custom_logo:
+        logo = Image.open(custom_logo).convert("RGBA")
+        logo.thumbnail((360, 120), Image.Resampling.LANCZOS)
+        B.shadow(canvas, (40, 40, 40 + logo.width + 36, 40 + logo.height + 24), radius=24, blur=12, offset=(0, 5), alpha=60)
+        ImageDraw.Draw(canvas).rounded_rectangle((40, 40, 40 + logo.width + 36, 40 + logo.height + 24), radius=24, fill=(*B.PAPER, 240))
+        canvas.alpha_composite(logo, (58, 52))
+    else:
+        B.brand_lockup(canvas, (40, 40), mark=56)
+    d = ImageDraw.Draw(canvas)
 
-    print()
-    print("======================================")
-    print(" Publication générée")
-    print("======================================")
-    print(f"Fichier : {output}")
-    print(f"Taille  : {WIDTH}x{HEIGHT}")
-    print(f"URL QR  : {args.url}")
+    if info["difficulty"]:
+        color = B.DIFFICULTY_COLORS.get(B.difficulty_key(info["difficulty"]), B.INK_SOFT)
+        f = B.font("sans", 26, 700)
+        tw = d.textlength(info["difficulty"], font=f)
+        x = W - 40 - tw - 44
+        B.shadow(canvas, (x, 50, W - 40, 100), radius=25, blur=10, offset=(0, 4), alpha=70)
+        d = ImageDraw.Draw(canvas)
+        B.pill(d, (x, 50), info["difficulty"], f, color, B.WHITE, pad=(22, 10))
 
-    if photo:
-        print(f"Photo   : {photo}")
+    poly, fill = B.mountain_edge(W, 42, photo_h + 2, (*B.CREAM, 255))
+    d.polygon(poly, fill=fill)
+    d.rectangle((0, photo_h, W, H), fill=(*B.CREAM, 255))
 
-    print()
+    footer_y = H - FOOTER_H
+    title_font = (lambda size: title_font_override(custom_font, size)) if custom_font else None
+
+    def fit(text, width, lines, sizes):
+        if not title_font:
+            return B.fit_title(d, text, width, lines, sizes)
+        for s in sizes:
+            fnt = title_font(s)
+            wrapped = B.wrap(d, text, fnt, width)
+            if len(wrapped) <= lines:
+                return fnt, wrapped
+        fnt = title_font(sizes[-1])
+        return fnt, B.wrap(d, text, fnt, width)[:lines]
+
+    stats = " · ".join(x for x in (info["distance"], info["dplus"], info["duration"]) if x)
+    cta = "Scannez pour retrouver la trace GPX, la carte, les photos et les vues 360°."
+
+    if fmt == "carre":
+        # QR à gauche, textes à droite
+        card = 470
+        qx, qy = MARGIN, photo_h - 50
+        B.shadow(canvas, (qx, qy, qx + card, qy + card), radius=34, blur=22, offset=(0, 12), alpha=85)
+        canvas.alpha_composite(styled_qr(qr_url, card), (qx, qy))
+        d = ImageDraw.Draw(canvas)
+
+        tx = qx + card + 40
+        tw = W - MARGIN - tx
+        fnt, lines = fit(info["title"] or "Cyclo Explore", tw, 4, (48, 44, 40, 36, 32))
+        asc, desc = fnt.getmetrics()
+        lh = int((asc + desc) * 1.02)
+        sf, cf = B.font("sans", 25, 600), B.font("sans", 22, 400)
+        stat_lines = B.wrap(d, stats, sf, tw) if stats else []
+        cta_lines = B.wrap(d, cta, cf, tw)
+        block_h = 36 + len(lines) * lh + (len(stat_lines) * 36 + 8 if stat_lines else 0) + 10 + len(cta_lines) * 31
+        # colonne de texte centrée verticalement face au QR (sous la photo)
+        y = max(photo_h + 24, qy + (card - block_h) / 2 + 20)
+        B.draw_text(d, (tx, y), "SORTIE VÉLO & GRAVEL", B.font("sans", 20, 600), B.OLIVE, tracking=2.2)
+        y += 36
+        for line in lines:
+            d.text((tx, y), line, font=fnt, fill=B.INK)
+            y += lh
+        if stat_lines:
+            y += 8
+            for line in stat_lines:
+                d.text((tx, y), line, font=sf, fill=B.TERRACOTTA_DARK)
+                y += 36
+        y += 10
+        for line in cta_lines:
+            d.text((tx, y), line, font=cf, fill=B.INK_SOFT)
+            y += 31
+    else:
+        # Affiche : titre centré, QR centré, invitation dessous
+        y = photo_h + 24
+        B.draw_text(d, (W / 2, y), "SORTIE VÉLO & GRAVEL", B.font("sans", 21, 600), B.OLIVE, anchor="mt", tracking=2.4)
+        y += 38
+        fnt, lines = fit(info["title"] or "Cyclo Explore", W - 2 * MARGIN, 2, (60, 54, 48, 42, 38))
+        asc, desc = fnt.getmetrics()
+        for line in lines:
+            d.text((W / 2, y), line, font=fnt, fill=B.INK, anchor="mt")
+            y += int((asc + desc) * 1.02)
+        if stats:
+            y += 6
+            d.text((W / 2, y), stats, font=B.font("sans", 28, 600), fill=B.TERRACOTTA_DARK, anchor="mt")
+            y += 44
+        card = min(420, footer_y - y - 110)
+        qx, qy = (W - card) // 2, y + 18
+        B.shadow(canvas, (qx, qy, qx + card, qy + card), radius=34, blur=22, offset=(0, 12), alpha=85)
+        canvas.alpha_composite(styled_qr(qr_url, card), (qx, qy))
+        d = ImageDraw.Draw(canvas)
+        d.text((W / 2, qy + card + 26), cta, font=B.font("sans", 23, 500), fill=B.INK_SOFT, anchor="mt")
+
+    # --- Pied de page --------------------------------------------------------
+    d.rectangle((0, footer_y, W, H), fill=(*B.FOREST, 255))
+    canvas.alpha_composite(B.logo_mark(50, color=B.WHITE), (MARGIN - 4, footer_y + (FOOTER_H - 50) // 2))
+    d = ImageDraw.Draw(canvas)
+    url_text = B.display_url(info["display_url"])
+    uf = B.font("sans", 26, 600)
+    while d.textlength(url_text, font=uf) > W - 2 * MARGIN - 70 - 150 and uf.size > 16:
+        uf = B.font("sans", uf.size - 1, 600)
+    d.text((MARGIN + 60, footer_y + FOOTER_H / 2), url_text, font=uf, fill=B.WHITE, anchor="lm")
+    B.draw_text(d, (W - MARGIN, footer_y + FOOTER_H / 2), "SCANNEZ-MOI", B.font("sans", 19, 700), B.SAND,
+                anchor="rm", tracking=2.2)
+    return canvas
 
 
 # ============================================================
@@ -979,87 +307,87 @@ def generate(args):
 # ============================================================
 
 def main():
-
-    parser = argparse.ArgumentParser(
-        description=(
-            "Générateur de publications "
-            "Instagram Cyclo Explore"
-        )
-    )
-
-    # URL obligatoire
-    parser.add_argument(
-        "url",
-        help="URL encodée dans le QR code"
-    )
-
-    parser.add_argument(
-        "--title",
-        default="",
-        help="Nom du parcours"
-    )
-
-    parser.add_argument(
-        "--distance",
-        default="",
-        help="Distance, ex: 86 km"
-    )
-
-    parser.add_argument(
-        "--dplus",
-        default="",
-        help="D+, ex: 1250 m"
-    )
-
-    # Une seule photo
-    parser.add_argument(
-        "--photo",
-        default=None,
-        help="Utiliser une photo précise"
-    )
-
-    # OU un dossier de photos
-    parser.add_argument(
-        "--photos",
-        default=None,
-        help=(
-            "Dossier contenant les photos "
-            "du parcours"
-        )
-    )
-
-    # Logo
-    parser.add_argument(
-        "--logo",
-        default=None,
-        help="Logo Cyclo Explore"
-    )
-
-    # Police
-    parser.add_argument(
-        "--font",
-        default=None,
-        help="Fichier TTF/OTF de police"
-    )
-
-    # Sortie : accepte --output ET -o
-    parser.add_argument(
-        "-o",
-        "--output",
-        default="cyclo_explore_instagram.jpg",
-        help="Fichier de sortie"
-    )
-
+    parser = argparse.ArgumentParser(description="QR code aux couleurs de Cyclo Explore (sortie ou URL).")
+    parser.add_argument("target", help="Dossier d'une sortie (ex: rides/clapiers-corconne) ou URL à encoder")
+    parser.add_argument("--title", help="Titre (défaut : celui de la sortie)")
+    parser.add_argument("--distance", help="Distance, ex: « 86 km » (défaut : celle de la sortie)")
+    parser.add_argument("--dplus", help="D+, ex: « 1250 m » (défaut : celui de la sortie)")
+    parser.add_argument("--photo", help="Photo précise")
+    parser.add_argument("--photos", help="Dossier de photos (une est tirée au hasard)")
+    parser.add_argument("--logo", help="Logo à utiliser à la place de l'emblème Cyclo Explore")
+    parser.add_argument("--font", help="Police TTF/OTF des titres (défaut : Fraunces, fournie)")
+    parser.add_argument("--format", choices=("carre", "affiche"), default="carre", help="carre (1080×1080, défaut) ou affiche (1080×1350)")
+    parser.add_argument("--plain", action="store_true", help="Exporter seulement le QR code stylé (PNG transparent 1200 px)")
+    parser.add_argument("--utm", action="store_true", help="Ajouter ?utm_source=qrcode&utm_medium=print à l'URL encodée")
+    parser.add_argument("--site-url", default=B.DEFAULT_SITE_URL, help="URL publique du site (mode dossier de sortie)")
+    parser.add_argument("-o", "--output", help="Fichier de sortie (défaut : qrcode.jpg dans le dossier de la sortie, ou cyclo_explore_qrcode.jpg)")
     args = parser.parse_args()
 
-    # Vérification
     if args.photo and args.photos:
-        parser.error(
-            "--photo et --photos ne peuvent "
-            "pas être utilisés simultanément."
-        )
+        parser.error("--photo et --photos ne peuvent pas être utilisés simultanément.")
 
-    generate(args)
+    info = {"title": "", "distance": "", "dplus": "", "duration": "", "difficulty": "", "photo": None}
+    if os.path.isdir(args.target):
+        try:
+            ride = B.load_ride(args.target, args.site_url)
+        except FileNotFoundError as e:
+            sys.exit(f"✗ {e}")
+        url = ride["url"]
+        info.update(
+            title=ride["title"],
+            distance=f"{B.fmt_int(ride['distance_km'])} km" if ride["distance_km"] else "",
+            dplus=f"{B.fmt_int(ride['elevation_m'])} m D+" if ride["elevation_m"] else "",
+            duration=ride["duration"],
+            difficulty=ride["difficulty"],
+            photo=ride["photos"][0] if ride["photos"] else None,
+        )
+        default_out = os.path.join(args.target, "qrcode.png" if args.plain else "qrcode.jpg")
+    elif args.target.startswith(("http://", "https://")):
+        url = args.target
+        default_out = "cyclo_explore_qrcode.png" if args.plain else "cyclo_explore_qrcode.jpg"
+    else:
+        sys.exit(f"✗ {args.target} n'est ni un dossier de sortie ni une URL (http/https)")
+
+    if args.title is not None:
+        info["title"] = args.title
+    if args.distance is not None:
+        info["distance"] = args.distance
+    if args.dplus is not None:
+        info["dplus"] = args.dplus if "D+" in args.dplus or not args.dplus else f"{args.dplus} D+"
+    try:
+        info["photo"] = select_photo(args.photo, args.photos, info["photo"])
+    except FileNotFoundError as e:
+        sys.exit(f"✗ {e}")
+    for path, label in ((args.logo, "Logo"), (args.font, "Police")):
+        if path and not os.path.exists(path):
+            sys.exit(f"✗ {label} introuvable : {path}")
+
+    qr_url = url
+    if args.utm:
+        qr_url += ("&" if "?" in url else "?") + "utm_source=qrcode&utm_medium=print"
+    info["display_url"] = url
+    out = args.output or default_out
+
+    check = verify(styled_qr(qr_url, 600), qr_url)
+    if check is False:
+        print("⚠ le QR code stylé n'a pas pu être relu à toutes les tailles : testez-le au téléphone avant impression")
+
+    if args.plain:
+        styled_qr(qr_url, 1200, background=B.WHITE).save(out, "PNG", optimize=True)
+        print(f"✓ QR code : {out} (1200×1200) → {qr_url}")
+        if check:
+            print("  Relecture vérifiée (OpenCV)")
+        return
+
+    image = render(info, args.format, qr_url, args.logo, args.font)
+    if out.lower().endswith(".png"):
+        image.save(out, "PNG", optimize=True)
+    else:
+        image.convert("RGB").save(out, "JPEG", quality=94, optimize=True, progressive=True)
+    print(f"✓ Visuel QR code : {out} ({image.width}×{image.height})")
+    print(f"  URL encodée : {qr_url}" + ("  (relecture vérifiée)" if check else ""))
+    if info["photo"]:
+        print(f"  Photo : {info['photo']}")
 
 
 if __name__ == "__main__":

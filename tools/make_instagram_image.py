@@ -1,379 +1,207 @@
 #!/usr/bin/env python3
 """
-Génère une image au format Instagram (portrait 1080x1350) pour une sortie :
-photo de fond, silhouette de la trace GPX, infos clés (titre, distance,
-dénivelé, difficulté) et logo Cyclo Explore.
+Génère le visuel Instagram d'une sortie, aux couleurs du site Cyclo Explore :
 
-Le fichier généré (instagram.jpg, à la racine du dossier de la sortie) est
-automatiquement repris par le générateur : s'il existe, un bouton "Instagram"
-apparaît dans le bloc de partage de la page de la sortie.
+  - photo de la sortie en grand, avec l'emblème et le nom du site ;
+  - pastille de difficulté (même couleur que sur le site) ;
+  - titre en Fraunces, chiffres clés (distance, D+, durée) ;
+  - silhouette de la trace et profil altimétrique colorés selon la pente
+    (mêmes couleurs que la carte du site, lues dans slope.geojson) ;
+  - bandeau de pied avec l'adresse de la fiche.
+
+Trois formats : post (1080×1350, défaut), story (1080×1920), carre (1080×1080).
+
+Le fichier généré (instagram.jpg à la racine du dossier de la sortie, pour
+le format post) est repris automatiquement par le site : un bouton
+« Instagram » apparaît dans le bloc de partage de la fiche.
+
+Toutes les données viennent des fichiers de la sortie (description.md, GPX,
+photos/, slope.geojson) : rien à ressaisir. Polices Fraunces et Inter
+fournies dans tools/fonts (licence OFL).
 
 Dépend de Pillow :
-    pip install Pillow
-    (si erreur "externally-managed-environment" : pip install Pillow --break-system-packages)
+    pip install -r tools/requirements.txt
 
 Usage :
-    python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup
-    python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --photo photos/sommet.jpg
-    python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --out apercu.jpg
+    python3 tools/make_instagram_image.py rides/clapiers-corconne
+    python3 tools/make_instagram_image.py rides/clapiers-corconne --format story
+    python3 tools/make_instagram_image.py rides/clapiers-corconne --photo photos/sommet.jpg
+    python3 tools/make_instagram_image.py rides/clapiers-corconne --out apercu.jpg
 """
 
 import argparse
-import math
 import os
 import sys
-import xml.etree.ElementTree as ET
 
 try:
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw
 except ImportError:
-    sys.exit(
-        "Ce script a besoin de Pillow : pip install Pillow\n"
-        "(si erreur \"externally-managed-environment\" : pip install Pillow --break-system-packages)"
-    )
+    sys.exit("Ce script a besoin de Pillow : pip install -r tools/requirements.txt")
 
-CANVAS_W, CANVAS_H = 1080, 1350
-EARTH_RADIUS_KM = 6371.0
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import brand as B  # noqa: E402
 
-CREAM = (247, 242, 234)
-TERRACOTTA = (184, 86, 47)
-INK = (43, 38, 32)
-WHITE = (255, 255, 255)
-
-FONT_BOLD_CANDIDATES = [
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-    "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
-    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-    "/Library/Fonts/Arial Bold.ttf",
-    "C:\\Windows\\Fonts\\arialbd.ttf",
-]
-FONT_REGULAR_CANDIDATES = [
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-    "/usr/share/fonts/dejavu/DejaVuSans.ttf",
-    "/System/Library/Fonts/Supplemental/Arial.ttf",
-    "/Library/Fonts/Arial.ttf",
-    "C:\\Windows\\Fonts\\arial.ttf",
-]
+FORMATS = {
+    # largeur, hauteur, hauteur photo, côté de la carte de trace, tailles de titre, lignes max, synthèse
+    "post": dict(w=1080, h=1350, photo=690, route=290, sizes=(58, 54, 50, 46, 42), lines=3, summary=False),
+    "story": dict(w=1080, h=1920, photo=1000, route=360, sizes=(76, 68, 60, 54), lines=3, summary=True),
+    "carre": dict(w=1080, h=1080, photo=500, route=250, sizes=(52, 48, 44, 40), lines=2, summary=False),
+}
+MARGIN = 56
+FOOTER_H = 84
 
 
-def load_font(candidates, size):
-    for path in candidates:
-        if os.path.exists(path):
-            try:
-                return ImageFont.truetype(path, size)
-            except OSError:
-                continue
-    # Repli : police par défaut de Pillow (scalable depuis Pillow 10.1+).
-    try:
-        return ImageFont.load_default(size=size)
-    except TypeError:
-        return ImageFont.load_default()
+def stat_blocks(ride):
+    blocks = []
+    if ride["distance_km"]:
+        blocks.append(("DISTANCE", f"{B.fmt_int(ride['distance_km'])} km"))
+    if ride["elevation_m"]:
+        blocks.append(("DÉNIVELÉ +", f"{B.fmt_int(ride['elevation_m'])} m"))
+    if ride["duration"]:
+        blocks.append(("DURÉE", ride["duration"]))
+    return blocks
 
 
-# --- Contenu de la sortie ---------------------------------------------
+def render(ride, fmt, photo_path=None):
+    L = FORMATS[fmt]
+    W, H = L["w"], L["h"]
+    canvas = Image.new("RGBA", (W, H), (*B.CREAM, 255))
+    d = ImageDraw.Draw(canvas)
 
-def parse_frontmatter(path):
-    with open(path, "r", encoding="utf-8") as f:
-        content = f.read()
-    lines = content.replace("\r\n", "\n").split("\n")
-    if not lines or lines[0].strip() != "---":
-        return {}
-    fields = {}
-    for line in lines[1:]:
-        if line.strip() == "---":
-            break
-        if ":" not in line or line.strip().startswith("#"):
-            continue
-        key, _, value = line.partition(":")
-        fields[key.strip()] = value.strip().strip("\"'")
-    return fields
-
-
-def haversine_km(a, b):
-    lat1, lon1 = math.radians(a[0]), math.radians(a[1])
-    lat2, lon2 = math.radians(b[0]), math.radians(b[1])
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    h = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
-    return EARTH_RADIUS_KM * 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h))
-
-
-def load_gpx(path):
-    tree = ET.parse(path)
-    root = tree.getroot()
-    pts = []
-    for pt in root.findall(".//{*}trkpt"):
-        lat, lon = float(pt.get("lat")), float(pt.get("lon"))
-        ele_el = pt.find("{*}ele")
-        ele = float(ele_el.text) if ele_el is not None and ele_el.text else None
-        pts.append((lat, lon, ele))
-    if not pts:
-        for pt in root.findall(".//{*}rtept"):
-            pts.append((float(pt.get("lat")), float(pt.get("lon")), None))
-    return pts
-
-
-def track_stats(track):
-    distance = 0.0
-    for i in range(1, len(track)):
-        distance += haversine_km(track[i - 1][:2], track[i][:2])
-    gain = 0.0
-    for i in range(1, len(track)):
-        e0, e1 = track[i - 1][2], track[i][2]
-        if e0 is not None and e1 is not None and e1 > e0:
-            gain += e1 - e0
-    return distance, gain
-
-
-def find_gpx(ride_dir):
-    for name in sorted(os.listdir(ride_dir)):
-        if name.lower().endswith(".gpx"):
-            return os.path.join(ride_dir, name)
-    return None
-
-
-def find_first_photo(ride_dir):
-    photos_dir = os.path.join(ride_dir, "photos")
-    if not os.path.isdir(photos_dir):
-        return None
-    exts = (".jpg", ".jpeg", ".png", ".webp")
-    for name in sorted(os.listdir(photos_dir)):
-        if name.lower().endswith(exts):
-            return os.path.join(photos_dir, name)
-    return None
-
-
-# --- Rendu image ------------------------------------------------------
-
-def cover_resize(im, target_w, target_h):
-    src_w, src_h = im.size
-    src_ratio = src_w / src_h
-    target_ratio = target_w / target_h
-    if src_ratio > target_ratio:
-        new_h = target_h
-        new_w = max(1, int(round(new_h * src_ratio)))
+    # --- Photo + voiles (lisibilité du logo en haut) ------------------------
+    photo_h = L["photo"]
+    photo_path = photo_path or (ride["photos"][0] if ride["photos"] else None)
+    if photo_path:
+        photo = B.cover(B.open_photo(photo_path), W, photo_h + 60, focus_y=0.55).convert("RGBA")
     else:
-        new_w = target_w
-        new_h = max(1, int(round(new_w / src_ratio)))
-    im = im.resize((new_w, new_h), Image.Resampling.LANCZOS)
-    left = (new_w - target_w) // 2
-    top = (new_h - target_h) // 2
-    return im.crop((left, top, left + target_w, top + target_h))
+        photo = B.vertical_gradient(W, photo_h + 60, (*B.OLIVE, 255), (*B.FOREST, 255))
+    canvas.alpha_composite(photo, (0, 0))
+    canvas.alpha_composite(B.vertical_gradient(W, 260, (*B.INK, 120), (*B.INK, 0)), (0, 0))
 
+    B.brand_lockup(canvas, (40, 40), mark=58)
 
-def bottom_gradient(w, h, start_frac=0.32, max_alpha=215):
-    col = Image.new("L", (1, h), 0)
-    for y in range(h):
-        frac = y / h
-        a = 0 if frac < start_frac else int(max_alpha * (frac - start_frac) / (1 - start_frac))
-        col.putpixel((0, y), a)
-    alpha = col.resize((w, h))
-    overlay = Image.new("RGBA", (w, h), (*INK, 0))
-    overlay.putalpha(alpha)
-    return overlay
+    if ride["difficulty"]:
+        color = B.DIFFICULTY_COLORS.get(ride["difficulty_key"], B.INK_SOFT)
+        f = B.font("sans", 28, 700)
+        tw = d.textlength(ride["difficulty"], font=f)
+        x = W - 40 - tw - 44
+        B.shadow(canvas, (x, 52, W - 40, 104), radius=26, blur=10, offset=(0, 4), alpha=70)
+        d = ImageDraw.Draw(canvas)
+        B.pill(d, (x, 52), ride["difficulty"], f, color, B.WHITE, pad=(22, 11))
 
+    # --- Bord « relief » entre la photo et le panneau crème -------------------
+    poly, fill = B.mountain_edge(W, 46, photo_h + 2, (*B.CREAM, 255))
+    d.polygon(poly, fill=fill)
+    d.rectangle((0, photo_h, W, H), fill=(*B.CREAM, 255))
 
-def load_logo_with_transparency(path, size):
-    logo = Image.open(path).convert("RGBA")
-    logo = logo.resize((size, size), Image.Resampling.LANCZOS)
-    gray = logo.convert("L")
-    # Le fond du logo est blanc : on le rend transparent par seuillage simple
-    # (suffisant pour un logo en aplats de couleur comme celui-ci).
-    mask = gray.point(lambda p: 0 if p > 248 else 255)
-    logo.putalpha(mask)
-    return logo
+    # --- Carte de la trace, à cheval sur la photo -----------------------------
+    R = L["route"]
+    rx, ry = W - MARGIN - R, photo_h - int(R * 0.55)
+    has_route = bool(ride["track"] or ride["slope"])
+    if has_route:
+        B.shadow(canvas, (rx, ry, rx + R, ry + R), radius=30, blur=22, offset=(0, 12), alpha=80)
+        d = ImageDraw.Draw(canvas)
+        d.rounded_rectangle((rx, ry, rx + R, ry + R), radius=30, fill=(*B.PAPER, 255))
+        B.draw_route(canvas, (rx + 16, ry + 16, rx + R - 16, ry + R - 16), ride, width=7)
+        d = ImageDraw.Draw(canvas)
 
+    # --- Titre ------------------------------------------------------------------
+    col_w = (W - 2 * MARGIN - R - 36) if has_route else (W - 2 * MARGIN)
+    y = photo_h + 26
+    B.draw_text(d, (MARGIN, y), "SORTIE VÉLO & GRAVEL · MONTPELLIER", B.font("sans", 21, 600), B.OLIVE, tracking=2.4)
+    y += 40
+    tf, lines = B.fit_title(d, ride["title"], col_w, L["lines"], L["sizes"])
+    asc, desc = tf.getmetrics()
+    line_h = int((asc + desc) * 1.02)
+    for line in lines:
+        d.text((MARGIN, y), line, font=tf, fill=B.INK)
+        y += line_h
+    if ride["departure"]:
+        y += 4
+        d.text((MARGIN, y), "Départ : " + ride["departure"], font=B.font("sans", 24, 500), fill=B.INK_SOFT)
+        y += 36
+    y = max(y, (ry + R) if has_route else y) + 26
 
-def wrap_text(draw, text, font, max_width):
-    words = text.split()
-    if not words:
-        return []
-    lines, cur = [], words[0]
-    for word in words[1:]:
-        trial = cur + " " + word
-        box = draw.textbbox((0, 0), trial, font=font)
-        if box[2] - box[0] <= max_width:
-            cur = trial
-        else:
-            lines.append(cur)
-            cur = word
-    lines.append(cur)
-    return lines
+    # --- Chiffres clés -----------------------------------------------------------
+    blocks = stat_blocks(ride)
+    if blocks:
+        bw = (W - 2 * MARGIN) / len(blocks)
+        vf, cf = B.font("serif", 50, 650), B.font("sans", 19, 700)
+        for i, (cap, val) in enumerate(blocks):
+            bx = MARGIN + i * bw
+            if i:
+                d.line((bx, y + 6, bx, y + 86), fill=B.LINE, width=2)
+            px = bx + (24 if i else 0)
+            B.draw_text(d, (px, y), cap, cf, B.INK_SOFT, tracking=2)
+            d.text((px, y + 26), val, font=vf, fill=B.TERRACOTTA_DARK)
+        y += 96
 
+    # --- Synthèse (story) -----------------------------------------------------------
+    if L["summary"] and ride["summary"]:
+        sf = B.font("sans", 31, 400)
+        lines = B.wrap(d, ride["summary"], sf, W - 2 * MARGIN)
+        if len(lines) > 6:
+            lines = lines[:6]
+            lines[-1] = lines[-1].rstrip(" ,;:.") + "…"
+        y += 6
+        for line in lines:
+            d.text((MARGIN, y), line, font=sf, fill=B.INK)
+            y += 46
+        y += 14
 
-def draw_shadowed_text(draw, pos, text, font, fill):
-    x, y = pos
-    draw.text((x + 2, y + 2), text, font=font, fill=(0, 0, 0, 140))
-    draw.text((x, y), text, font=font, fill=fill)
+    # --- Profil altimétrique coloré selon la pente -----------------------------------
+    footer_y = H - FOOTER_H
+    prof_top = y + 30
+    prof_bottom = footer_y - 24
+    if prof_bottom - prof_top >= 50 and ride["track"]:
+        B.draw_profile(canvas, (MARGIN, prof_top, W - MARGIN, prof_bottom), ride,
+                       label_font=B.font("sans", 20, 600))
+        d = ImageDraw.Draw(canvas)
 
+    # --- Pied de page -------------------------------------------------------------------
+    d.rectangle((0, footer_y, W, H), fill=(*B.FOREST, 255))
+    canvas.alpha_composite(B.logo_mark(48, color=B.WHITE), (MARGIN - 4, footer_y + (FOOTER_H - 48) // 2))
+    d = ImageDraw.Draw(canvas)
+    d.text((MARGIN + 58, footer_y + FOOTER_H / 2), B.display_url(ride["url"]), font=B.font("sans", 25, 600),
+           fill=B.WHITE, anchor="lm")
+    B.draw_text(d, (W - MARGIN, footer_y + FOOTER_H / 2), "GPX · CARTE · 360°", B.font("sans", 19, 700), B.SAND,
+                anchor="rm", tracking=2)
+    return canvas.convert("RGB")
 
-def draw_track_overlay(draw, track, area, color):
-    """Dessine la trace directement sur la photo (pas de carte blanche
-    derrière), avec une ombre portée assortie à celle du texte pour rester
-    lisible quel que soit le fond."""
-    x0, y0, size = area
-    if len(track) < 2:
-        return
-    lats = [p[0] for p in track]
-    lons = [p[1] for p in track]
-    min_lat, max_lat = min(lats), max(lats)
-    min_lon, max_lon = min(lons), max(lons)
-    lat_span = max(max_lat - min_lat, 1e-9)
-    lon_span = max(max_lon - min_lon, 1e-9)
-
-    ref_lat = (min_lat + max_lat) / 2
-    lon_span_m = lon_span * math.cos(math.radians(ref_lat))
-    ratio = (lon_span_m / lat_span) if lat_span else 1.0
-
-    pad = size * 0.08
-    inner = size - 2 * pad
-    if ratio > 1:
-        draw_w, draw_h = inner, inner / ratio
-    else:
-        draw_w, draw_h = inner * ratio, inner
-
-    ox = x0 + (size - draw_w) / 2
-    oy = y0 + (size - draw_h) / 2
-
-    pts = []
-    for lat, lon, _ in track:
-        x = ox + (lon - min_lon) / lon_span * draw_w
-        y = oy + (max_lat - lat) / lat_span * draw_h
-        pts.append((x, y))
-
-    shadow = [(x + 4, y + 4) for x, y in pts]
-    draw.line(shadow, fill=(0, 0, 0, 130), width=8, joint="curve")
-    draw.line(pts, fill=color, width=7, joint="curve")
-
-    for p in (pts[0], pts[-1]):
-        sx, sy = p[0] + 4, p[1] + 4
-        draw.ellipse([sx - 7, sy - 7, sx + 7, sy + 7], fill=(0, 0, 0, 130))
-    for p in (pts[0], pts[-1]):
-        draw.ellipse([p[0] - 7, p[1] - 7, p[0] + 7, p[1] + 7], fill=color, outline=WHITE, width=2)
-
-
-# --- Programme principal --------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Génère une image Instagram pour une sortie.")
-    parser.add_argument("ride", help="Dossier de la sortie (ex: rides/tour-du-pic-saint-loup)")
+    parser = argparse.ArgumentParser(description="Génère le visuel Instagram d'une sortie (charte Cyclo Explore).")
+    parser.add_argument("ride", help="Dossier de la sortie (ex: rides/clapiers-corconne)")
+    parser.add_argument("--format", choices=sorted(FORMATS), default="post",
+                        help="post (1080×1350, défaut), story (1080×1920) ou carre (1080×1080)")
     parser.add_argument("--photo", help="Photo à utiliser (chemin relatif au dossier de la sortie, ou absolu). Défaut : la première de photos/")
-    parser.add_argument("--out", help="Fichier de sortie (défaut : instagram.jpg dans le dossier de la sortie)")
-    parser.add_argument("--logo", default=os.path.join(os.path.dirname(__file__), "..", "internal", "site", "static", "logo.png"), help="Chemin du logo à incruster")
+    parser.add_argument("--out", help="Fichier de sortie (défaut : instagram.jpg, ou instagram-<format>.jpg, dans le dossier de la sortie)")
+    parser.add_argument("--site-url", default=B.DEFAULT_SITE_URL, help="URL publique du site (adresse affichée)")
+    parser.add_argument("--logo", help=argparse.SUPPRESS)  # ancienne option, l'emblème du site est utilisé
     args = parser.parse_args()
 
-    ride_dir = args.ride
-    if not os.path.isdir(ride_dir):
-        sys.exit(f"{ride_dir} n'est pas un dossier de sortie")
-
-    desc_path = os.path.join(ride_dir, "description.md")
-    if not os.path.exists(desc_path):
-        sys.exit(f"{desc_path} introuvable")
-    fields = parse_frontmatter(desc_path)
-    title = fields.get("title") or os.path.basename(os.path.normpath(ride_dir))
-    difficulty = fields.get("difficulty", "")
-    departure = fields.get("departure", "")
-
-    distance_km = float(fields["distance_km"]) if fields.get("distance_km") else None
-    elevation_m = float(fields["elevation_m"]) if fields.get("elevation_m") else None
-
-    track = None
-    gpx_path = find_gpx(ride_dir)
-    if gpx_path:
-        try:
-            track = load_gpx(gpx_path)
-        except (ET.ParseError, OSError) as e:
-            print(f"⚠ trace GPX illisible ({e}), ignorée")
-            track = None
-    if track and len(track) >= 2:
-        auto_distance, auto_gain = track_stats(track)
-        if distance_km is None:
-            distance_km = auto_distance
-        if elevation_m is None:
-            elevation_m = auto_gain
-
-    photo_path = None
-    if args.photo:
-        photo_path = args.photo if os.path.isabs(args.photo) else os.path.join(ride_dir, args.photo)
-        if not os.path.exists(photo_path):
-            sys.exit(f"Photo introuvable : {photo_path}")
-    else:
-        photo_path = find_first_photo(ride_dir)
-
-    out_path = args.out or os.path.join(ride_dir, "instagram.jpg")
-
-    # --- Fond : photo (cover) ou dégradé de secours ---
-    if photo_path:
-        photo = Image.open(photo_path)
-        try:
-            from PIL import ImageOps
-            photo = ImageOps.exif_transpose(photo)
-        except Exception:
-            pass
-        canvas = cover_resize(photo.convert("RGB"), CANVAS_W, CANVAS_H).convert("RGBA")
-    else:
-        canvas = Image.new("RGBA", (CANVAS_W, CANVAS_H), CREAM)
-        grad = Image.new("L", (1, CANVAS_H), 0)
-        for y in range(CANVAS_H):
-            grad.putpixel((0, y), int(255 * (y / CANVAS_H) * 0.5))
-        overlay = Image.new("RGBA", (CANVAS_W, CANVAS_H), (*TERRACOTTA, 0))
-        overlay.putalpha(grad.resize((CANVAS_W, CANVAS_H)))
-        canvas = Image.alpha_composite(canvas, overlay)
-
-    canvas = Image.alpha_composite(canvas, bottom_gradient(CANVAS_W, CANVAS_H))
-    draw = ImageDraw.Draw(canvas)
-
-    # --- Logo (haut gauche), agrandi ---
-    logo_size = 190
+    if not os.path.isdir(args.ride):
+        sys.exit(f"✗ {args.ride} n'est pas un dossier de sortie")
     try:
-        logo = load_logo_with_transparency(args.logo, logo_size)
-        canvas.alpha_composite(logo, (48, 48))
-    except (FileNotFoundError, OSError):
-        print(f"⚠ logo introuvable ({args.logo}), ignoré")
+        ride = B.load_ride(args.ride, args.site_url)
+    except FileNotFoundError as e:
+        sys.exit(f"✗ {e}")
 
-    # --- Trace (haut droite), directement sur la photo ---
-    if track and len(track) >= 2:
-        badge_size = 820  # x5 (260) dépasserait le cadre (1080 de large) et chevaucherait le texte ; plafonné pour rester net
-        bx, by = CANVAS_W - badge_size - 48, 48
-        draw_track_overlay(draw, track, (bx, by, badge_size), TERRACOTTA)
+    photo = None
+    if args.photo:
+        photo = args.photo if os.path.isabs(args.photo) else os.path.join(args.ride, args.photo)
+        if not os.path.exists(photo):
+            sys.exit(f"✗ Photo introuvable : {photo}")
+    if not (photo or ride["photos"]):
+        print("⚠ aucune photo : fond aux couleurs du site")
+    if not ride["slope"] and ride["track"]:
+        print("⚠ slope.geojson absent : trace en couleur unie (python3 tools/slope_colors.py " + args.ride + ")")
 
-    # --- Texte (bas) ---
-    font_title = load_font(FONT_BOLD_CANDIDATES, 64)
-    font_stats = load_font(FONT_BOLD_CANDIDATES, 38)
-    font_brand = load_font(FONT_REGULAR_CANDIDATES, 30)
-
-    text_max_w = CANVAS_W - 2 * 56
-    title_lines = wrap_text(draw, title, font_title, text_max_w)[:3]
-
-    stats_parts = []
-    if distance_km:
-        stats_parts.append(f"{distance_km:.0f} km")
-    if elevation_m:
-        stats_parts.append(f"+{elevation_m:.0f} m D+")
-    if difficulty:
-        stats_parts.append(difficulty)
-    stats_line = "  ·  ".join(stats_parts)
-
-    y = CANVAS_H - 72
-    if departure:
-        departure_line = f"Départ : {departure}"
-        box = draw.textbbox((0, 0), departure_line, font=font_brand)
-        y -= (box[3] - box[1])
-        draw_shadowed_text(draw, (56, y), departure_line, font_brand, (247, 242, 234, 230))
-        y -= 14
-    if stats_line:
-        box = draw.textbbox((0, 0), stats_line, font=font_stats)
-        y -= (box[3] - box[1])
-        draw_shadowed_text(draw, (56, y), stats_line, font_stats, (247, 242, 234, 255))
-        y -= 18
-
-    for line in reversed(title_lines):
-        box = draw.textbbox((0, 0), line, font=font_title)
-        y -= (box[3] - box[1]) + 6
-        draw_shadowed_text(draw, (56, y), line, font_title, WHITE)
-
-    canvas.convert("RGB").save(out_path, "JPEG", quality=90)
-    print(f"✓ Image générée : {out_path} ({CANVAS_W}x{CANVAS_H})")
+    image = render(ride, args.format, photo)
+    name = "instagram.jpg" if args.format == "post" else f"instagram-{args.format}.jpg"
+    out = args.out or os.path.join(args.ride, name)
+    image.save(out, "JPEG", quality=92, optimize=True, progressive=True)
+    print(f"✓ Image générée : {out} ({image.width}×{image.height})")
 
 
 if __name__ == "__main__":

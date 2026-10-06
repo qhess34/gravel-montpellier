@@ -218,7 +218,8 @@ html { scroll-behavior: smooth; }
 .ride h1 { font-size: 2.1rem; margin-top: 4px; }
 
 .ride-map {
-  height: clamp(340px, 60vh, 560px);
+  /* hauteur d'écran moins en-tête fixe et profil, pour voir carte + profil ensemble */
+  height: clamp(320px, calc(100vh - 340px), 560px);
   border-radius: var(--radius);
   margin: 12px 0;
   border: 1px solid var(--line);
@@ -285,8 +286,8 @@ html { scroll-behavior: smooth; }
 .surface-swatch--unknown { background: #ccc3b1; }
 
 /* Profil altimétrique */
-.elevation-wrap { margin: 24px 0 12px; }
-.elevation-title { font-size: 1.1rem; margin-bottom: 10px; }
+/* Profil collé sous la carte : les deux tiennent sur un même écran */
+.elevation-wrap { margin: 6px 0 12px; }
 .elevation-profile {
   width: 100%;
   height: auto;
@@ -1446,7 +1447,7 @@ body.gm-modal-lock { overflow: hidden; }
   .ride { padding-top: 20px; }
   .carousel-viewport { aspect-ratio: 4 / 3; }
   /* Profil plus haut sur mobile (le SVG s'étire ; icônes et info-bulle sont positionnées en %) */
-  .elevation-profile { height: 160px; }
+  .elevation-profile { height: 150px; }
   .elevation-poi { width: 22px; height: 22px; font-size: 10px; }
   .carousel-btn { width: 38px; height: 38px; font-size: 1.6rem; }
   .carousel-btn--prev { left: 6px; }
