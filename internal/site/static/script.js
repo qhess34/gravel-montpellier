@@ -186,16 +186,63 @@
     return wrap;
   }
 
-  function gmPanoramaxButtonContent(label, endpoint, sequence, picture) {
+  function gmFormatDate(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  // Popup « vue 360° » : miniature de la photo (si connue), date de prise de
+  // vue, distance au point cliqué, et bouton pour ouvrir la visionneuse.
+  // info : { label, endpoint, sequence, picture, thumb, date, dist }.
+  function gmPanoramaxButtonContent(info) {
     var wrap = document.createElement("div");
     wrap.className = "gm-track-panoramax-popup";
+    var open = function () {
+      window.gmOpenPanoramax(info.endpoint, info.sequence, info.picture, info.label);
+    };
+
+    if (info.thumb) {
+      var thumb = document.createElement("button");
+      thumb.type = "button";
+      thumb.className = "gm-pano-thumb";
+      thumb.setAttribute("aria-label", "Ouvrir la vue 360°");
+      var img = document.createElement("img");
+      img.src = info.thumb;
+      img.alt = "";
+      img.loading = "lazy";
+      img.onerror = function () { thumb.remove(); };
+      thumb.appendChild(img);
+      var badge = document.createElement("span");
+      badge.className = "gm-pano-badge";
+      badge.textContent = "360°";
+      thumb.appendChild(badge);
+      thumb.addEventListener("click", open);
+      wrap.appendChild(thumb);
+    }
+
+    if (info.label) {
+      var title = document.createElement("strong");
+      title.className = "gm-pano-title";
+      title.textContent = info.label;
+      wrap.appendChild(title);
+    }
+    var meta = [];
+    if (info.date) meta.push("Photo du " + gmFormatDate(info.date));
+    if (typeof info.dist === "number") meta.push("à " + Math.round(info.dist) + " m");
+    if (meta.length) {
+      var m = document.createElement("span");
+      m.className = "gm-pano-meta";
+      m.textContent = meta.join(" · ");
+      wrap.appendChild(m);
+    }
+
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "gm-track-panoramax-btn";
-    btn.textContent = "🧭 Voir en 360°" + (label ? " · " + label : "");
-    btn.addEventListener("click", function () {
-      window.gmOpenPanoramax(endpoint, sequence, picture, label);
-    });
+    btn.textContent = "🧭 Voir en 360°";
+    btn.addEventListener("click", open);
     wrap.appendChild(btn);
     return wrap;
   }
@@ -203,56 +250,79 @@
   function gmPanoramaxEmptyContent() {
     var wrap = document.createElement("div");
     wrap.className = "gm-track-panoramax-popup gm-track-panoramax-popup--empty";
-    wrap.textContent = "Aucune photo à 360° à cet endroit.";
+    wrap.textContent = "Pas encore de photo 360° à cet endroit.";
     return wrap;
   }
 
-  // Interroge l'API Panoramax (standard STAC, filtre bbox) pour trouver la
-  // photo la plus proche de (lat, lon), dans un rayon de radiusM. Renvoie
-  // une promesse résolue avec {id, sequence, lat, lon} ou null si rien à
-  // proximité (ou en cas d'erreur réseau).
+  function gmPanoramaxFeature(f, lat, lon) {
+    var coords = f.geometry && f.geometry.coordinates;
+    if (!coords) return null;
+    var assets = f.assets || {};
+    return {
+      picture: f.id,
+      sequence: f.collection,
+      lat: coords[1],
+      lon: coords[0],
+      thumb: (assets.thumb && assets.thumb.href) || "",
+      date: (f.properties && f.properties.datetime) || "",
+      dist: lat === undefined ? undefined : gmDistMeters(lat, lon, coords[1], coords[0]),
+    };
+  }
+
+  // Cherche la photo Panoramax la plus proche de (lat, lon), comme le
+  // userscript tampermonkey-komoot-panoramax : photos qui « voient » le
+  // point (place_position, toutes orientations) dans un rayon de radiusM.
+  // Si l'instance ne gère pas cette recherche, repli sur un filtre bbox.
+  // Renvoie une promesse : {picture, sequence, lat, lon, thumb, date, dist}
+  // ou null (rien à proximité, ou erreur réseau).
   window.gmFindNearestPanoramax = function (lat, lon, radiusM, endpoint) {
+    var base = endpoint.replace(/\/$/, "") + "/search?";
+    var byPosition = base + "place_position=" + lon + "," + lat +
+      "&place_fov_tolerance=180&place_distance=0-" + Math.round(radiusM) + "&sortby=-ts&limit=50";
     var dLat = radiusM / 111320;
     var dLon = radiusM / (111320 * Math.cos((lat * Math.PI) / 180));
-    var bbox = [lon - dLon, lat - dLat, lon + dLon, lat + dLat].join(",");
-    var url = endpoint.replace(/\/$/, "") + "/search?bbox=" + encodeURIComponent(bbox) + "&limit=10";
+    var byBbox = base + "bbox=" + encodeURIComponent([lon - dLon, lat - dLat, lon + dLon, lat + dLat].join(",")) + "&limit=20";
 
-    return fetch(url)
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (data) {
-        var features = (data && data.features) || [];
-        if (!features.length) return null;
-
-        var best = null;
-        var bestDist = Infinity;
-        features.forEach(function (f) {
-          var coords = f.geometry && f.geometry.coordinates;
-          if (!coords) return;
-          var d = gmDistMeters(lat, lon, coords[1], coords[0]);
-          if (d < bestDist) {
-            bestDist = d;
-            best = { id: f.id, sequence: f.collection, lat: coords[1], lon: coords[0] };
-          }
-        });
-        return best;
-      })
-      .catch(function () {
-        return null;
+    function nearest(data) {
+      var best = null;
+      ((data && data.features) || []).forEach(function (f) {
+        var c = gmPanoramaxFeature(f, lat, lon);
+        if (c && c.dist <= radiusM * 1.5 && (!best || c.dist < best.dist)) best = c;
       });
+      return best;
+    }
+
+    return fetch(byPosition)
+      .then(function (r) {
+        if (r.ok) return r.json().then(nearest);
+        return fetch(byBbox).then(function (r2) { return r2.ok ? r2.json().then(nearest) : null; });
+      })
+      .catch(function () { return null; });
   };
 
-  // Clic sur la carte : ouvre immédiatement une popup avec un indicateur de
-  // chargement, puis l'actualise avec un bouton "Voir en 360°" si une vue
-  // panoramax existe près de l'endroit cliqué, ou un message sinon. Vérifie
-  // d'abord les points catalogués à la main dans points.md (rapide, pas de
-  // réseau) ; à défaut, interroge l'API Panoramax en direct pour trouver
-  // n'importe quelle photo existante à proximité, même non cataloguée.
+  // Miniature et date d'une photo connue par son identifiant (points.md).
+  window.gmPanoramaxPreview = function (endpoint, picture) {
+    return fetch(endpoint.replace(/\/$/, "") + "/search?ids=" + encodeURIComponent(picture) + "&limit=1")
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        var f = data && data.features && data.features[0];
+        return f ? gmPanoramaxFeature(f) : null;
+      })
+      .catch(function () { return null; });
+  };
+
+  // Clic sur la carte (ou sur le profil) : popup immédiate « recherche… »,
+  // puis aperçu de la vue 360° la plus proche avec un bouton pour l'ouvrir,
+  // ou un message s'il n'y en a pas. Les points panoramax catalogués dans
+  // points.md (à moins de 60 m) sont prioritaires ; à défaut, l'API
+  // Panoramax est interrogée en direct (photos à moins de 50 m).
   var gmTrackClickSeq = 0;
 
   window.gmHandleTrackClick = function (ev, map, panoramaxPoints) {
     var seq = ++gmTrackClickSeq;
     var clickLat = ev.latlng.lat;
     var clickLon = ev.latlng.lng;
+    var stale = function (popup) { return seq !== gmTrackClickSeq || !map.hasLayer(popup); };
 
     var best = null;
     var bestDist = 60; // mètres : ces points sont placés à la main, donc on peut être strict
@@ -264,24 +334,54 @@
       }
     });
     if (best) {
-      L.popup().setLatLng([best.lat, best.lon])
-        .setContent(gmPanoramaxButtonContent(best.label, best.endpoint, best.sequence, best.picture))
-        .openOn(map);
+      var info = { label: best.label, endpoint: best.endpoint, sequence: best.sequence, picture: best.picture, dist: bestDist };
+      var known = L.popup({ className: "gm-pano-popup" }).setLatLng([best.lat, best.lon])
+        .setContent(gmPanoramaxButtonContent(info)).openOn(map);
+      window.gmPanoramaxPreview(best.endpoint, best.picture).then(function (p) {
+        if (!p || stale(known)) return;
+        info.thumb = p.thumb;
+        info.date = p.date;
+        known.setContent(gmPanoramaxButtonContent(info));
+      });
       return;
     }
 
-    var popup = L.popup().setLatLng(ev.latlng).setContent(gmPanoramaxLoadingContent()).openOn(map);
+    var popup = L.popup({ className: "gm-pano-popup" }).setLatLng(ev.latlng).setContent(gmPanoramaxLoadingContent()).openOn(map);
 
-    window.gmFindNearestPanoramax(clickLat, clickLon, 25, GM_PANORAMAX_DEFAULT_ENDPOINT).then(function (found) {
+    window.gmFindNearestPanoramax(clickLat, clickLon, 50, GM_PANORAMAX_DEFAULT_ENDPOINT).then(function (found) {
       // Un clic plus récent a eu lieu, ou la popup a été refermée entre-temps.
-      if (seq !== gmTrackClickSeq || !map.hasLayer(popup)) return;
-
+      if (stale(popup)) return;
       if (found) {
-        popup.setContent(gmPanoramaxButtonContent("", GM_PANORAMAX_DEFAULT_ENDPOINT, found.sequence, found.id));
+        found.endpoint = GM_PANORAMAX_DEFAULT_ENDPOINT;
+        popup.setContent(gmPanoramaxButtonContent(found));
       } else {
         popup.setContent(gmPanoramaxEmptyContent());
       }
     });
+  };
+
+  // Bouton « Visite 360° » sur la carte d'une sortie : rappelle que la trace
+  // se parcourt en vues immersives et ouvre la vue la plus proche du départ.
+  window.gmInit360Control = function (map, start, panoramaxPoints) {
+    if (!map || !window.L) return;
+    var Ctl = L.Control.extend({
+      options: { position: "topright" },
+      onAdd: function () {
+        var btn = L.DomUtil.create("button", "gm-360-control");
+        btn.type = "button";
+        btn.innerHTML = '<span class="gm-360-control-badge" aria-hidden="true">360°</span><span class="gm-360-control-text">Visite immersive<small>Cliquez sur la trace</small></span>';
+        btn.setAttribute("aria-label", "Voir le départ en 360° (Panoramax). Cliquez ensuite n'importe où sur la trace.");
+        L.DomEvent.disableClickPropagation(btn);
+        L.DomEvent.on(btn, "click", function () {
+          if (!start) return;
+          var latlng = L.latLng(start[0], start[1]);
+          map.setView(latlng, Math.max(map.getZoom(), 14));
+          window.gmHandleTrackClick({ latlng: latlng }, map, panoramaxPoints);
+        });
+        return btn;
+      },
+    });
+    new Ctl().addTo(map);
   };
 
   // Construit le contenu d'une popup Leaflet pour un point d'intérêt.
@@ -389,6 +489,7 @@
           (seg.p > 0 ? "+" : "") + fmt(seg.p, 1) + " %</span>";
       }
       html += '<span class="gm-hover-ele">' + Math.round(point.ele) + " m</span>";
+      html += '<span class="gm-hover-hint">clic : vue 360°</span>';
       return html;
     }
 
@@ -460,6 +561,21 @@
       }
       showAt(nearestByKm(km));
     }
+
+    // Clic sur le profil : vue 360° la plus proche de ce point de la trace
+    // (même popup que sur la carte, carte recentrée sur le point).
+    svg.addEventListener("click", function (evt) {
+      var rect = svg.getBoundingClientRect();
+      var relX = ((evt.clientX - rect.left) / rect.width) * width;
+      var km = ((relX - padL) / chartW) * totalKm;
+      if (km < 0 || km > totalKm || !window.gmPanoramaxPoints) return;
+      var point = nearestByKm(km);
+      var latlng = L.latLng(point.lat, point.lon);
+      var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      map.getContainer().scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+      map.setView(latlng, Math.max(map.getZoom(), 15), { animate: !reduce });
+      window.gmHandleTrackClick({ latlng: latlng }, map, window.gmPanoramaxPoints);
+    });
 
     svg.addEventListener("mousemove", onSvgMove);
     svg.addEventListener("mouseleave", hide);

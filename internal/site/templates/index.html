@@ -17,6 +17,7 @@
       {{if .Km}}<li><strong>{{.Km}}</strong> km de traces</li>{{end}}
       {{if .Elevation}}<li><strong>{{.Elevation}}</strong> m de D+</li>{{end}}
     </ul>
+    <p class="hero-360"><span class="hero-360-badge" aria-hidden="true">360°</span><span><strong>La plupart des sorties sont visibles en 360°</strong> grâce aux vues immersives <a href="https://panoramax.fr/" target="_blank" rel="noopener">Panoramax</a>, prises le long des traces&nbsp;: cliquez sur la trace d'une sortie pour voir la photo la plus proche.</span></p>
     <a class="btn btn--primary hero-cta" href="#explore">Explorer la carte <span aria-hidden="true">↓</span></a>
   </div>
 </section>
@@ -78,6 +79,7 @@
     <article role="listitem" class="ride-card" data-slug="{{.Slug}}" data-tags="{{.TagsAttr}}" data-difficulty="{{.DifficultyKey}}" style="--ride-color: {{.Color}}">
       {{if .PhotoThumbs}}
       <div class="ride-card-photo" data-photo-carousel>
+        {{if .PanoramaxCount}}<span class="ride-card-360" title="{{.PanoramaxCount}} vue(s) 360° sélectionnée(s) le long de la trace">360°<span class="sr-only"> : {{.PanoramaxCount}} vues immersives sélectionnées</span></span>{{end}}
         {{range $i, $p := .PhotoThumbs}}
         {{if eq $i 0}}
         <img class="ride-card-photo-layer is-active" src="{{$.Root}}rides/{{$ride.Slug}}/{{$p}}" alt="" loading="lazy" decoding="async">

@@ -1470,3 +1470,146 @@ body.gm-modal-lock { overflow: hidden; }
   }
   .ride-card:hover, .ride-card:focus-within { transform: none; }
 }
+
+/* =====================================================================
+   Vues 360° Panoramax le long des traces
+   ===================================================================== */
+:root { --pano: #6b3fa0; --pano-dark: #57327f; }
+
+/* Encart au-dessus de la carte d'une sortie */
+.pano-callout {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: linear-gradient(100deg, #f1eaf8, var(--paper) 70%);
+  border: 1px solid #ddd0ec;
+}
+.pano-callout-badge,
+.hero-360-badge,
+.gm-360-control-badge,
+.gm-pano-badge,
+.ride-card-360 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--pano);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.pano-callout-badge {
+  width: 52px;
+  height: 52px;
+  font-size: 0.95rem;
+  box-shadow: 0 0 0 4px rgba(107, 63, 160, 0.15);
+}
+.pano-callout-text { flex: 1; min-width: 0; }
+.pano-callout-text strong { display: block; color: var(--pano-dark); }
+.pano-callout-text p { margin: 2px 0 0; font-size: 0.88rem; color: var(--ink-soft); }
+.pano-callout-link { font-size: 0.82rem; color: var(--pano-dark); white-space: nowrap; text-decoration: underline; }
+
+/* Bouton « Visite immersive » sur la carte */
+.gm-360-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+.gm-360-control:hover { background: #f6f1fb; }
+.gm-360-control-badge {
+  width: 34px;
+  height: 34px;
+  font-size: 0.72rem;
+  animation: gm-360-pulse 2.4s ease-out infinite;
+}
+.gm-360-control-text small { display: block; font-weight: 400; color: var(--ink-soft); font-size: 0.72rem; }
+@keyframes gm-360-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(107, 63, 160, 0.45); }
+  70% { box-shadow: 0 0 0 10px rgba(107, 63, 160, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(107, 63, 160, 0); }
+}
+
+/* Popup « vue 360° » : aperçu + date + bouton */
+.gm-pano-popup .leaflet-popup-content { margin: 10px; }
+.gm-track-panoramax-popup:not(.gm-track-panoramax-popup--loading):not(.gm-track-panoramax-popup--empty) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 220px;
+}
+.gm-pano-thumb {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: zoom-in;
+  background: #ddd2bd;
+  aspect-ratio: 2 / 1;
+}
+.gm-pano-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+.gm-pano-thumb:hover img { transform: scale(1.06); }
+.gm-pano-badge { position: absolute; left: 8px; bottom: 8px; padding: 3px 8px; font-size: 0.72rem; }
+.gm-pano-title { font-size: 0.9rem; }
+.gm-pano-meta { font-size: 0.78rem; color: var(--ink-soft); }
+.gm-track-panoramax-popup .gm-track-panoramax-btn { justify-content: center; }
+
+/* Indication « clic : vue 360° » dans l'info-bulle de survol */
+.gm-hover-hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+.gm-hover-hint::before { content: '🧭 '; }
+
+/* Accueil : bandeau et cartouches */
+.hero-360 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 40em;
+  margin: -8px 0 24px;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.92);
+}
+.hero-360 a { color: #fff; text-decoration: underline; }
+.hero-360 strong { color: #fff; font-weight: 700; }
+.hero-360-badge { width: 40px; height: 40px; font-size: 0.78rem; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25); }
+.ride-card-360 {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 700px) {
+  .pano-callout { flex-wrap: wrap; align-items: flex-start; gap: 4px 10px; padding: 10px 12px; }
+  .pano-callout-badge { width: 40px; height: 40px; font-size: 0.8rem; }
+  .pano-callout-text { flex: 1 1 calc(100% - 50px); }
+  .pano-callout-link { margin-left: 50px; }
+  .gm-360-control { padding: 5px; }
+  .gm-360-control-text { display: none; }
+  .hero-360 { font-size: 0.82rem; margin-top: -4px; }
+  .hero-360-badge { width: 34px; height: 34px; font-size: 0.7rem; }
+}

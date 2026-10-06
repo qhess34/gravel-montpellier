@@ -193,12 +193,24 @@ Champs communs : `type` (obligatoire), `label`. `lat`/`lon` sont
 > récupère depuis son visionneur : bouton en haut à gauche de l'image
 > → onglet *Résumé* → *Copier l'identifiant*.
 
+**Vues 360° le long des traces.** La plupart des sorties sont visibles en
+360° grâce aux photos Panoramax prises le long des traces ; le site le met
+en avant : mention dans le bandeau d'accueil, badge « 360° » sur les
+cartouches des sorties qui ont des vues sélectionnées dans `points.md`,
+encart « Parcours visible en 360° » et bouton « Visite immersive » (vue du
+départ) sur la carte de chaque sortie. Cliquer sur la trace **ou sur le
+profil altimétrique** affiche un aperçu de la photo la plus proche
+(miniature, date de prise de vue, distance) avec un bouton « Voir en
+360° ». La recherche est la même que celle du userscript
+[tampermonkey-komoot-panoramax](https://github.com/qhess34/tampermonkey-komoot-panoramax) :
+photos qui « voient » le point, à moins de 50 m.
+
 Cliquer n'importe où sur la carte d'une sortie propose aussi un bouton
 « Voir en 360° » quand une vue panoramax existe à proximité — pas besoin
 de viser précisément un marqueur. Il vérifie d'abord vos points
 panoramax catalogués dans `points.md` (à moins de 60 m du clic), et à
 défaut interroge l'API Panoramax en direct pour trouver n'importe quelle
-photo existante à proximité (moins de 25 m), même si vous ne l'avez pas
+photo existante à proximité (moins de 50 m), même si vous ne l'avez pas
 ajoutée vous-même — pratique pour explorer la couverture Panoramax le
 long de tout le parcours plutôt que seulement aux points que vous avez
 choisis. Nécessite un accès réseau côté visiteur pour ce second cas.
