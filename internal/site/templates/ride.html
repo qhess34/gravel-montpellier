@@ -282,6 +282,7 @@
 
   window.gmInitPOIList(document.querySelector('.poi-section'), map, gmPoiMarkers, document.querySelector('[data-poi-filter]'));
   window.gmInitLocateMe(map);
+  window.gmInitFullscreen(map);
   {{if .HasGPX}}window.gmInit360Control(map, [{{.StartPoint.Lat}}, {{.StartPoint.Lon}}], gmPanoramaxPoints);{{end}}
 </script>
 {{end}}

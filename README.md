@@ -470,6 +470,14 @@ est mémorisé d'une page à l'autre dans le navigateur :
 Les boutons de zoom, « Me localiser » et « Fond de carte » partagent le
 même style (pastilles claires, icônes, survol terracotta).
 
+Sur la fiche d'une sortie, le bouton **Plein écran** (sous « Me
+localiser ») agrandit la carte à tout l'écran, recadrée sur la trace,
+pour la parcourir confortablement ; Échap ou le même bouton en sortent.
+Il utilise le mode plein écran du navigateur, et sur les appareils qui ne
+le permettent pas pour un élément (iPhone), la carte occupe tout l'écran
+de la page. La visionneuse 360° et l'agrandissement des photos restent
+accessibles en plein écran.
+
 ## En-tête et bandeau d'accueil
 
 L'en-tête (fixe en haut de l'écran) affiche l'emblème du logo

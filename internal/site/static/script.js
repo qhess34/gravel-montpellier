@@ -23,8 +23,25 @@
     return modal;
   }
 
+  // Conteneur des fenêtres superposées : l'élément en plein écran s'il y en
+  // a un (sinon elles s'ouvriraient derrière la carte en plein écran).
+  function gmOverlayHost() {
+    return document.fullscreenElement || document.webkitFullscreenElement || document.body;
+  }
+
+  // Une fenêtre insérée dans la carte (plein écran) ne doit pas transmettre
+  // ses clics, glisser ou molette à la carte.
+  function gmIsolateFromMap(el) {
+    if (window.L && L.DomEvent) {
+      L.DomEvent.disableClickPropagation(el);
+      L.DomEvent.disableScrollPropagation(el);
+    }
+  }
+
   function openModal(contentEl) {
     var modal = ensureModal();
+    if (modal.parentNode !== gmOverlayHost()) gmOverlayHost().appendChild(modal);
+    if (!modal.gmIsolated) { gmIsolateFromMap(modal); modal.gmIsolated = true; }
     var body = modal.querySelector(".gm-modal-body");
     body.innerHTML = "";
     body.appendChild(contentEl);
@@ -158,7 +175,8 @@
       if (e.target === popup) gmClosePanoramax();
     });
 
-    document.body.appendChild(popup);
+    gmOverlayHost().appendChild(popup);
+    gmIsolateFromMap(popup);
     document.body.classList.add("gm-modal-lock");
     gmPanoramaxPopup = popup;
     close.focus();
@@ -729,6 +747,89 @@
     return { select: function (key) { select(key, map.getContainer().querySelector(".gm-basemap-list")); } };
   };
 
+  // --- Plein écran de la carte ---------------------------------------------
+
+  GM_ICONS.expand = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+  GM_ICONS.collapse = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+
+  // Bouton « Plein écran » : utilise l'API Fullscreen du navigateur quand
+  // elle existe pour un élément ; sinon (iPhone notamment), la carte occupe
+  // tout l'écran en CSS. Échap ou le même bouton en sortent.
+  window.gmInitFullscreen = function (map) {
+    if (!map || !window.L) return;
+    var el = map.getContainer();
+    var nativeOK = !!(el.requestFullscreen || el.webkitRequestFullscreen);
+    var link;
+
+    function isNative() {
+      return (document.fullscreenElement || document.webkitFullscreenElement) === el;
+    }
+    function isOn() {
+      return isNative() || el.classList.contains("gm-map-fullscreen");
+    }
+    function refresh() {
+      var on = isOn();
+      document.body.classList.toggle("gm-map-fullscreen-lock", el.classList.contains("gm-map-fullscreen"));
+      if (link) {
+        link.innerHTML = on ? GM_ICONS.collapse : GM_ICONS.expand;
+        link.title = on ? "Quitter le plein écran" : "Afficher la carte en plein écran";
+        link.setAttribute("aria-label", link.title);
+        link.setAttribute("aria-pressed", on ? "true" : "false");
+      }
+      if (!map._loaded) return; // pas encore de vue (trace en cours de chargement)
+      var center = map.getCenter();
+      setTimeout(function () {
+        map.invalidateSize({ pan: false });
+        // En entrant en plein écran : toute la trace, à la taille de l'écran.
+        if (on && map.gmTrackBounds) map.fitBounds(map.gmTrackBounds, { padding: [40, 40] });
+        else map.panTo(center, { animate: false });
+      }, 60);
+    }
+    function enter() {
+      if (nativeOK) {
+        var req = el.requestFullscreen || el.webkitRequestFullscreen;
+        var p = req.call(el);
+        if (p && p.catch) p.catch(function () { el.classList.add("gm-map-fullscreen"); refresh(); });
+      } else {
+        el.classList.add("gm-map-fullscreen");
+        refresh();
+      }
+      map.scrollWheelZoom.enable();
+    }
+    function exit() {
+      if (isNative()) {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      } else {
+        el.classList.remove("gm-map-fullscreen");
+        refresh();
+      }
+    }
+
+    document.addEventListener("fullscreenchange", refresh);
+    document.addEventListener("webkitfullscreenchange", refresh);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && el.classList.contains("gm-map-fullscreen") && !document.querySelector("#panoramax-popup, .gm-modal--open")) exit();
+    });
+
+    var Ctl = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd: function () {
+        var box = L.DomUtil.create("div", "leaflet-bar gm-fullscreen-control");
+        link = L.DomUtil.create("a", "gm-fullscreen-btn", box);
+        link.href = "#";
+        link.setAttribute("role", "button");
+        L.DomEvent.disableClickPropagation(box);
+        L.DomEvent.on(link, "click", function (e) {
+          L.DomEvent.stop(e);
+          isOn() ? exit() : enter();
+        });
+        refresh();
+        return box;
+      },
+    });
+    new Ctl().addTo(map);
+  };
+
   // Contrôle "Me localiser" intégré à la carte (même famille que les
   // boutons de zoom) : demande la position du visiteur (API de
   // géolocalisation du navigateur, nécessite son autorisation) et place un
@@ -884,7 +985,10 @@
 
     function fit(layer) {
       var b = layer.getBounds();
-      if (b.isValid()) map.fitBounds(b, { padding: [24, 24] });
+      if (b.isValid()) {
+        map.gmTrackBounds = b; // réutilisé pour recadrer en plein écran
+        map.fitBounds(b, { padding: [24, 24] });
+      }
     }
 
     function addSlope(data) {
