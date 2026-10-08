@@ -749,6 +749,7 @@ internal/site/images.go   réduction des photos et miniatures
 internal/site/templates/  gabarits HTML (mise en forme, à ne modifier que si besoin)
 internal/site/static/     CSS et JavaScript du site
 docs/DEVELOPPEMENT.md  guide du développeur (reprise et contribution au code)
+AGENTS.md               consignes pour les assistants IA (CLAUDE.md y renvoie)
 content/footer.md      pied de page, modifiable
 content/mentions-legales.md  page mentions légales, modifiable
 rides/                  une sortie = un dossier
