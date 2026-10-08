@@ -711,6 +711,9 @@ Les deux sont aussi exécutés par la CI avant chaque déploiement.
 
 ## Architecture
 
+> Pour reprendre ou faire évoluer le code (organisation, flux de données,
+> recettes, pièges connus), voir le **[guide du développeur](docs/DEVELOPPEMENT.md)**.
+
 - **Générateur Go sans dépendance** : lit `rides/`, calcule les données
   dérivées (synthèse, durée, difficulté normalisée, couleur, PK des POI,
   profil), publie photos + miniatures, GPX d'origine et `slope.geojson`,
@@ -745,6 +748,8 @@ internal/site/homemap.go  données de la carte d'accueil
 internal/site/images.go   réduction des photos et miniatures
 internal/site/templates/  gabarits HTML (mise en forme, à ne modifier que si besoin)
 internal/site/static/     CSS et JavaScript du site
+docs/DEVELOPPEMENT.md  guide du développeur (reprise et contribution au code)
+AGENTS.md               consignes pour les assistants IA (CLAUDE.md y renvoie)
 content/footer.md      pied de page, modifiable
 content/mentions-legales.md  page mentions légales, modifiable
 rides/                  une sortie = un dossier
