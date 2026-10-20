@@ -192,6 +192,7 @@ collisions. Le fichier est organisé en sections marquées
 | `gmInitProfileHover` | survol synchronisé entre profil SVG et carte (PK, altitude, pente) |
 | `gmInitPOIFilter`, `gmInitPOIList` | filtre par type de POI, liste des POI reliée à la carte |
 | `GM_BASEMAPS`, `GM_OVERLAYS`, `gmInitBasemaps` | fonds de carte, couches superposées et menu de choix (mémorisés dans `localStorage`) |
+| `gmCreateSlopeLayer`, `gmLoadTerrain`, `gmSlopeGrid`, `gmPaintSlope` | couche « pentes du terrain » calculée à partir des tuiles d'altitude |
 | `gmInitFullscreen` | plein écran (API native, repli CSS pour iPhone) |
 | `gmInitLocateMe` | bouton « me localiser » |
 | `gmLoadRideTrack` | charge `slope.geojson` (ou le GPX en repli) et cadre la carte |
@@ -714,11 +715,32 @@ qui suit) :
 - **Couches superposées** (`GM_OVERLAYS`) : plusieurs peuvent être
   cochées à la fois, sans fermer le menu. Elles sont mémorisées dans
   `gm-overlays` (tableau JSON) et recopiées dans `data-overlays`. L'ordre
-  d'empilement vient de `zIndex` : fond 1, relief ombré 3,
+  d'empilement vient de `zIndex` : fond 1, relief ombré 3, pentes 4,
   itinéraires 5. Les traces restent au-dessus, car elles sont dans le
   panneau des vecteurs de Leaflet. Le relief ombré IGN est fusionné avec
   le fond en `mix-blend-mode: multiply` : il assombrit le relief sans
   voiler la carte.
+- **Pentes du terrain** (`gmCreateSlopeLayer`, un `L.GridLayer` créé au
+  premier usage car `script.js` est chargé avant Leaflet) :
+  1. chaque tuile affichée (256 px, zoom z) lit la tuile d'altitude
+     Mapterhorn au zoom z − 1 (512 px, encodage Terrarium : altitude =
+     R × 256 + V + B / 256 − 32768), plafonnée au zoom 14 ;
+  2. si la tuile n'existe pas (404 : données plus grossières dans la
+     région), on remonte d'un zoom, jusqu'au zoom 8 ;
+  3. `gmSlopeGrid` décode les altitudes sur un canvas, puis calcule la
+     pente de chaque pixel par différences centrées. La taille du pixel
+     en mètres dépend de la latitude de la ligne (Web Mercator). Le
+     résultat est une grille de pentes en % (`Uint8Array`, plafonnée à
+     255) ;
+  4. `gmPaintSlope` ré-échantillonne la portion utile en bilinéaire et
+     la colore via une table (`GM_TERRAIN_SLOPES` : transparent sous
+     8 %).
+
+  Les 64 dernières tuiles décodées sont gardées en mémoire. Les bords de
+  tuile utilisent une différence décentrée (pas de tuile voisine), d'où
+  d'éventuelles fines discontinuités. La couche n'apparaît qu'à partir du
+  zoom 11 : en dessous, une pente moyennée sur des pixels de plus de
+  50 m n'a plus de sens.
 - **Plein écran** (`gmInitFullscreen`) : utilise `requestFullscreen` si
   possible, sinon la classe `gm-map-fullscreen` (`position: fixed`) avec
   blocage du défilement de la page. À chaque changement, `invalidateSize`
