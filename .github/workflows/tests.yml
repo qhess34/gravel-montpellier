@@ -1,0 +1,87 @@
+name: Tests
+
+# Vérifie chaque pull request avant le merge : le déploiement (deploy.yml)
+# ne tourne qu'après le push sur main, un test rouge y casserait le site.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Go, Python, JS et génération du site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dépendances des visuels (Pillow, segno)
+        run: pip install -r tools/requirements.txt
+
+      - name: Formatage Go (gofmt)
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "Fichiers à formater avec gofmt -w :"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Tests Go
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Tests Python
+        run: python3 -m unittest discover -s tools -p "test_*.py"
+
+      - name: Syntaxe JavaScript
+        run: node --check internal/site/static/script.js
+
+      # Avertissement seulement : deploy.yml régénère toujours les pentes.
+      - name: slope.geojson à jour ?
+        run: python3 tools/slope_colors.py --check || echo "::warning::slope.geojson absent ou obsolète pour au moins une sortie — lancez python3 tools/slope_colors.py"
+
+      - name: Générer le site
+        run: go run ./cmd/generator -umami-id "" -out "$RUNNER_TEMP/public"
+
+  navigateur:
+    name: Tests navigateur (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Playwright et Chromium
+        run: |
+          pip install playwright
+          python3 -m playwright install --with-deps chromium
+
+      - name: Tests navigateur
+        run: python3 -m unittest discover -s tests/e2e -v

@@ -86,9 +86,9 @@ func isList(lines []string) bool {
 }
 
 var (
-	boldRe  = regexp.MustCompile(`\*\*(.+?)\*\*`)
-	italRe  = regexp.MustCompile(`\*(.+?)\*`)
-	linkRe  = regexp.MustCompile(`\[(.+?)\]\((.+?)\)`)
+	boldRe = regexp.MustCompile(`\*\*(.+?)\*\*`)
+	italRe = regexp.MustCompile(`\*(.+?)\*`)
+	linkRe = regexp.MustCompile(`\[(.+?)\]\((.+?)\)`)
 )
 
 // inline échappe le texte puis applique les transformations markdown en ligne.

@@ -36,8 +36,11 @@ type Point struct {
 	Endpoint string // panoramax uniquement : URL de l'API (optionnel)
 
 	ID        int     // position dans Ride.Points : relie la liste des POI à son marqueur sur la carte
-	KmMark    float64 // point kilométrique sur la trace (si HasKmMark)
+	KmMark    float64 // point kilométrique sur la trace (si HasKmMark) : premier passage
 	HasKmMark bool    // true si le point est assez proche de la trace GPX pour qu'un PK ait du sens
+	// OtherKmMarks : PK des passages suivants quand la trace repasse près du
+	// point (aller-retour, départ et arrivée au même endroit).
+	OtherKmMarks []float64
 }
 
 // poiKindOrder associe chaque icône reconnue à un libellé, dans l'ordre

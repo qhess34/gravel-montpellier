@@ -1589,6 +1589,7 @@ body.gm-modal-lock { overflow: hidden; }
 .poi-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .poi-label { font-weight: 500; }
 .poi-kind { font-size: 0.82rem; color: var(--ink-soft); }
+.poi-again { display: block; font-size: 0.78rem; font-weight: 600; color: var(--olive); }
 
 /* Popup d'un POI sur la carte */
 .gm-poi-popup-meta {

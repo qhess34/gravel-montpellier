@@ -60,11 +60,11 @@ type Ride struct {
 	SlopeLegend []SlopeClass // classes de pente présentes sur la trace, pour la légende
 	SlopeJSON   template.JS  // tronçons [{s,e,c,p,l}] : pente affichée au survol du profil et de la carte
 
-	Points       []Point // POI, photos géolocalisées et points panoramax (points.md)
-	HasPanoramax   bool // true si au moins un Point de type panoramax
-	PanoramaxCount int  // nombre de vues 360° sélectionnées dans points.md
-	RoutePOIs    []Point // POI de type "poi" situés sur le parcours (tous types), triés par PK croissant
-	OffRoutePOIs []Point // POI de type "poi" trop loin de la trace pour avoir un PK
+	Points         []Point // POI, photos géolocalisées et points panoramax (points.md)
+	HasPanoramax   bool    // true si au moins un Point de type panoramax
+	PanoramaxCount int     // nombre de vues 360° sélectionnées dans points.md
+	RoutePOIs      []Point // POI de type "poi" situés sur le parcours (tous types), triés par PK croissant
+	OffRoutePOIs   []Point // POI de type "poi" trop loin de la trace pour avoir un PK
 
 	POIKinds     []POIKind // types de points présents sur cette sortie, pour le filtre carte/profil
 	HasPOIFilter bool      // true si au moins deux types différents sont présents

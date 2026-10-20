@@ -98,13 +98,13 @@ internal/site/
   profile.go                 profil altimétrique en SVG, généré au build
   homemap.go                 JSON des traces simplifiées pour la carte d'accueil
   seo.go                     sitemap.xml, robots.txt, données structurées JSON-LD
-  waytype.go                 classification OSM des voies (non appelé, voir § 9)
   assets.go                  go:embed des gabarits et du dossier static/
   templates/                 gabarits html/template (base, index, ride, legal, 404, partials)
   static/                    script.js, style.css, logos
   *_test.go                  tests Go
 content/                     footer.md et mentions-legales.md (Markdown)
 rides/                       les sorties
+tests/e2e/                   tests navigateur (Playwright pour Python)
 tools/                       scripts Python (pentes, POI, revêtement, visuels, new_ride)
 .github/workflows/deploy.yml CI : tests, pentes, build, déploiement Pages
 Dockerfile, docker-compose.yml
@@ -129,7 +129,7 @@ Dockerfile, docker-compose.yml
    - `photos/` : liste triée, publiée par `publishPhoto` (redimensionnement
      et rotation EXIF) ;
    - `points.md` : `LoadPoints`, puis calcul du PK de chaque point par
-     rapport à la trace (`NearestKm`). Au-delà de 3 km de la trace
+     rapport à la trace (`NearestPassagesKm`). Au-delà de 3 km de la trace
      (`maxPointToTrackKm`), un point est classé « hors parcours » ;
    - `slope.geojson` : `loadSlopeData` vérifie l'empreinte SHA-256 du GPX.
      Si le fichier est périmé, il est ignoré et la trace est affichée en
@@ -275,28 +275,51 @@ node --check internal/site/static/script.js             # syntaxe JS (si Node es
   vérifie les métadonnées (titres, Open Graph, JSON-LD, sitemap).
 - `tools/test_*.py` : pentes, charte et visuels. Les tests des visuels sont
   ignorés si Pillow ou segno ne sont pas installés.
-- **Pas de tests navigateur dans le dépôt.** Pour une modification du
-  front, générer le site et le vérifier à la main dans un navigateur
-  (ordinateur et mobile), en particulier :
-  - carte d'accueil : filtres, popups, défilement des cartouches ;
-  - fiche : carte, profil et survol, POI, plein écran, fonds de carte,
-    carrousel, Panoramax.
+- **`tests/e2e/test_site.py`** : tests navigateur, avec Playwright pour
+  Python et Chromium :
+  - **préparation** : génère le site dans un dossier temporaire et le sert
+    en local ;
+  - **réseau simulé** : les tuiles sont des images unies ; les tuiles
+    d'altitude sont synthétiques (moitié plate, moitié à 20 %, et 404
+    au-delà du zoom 12 pour tester le repli) ; les API externes sont
+    neutralisées ;
+  - **couverture** : accueil (carte, cartouches, filtres), survol du
+    profil, liste des POI et popup, mémorisation du fond de carte,
+    couches et couleurs de la couche des pentes, plein écran, menu
+    mobile sans défilement, absence d'erreur JavaScript.
 
-  Playwright fonctionne bien pour automatiser ces vérifications au
-  besoin.
+  Installation : `pip install playwright` puis
+  `python3 -m playwright install chromium`. Lancement :
+  `python3 -m unittest discover -s tests/e2e -v`. Sans réseau,
+  `CHROMIUM_PATH` désigne un Chromium déjà installé et `LEAFLET_DIR` un
+  dossier contenant `leaflet.js` et `leaflet.css`. Les tests sont ignorés
+  si Playwright ou Go manquent.
+
+  Ces tests ne remplacent pas un coup d'œil dans un vrai navigateur pour
+  ce qui est visuel (carrousel, Panoramax, rendu des vraies tuiles).
 
 ---
 
 ## 8. Intégration continue et déploiement
 
-`.github/workflows/deploy.yml` se déclenche **uniquement sur un push sur
-`main`** ou à la main (`workflow_dispatch`). Il n'y a **pas de CI sur les
-pull requests** : lancez les tests localement avant de proposer une PR.
+Deux workflows :
 
-Étapes : `go vet`, `go test`, tests Python, `slope_colors.py` (régénère les
-pentes), génération du site avec les variables de dépôt `SITE_URL` et
-`UMAMI_ID`, puis publication sur GitHub Pages. Le SHA court du commit est
-affiché en pied de page (`-version`).
+- **`tests.yml`, sur chaque pull request** (ou à la main) :
+  - `gofmt` (échoue si un fichier n'est pas formaté), `go vet` et
+    `go test` ;
+  - tests Python, avec Pillow et segno installés : les tests des visuels
+    tournent aussi ;
+  - `node --check` sur `script.js` ;
+  - `slope_colors.py --check`, en simple avertissement ;
+  - génération complète du site ;
+  - dans un second job, les tests navigateur (`tests/e2e`).
+
+  Une PR ne se merge qu'au vert.
+- **`deploy.yml`, sur un push sur `main`** (donc au merge) ou à la main.
+  Étapes : `go vet`, `go test`, tests Python, `slope_colors.py`
+  (régénère les pentes), génération du site avec les variables de dépôt
+  `SITE_URL` et `UMAMI_ID`, puis publication sur GitHub Pages. Le SHA
+  court du commit est affiché en pied de page (`-version`).
 
 Méthode de travail habituelle : une branche par sujet, un commit par
 fonctionnalité, une PR vers `main`. Le merge déclenche le déploiement.
@@ -347,15 +370,11 @@ si besoin, `head`), la rendre dans `Build` avec `parsePage` puis
 
 ## 10. Pièges et dette connue
 
-- **`waytype.go` n'est pas appelé** par le générateur. Le revêtement est
-  calculé hors build par `tools/surface_stats.py`, qui écrit
-  `surface_paved_km` et `surface_unpaved_km` dans `description.md`. Ce
-  fichier reste comme base si l'on veut un jour déplacer ce calcul dans le
-  build ; sinon il peut être supprimé.
-- **`public/` est ignoré par git**, mais `public/static/style.css` a été
-  commité par le passé. C'est un fichier généré : ne pas le modifier, il
-  est écrasé à chaque build. Il peut être retiré avec
-  `git rm --cached public/static/style.css`.
+- **Revêtement calculé hors build** : `tools/surface_stats.py` écrit
+  `surface_paved_km` et `surface_unpaved_km` dans `description.md` ; le
+  générateur ne fait que lire ces valeurs, sans appel réseau.
+- **`public/` est ignoré par git** : c'est la sortie du générateur, à ne
+  jamais commiter ni modifier à la main.
 - **Markdown maison** (`markdown.go`) : seuls les titres `#` à `###`, les
   listes `-`, le gras, l'italique, les liens et les paragraphes sont pris
   en charge. Tableaux, images et code ne le sont pas. Étendre ce fichier
@@ -428,14 +447,23 @@ fonction fait foi.
 10. **Points** : `LoadPoints` lit `points.md` (voir 11.3). Ensuite, toute
     photo JPEG **non citée** dans `points.md` et dont les EXIF contiennent
     une position GPS devient automatiquement un point « photo ».
-11. **PK** : pour chaque point, `NearestKm` cherche le **sommet de la trace
-    le plus proche**, en distance à vol d'oiseau, sans projection sur le
-    segment. Il renvoie la distance cumulée jusqu'à ce sommet et l'écart
-    au point. Si l'écart est de 3 km au plus (`maxPointToTrackKm`), le
-    point reçoit un PK (`HasKmMark`). Les POI avec PK vont dans
-    `RoutePOIs`, triés par PK ; les autres vont dans `OffRoutePOIs`.
-    Limite connue : sur une trace qui repasse au même endroit (aller-retour,
-    boucle en 8), le PK retenu est celui du premier passage le plus proche.
+11. **PK** (`NearestPassagesKm`, `gpx.go`) :
+    - chaque point est **projeté sur chaque segment** de la trace, dans une
+      projection locale équirectangulaire en km. Le PK est la distance
+      cumulée jusqu'à la projection, donc précis même entre deux points
+      GPX espacés ;
+    - une trace peut passer plusieurs fois près d'un point. Toute suite de
+      segments dont l'écart reste à moins de 50 m (`passToleranceKm`) du
+      plus petit écart forme un **passage**, dont on garde la position la
+      plus proche. Deux passages à moins de 500 m l'un de l'autre le long
+      de la trace (`minPassageGapKm`) sont confondus ;
+    - si l'écart minimal est de 3 km au plus (`maxPointToTrackKm`), le
+      point reçoit un PK (`HasKmMark`) : `KmMark` est le premier passage,
+      `OtherKmMarks` les suivants. Ces derniers sont affichés comme
+      « Repassage au km … » dans la liste et la popup, avec une icône de
+      plus sur le profil ;
+    - les POI avec PK vont dans `RoutePOIs`, triés par premier passage ;
+      les autres vont dans `OffRoutePOIs`.
 12. **Profil** : `buildElevationProfile(track, 1000)` puis
     `renderElevationProfileSVG` (voir 11.5).
 

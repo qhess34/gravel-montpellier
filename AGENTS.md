@@ -29,12 +29,14 @@ go vet ./... && go test ./...                            # tests Go
 python3 -m unittest discover -s tools -p "test_*.py"     # tests Python
 python3 tools/slope_colors.py --check                    # slope.geojson à jour ?
 node --check internal/site/static/script.js              # syntaxe JS
+python3 -m unittest discover -s tests/e2e                # tests navigateur (Playwright)
 python3 -m http.server -d public 8080                    # aperçu local
 ```
 
-Lancez les tests Go et Python avant chaque commit. **La CI ne tourne pas
-sur les PR**, elle ne tourne qu'après le merge sur `main` : un test rouge
-casse donc directement le déploiement.
+Lancez les tests Go et Python avant chaque commit. Chaque PR est vérifiée
+par `.github/workflows/tests.yml` (gofmt, `go vet`, tests Go et Python,
+syntaxe JS, génération du site) : ne mergez qu'une PR au vert. Le
+déploiement (`deploy.yml`) ne tourne qu'après le merge sur `main`.
 
 ## Règles impératives
 
@@ -97,11 +99,16 @@ section correspondante du README et, si l'architecture change,
 
 ## Vérifier un changement front
 
-Il n'y a pas de tests navigateur dans le dépôt. Après une modification de
+Les tests navigateur (`tests/e2e/test_site.py`, Playwright pour Python,
+tuiles simulées) couvrent l'essentiel et tournent sur chaque PR. Ajoutez-y
+un test pour toute nouvelle fonctionnalité du front. Lancement local :
+`pip install playwright && python3 -m playwright install chromium`, puis la
+commande ci-dessus ; `CHROMIUM_PATH` et `LEAFLET_DIR` permettent de
+fonctionner sans réseau. En complément, après une modification de
 `script.js`, `style.css` ou d'un gabarit :
 1. générez le site et servez `public/` ;
 2. vérifiez l'accueil et au moins une fiche, sur ordinateur et à la
-   largeur d'un mobile (Playwright est utilisable pour automatiser) ;
+   largeur d'un mobile ;
 3. sur l'accueil, contrôlez la carte, les filtres, les popups et le rail
    de cartouches ;
 4. sur la fiche, contrôlez la carte, le profil et son survol, les POI, le
@@ -119,8 +126,6 @@ Il n'y a pas de tests navigateur dans le dépôt. Après une modification de
 ## Pièges connus
 
 Voir la section 10 de `docs/DEVELOPPEMENT.md`. En résumé :
-- `waytype.go` n'est pas appelé ;
-- `public/static/style.css` est versionné par erreur ;
 - le Markdown et le lecteur EXIF sont faits maison et limités ;
 - le plein écran sur iPhone passe par un repli CSS ;
 - n'appelez `map.getCenter()` qu'après `map._loaded`.
