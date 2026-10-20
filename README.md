@@ -725,7 +725,9 @@ go vet ./... && go test ./...                          # générateur Go
 python3 -m unittest discover -s tools -p "test_*.py"   # script des pentes
 ```
 
-Les deux sont aussi exécutés par la CI avant chaque déploiement.
+Ils sont exécutés par la CI sur chaque pull request
+(`.github/workflows/tests.yml`, avec aussi `gofmt`, la syntaxe JS et la
+génération du site), puis avant chaque déploiement.
 
 ## Architecture
 

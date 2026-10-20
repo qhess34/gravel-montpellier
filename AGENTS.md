@@ -32,9 +32,10 @@ node --check internal/site/static/script.js              # syntaxe JS
 python3 -m http.server -d public 8080                    # aperçu local
 ```
 
-Lancez les tests Go et Python avant chaque commit. **La CI ne tourne pas
-sur les PR**, elle ne tourne qu'après le merge sur `main` : un test rouge
-casse donc directement le déploiement.
+Lancez les tests Go et Python avant chaque commit. Chaque PR est vérifiée
+par `.github/workflows/tests.yml` (gofmt, `go vet`, tests Go et Python,
+syntaxe JS, génération du site) : ne mergez qu'une PR au vert. Le
+déploiement (`deploy.yml`) ne tourne qu'après le merge sur `main`.
 
 ## Règles impératives
 

@@ -288,14 +288,23 @@ node --check internal/site/static/script.js             # syntaxe JS (si Node es
 
 ## 8. Intégration continue et déploiement
 
-`.github/workflows/deploy.yml` se déclenche **uniquement sur un push sur
-`main`** ou à la main (`workflow_dispatch`). Il n'y a **pas de CI sur les
-pull requests** : lancez les tests localement avant de proposer une PR.
+Deux workflows :
 
-Étapes : `go vet`, `go test`, tests Python, `slope_colors.py` (régénère les
-pentes), génération du site avec les variables de dépôt `SITE_URL` et
-`UMAMI_ID`, puis publication sur GitHub Pages. Le SHA court du commit est
-affiché en pied de page (`-version`).
+- **`tests.yml`, sur chaque pull request** (ou à la main) :
+  - `gofmt` (échoue si un fichier n'est pas formaté), `go vet` et
+    `go test` ;
+  - tests Python, avec Pillow et segno installés : les tests des visuels
+    tournent aussi ;
+  - `node --check` sur `script.js` ;
+  - `slope_colors.py --check`, en simple avertissement ;
+  - génération complète du site.
+
+  Une PR ne se merge qu'au vert.
+- **`deploy.yml`, sur un push sur `main`** (donc au merge) ou à la main.
+  Étapes : `go vet`, `go test`, tests Python, `slope_colors.py`
+  (régénère les pentes), génération du site avec les variables de dépôt
+  `SITE_URL` et `UMAMI_ID`, puis publication sur GitHub Pages. Le SHA
+  court du commit est affiché en pied de page (`-version`).
 
 Méthode de travail habituelle : une branche par sujet, un commit par
 fonctionnalité, une PR vers `main`. Le merge déclenche le déploiement.
