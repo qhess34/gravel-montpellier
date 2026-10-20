@@ -644,7 +644,8 @@
   };
   window.GM_ICONS = GM_ICONS;
 
-  var IGN_WMTS = "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+  var IGN_WMTS_BASE = "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+  var IGN_WMTS = IGN_WMTS_BASE + "&STYLE=normal";
   var OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
   var IGN_ATTR = '&copy; <a href="https://www.ign.fr/">IGN</a> – <a href="https://geoservices.ign.fr/">Géoplateforme</a>';
 
@@ -665,6 +666,32 @@
       url: IGN_WMTS + "&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&FORMAT=image/jpeg",
       opts: { maxZoom: 19, attribution: IGN_ATTR } },
   ];
+
+  // Couches à superposer au fond de carte (cases à cocher du menu).
+  var GM_OVERLAYS = [
+    { key: "ombrage", label: "Relief ombré", hint: "Estompage IGN (France)",
+      swatch: "linear-gradient(135deg,#fdfbf7 35%,#c9c3b8 50%,#8d867b 70%)",
+      make: function () {
+        return L.tileLayer(IGN_WMTS_BASE + "&LAYER=ELEVATION.ELEVATIONGRIDCOVERAGE.SHADOW&STYLE=estompage_grayscale&FORMAT=image/png", {
+          maxZoom: 20, maxNativeZoom: 15, opacity: 0.5, zIndex: 3, className: "gm-overlay-multiply", attribution: IGN_ATTR,
+        });
+      } },
+    { key: "itineraires", label: "Itinéraires vélo", hint: "Balisés (Waymarked Trails)",
+      swatch: "linear-gradient(135deg,#f6f2ea 40%,#a3329c 40% 52%,#f6f2ea 52%)",
+      make: function () {
+        return L.tileLayer("https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png", {
+          maxZoom: 20, maxNativeZoom: 17, zIndex: 5,
+          attribution: 'Itinéraires &copy; <a href="https://cycling.waymarkedtrails.org/">Waymarked Trails</a> (CC-BY-SA)',
+        });
+      } },
+  ];
+
+  function gmStoredOverlays() {
+    try {
+      var v = JSON.parse(localStorage.getItem("gm-overlays") || "[]");
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return []; }
+  }
 
   function gmStoredBasemap() {
     try { return localStorage.getItem("gm-basemap"); } catch (e) { return null; }
@@ -702,6 +729,28 @@
       map.getContainer().setAttribute("data-basemap", b.key);
     }
 
+    // Couches superposées (plusieurs à la fois), mémorisées comme le fond.
+    var overlays = {};
+    function setOverlay(o, on, list) {
+      if (on) {
+        overlays[o.key] = overlays[o.key] || o.make();
+        overlays[o.key].addTo(map);
+      } else if (overlays[o.key]) {
+        map.removeLayer(overlays[o.key]);
+      }
+      var active = GM_OVERLAYS.filter(function (x) { return overlays[x.key] && map.hasLayer(overlays[x.key]); })
+        .map(function (x) { return x.key; });
+      try { localStorage.setItem("gm-overlays", JSON.stringify(active)); } catch (e) { /* stockage indisponible */ }
+      if (list) {
+        var el = list.querySelector('[data-overlay="' + o.key + '"]');
+        if (el) {
+          el.classList.toggle("is-active", on);
+          el.setAttribute("aria-checked", on ? "true" : "false");
+        }
+      }
+      map.getContainer().setAttribute("data-overlays", active.join(" "));
+    }
+
     var Ctl = L.Control.extend({
       options: { position: position || "topright" },
       onAdd: function () {
@@ -713,11 +762,13 @@
         btn.setAttribute("aria-label", "Changer de fond de carte");
         btn.setAttribute("aria-expanded", "false");
         var list = L.DomUtil.create("div", "gm-basemap-list", box);
-        list.setAttribute("role", "radiogroup");
-        list.setAttribute("aria-label", "Fond de carte");
         list.hidden = true;
+        L.DomUtil.create("p", "gm-basemap-heading", list).textContent = "Fond de carte";
+        var bases = L.DomUtil.create("div", "gm-basemap-group", list);
+        bases.setAttribute("role", "radiogroup");
+        bases.setAttribute("aria-label", "Fond de carte");
         GM_BASEMAPS.forEach(function (b) {
-          var item = L.DomUtil.create("button", "gm-basemap-item", list);
+          var item = L.DomUtil.create("button", "gm-basemap-item", bases);
           item.type = "button";
           item.setAttribute("role", "radio");
           item.setAttribute("data-basemap", b.key);
@@ -725,6 +776,24 @@
             '<span class="gm-basemap-text"><strong>' + b.label + "</strong><small>" + b.hint + "</small></span>" +
             '<span class="gm-basemap-check">' + GM_ICONS.check + "</span>";
           L.DomEvent.on(item, "click", function () { select(b.key, list); close(); });
+        });
+        L.DomUtil.create("p", "gm-basemap-heading", list).textContent = "Couches";
+        var extras = L.DomUtil.create("div", "gm-basemap-group", list);
+        extras.setAttribute("role", "group");
+        extras.setAttribute("aria-label", "Couches superposées");
+        GM_OVERLAYS.forEach(function (o) {
+          var item = L.DomUtil.create("button", "gm-basemap-item gm-overlay-item", extras);
+          item.type = "button";
+          item.setAttribute("role", "checkbox");
+          item.setAttribute("aria-checked", "false");
+          item.setAttribute("data-overlay", o.key);
+          item.innerHTML = '<span class="gm-basemap-swatch" style="background:' + o.swatch + '"></span>' +
+            '<span class="gm-basemap-text"><strong>' + o.label + "</strong><small>" + o.hint + "</small></span>" +
+            '<span class="gm-basemap-check gm-overlay-box">' + GM_ICONS.check + "</span>";
+          // le menu reste ouvert : on peut cocher plusieurs couches
+          L.DomEvent.on(item, "click", function () {
+            setOverlay(o, item.getAttribute("aria-checked") !== "true", list);
+          });
         });
         function open() {
           // hauteur disponible : le menu défile s'il est plus haut que la carte
@@ -740,6 +809,8 @@
         L.DomEvent.disableClickPropagation(box);
         L.DomEvent.disableScrollPropagation(box);
         select(initial, list);
+        var storedOverlays = gmStoredOverlays();
+        GM_OVERLAYS.forEach(function (o) { if (storedOverlays.indexOf(o.key) !== -1) setOverlay(o, true, list); });
         return box;
       },
     });

@@ -476,6 +476,14 @@ est mémorisé d'une page à l'autre dans le navigateur :
 | IGN             | Plan IGN (Géoplateforme, sans clé)        | cartographie française détaillée                 |
 | Photo aérienne  | Orthophotos IGN (Géoplateforme, sans clé) | repérer pistes et chemins vus du ciel            |
 
+Le même menu propose des **couches** à superposer au fond, à cocher
+librement (plusieurs à la fois, choix mémorisé lui aussi) :
+
+| Couche            | Source                                              | Intérêt                                                    |
+|-------------------|-----------------------------------------------------|------------------------------------------------------------|
+| Relief ombré      | Estompage IGN (Géoplateforme, licence Etalab)       | lire le relief sur n'importe quel fond (France)            |
+| Itinéraires vélo  | [Waymarked Trails](https://cycling.waymarkedtrails.org/) (données OSM, CC-BY-SA) | véloroutes et boucles balisées autour des traces          |
+
 Les boutons de zoom, « Me localiser » et « Fond de carte » partagent le
 même style (pastilles claires, icônes, survol terracotta).
 

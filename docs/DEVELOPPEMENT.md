@@ -191,7 +191,7 @@ collisions. Le fichier est organisé en sections marquées
 | `gmPoiPopup`, `gmIcon` | popups et marqueurs (`L.divIcon` stylé par la classe CSS `gm-marker--<type>`) |
 | `gmInitProfileHover` | survol synchronisé entre profil SVG et carte (PK, altitude, pente) |
 | `gmInitPOIFilter`, `gmInitPOIList` | filtre par type de POI, liste des POI reliée à la carte |
-| `GM_BASEMAPS`, `gmInitBasemaps` | fonds de carte et menu de choix (mémorisé dans `localStorage`) |
+| `GM_BASEMAPS`, `GM_OVERLAYS`, `gmInitBasemaps` | fonds de carte, couches superposées et menu de choix (mémorisés dans `localStorage`) |
 | `gmInitFullscreen` | plein écran (API native, repli CSS pour iPhone) |
 | `gmInitLocateMe` | bouton « me localiser » |
 | `gmLoadRideTrack` | charge `slope.geojson` (ou le GPX en repli) et cadre la carte |
@@ -318,6 +318,12 @@ fonctionnalité, une PR vers `main`. Le merge déclenche le déploiement.
 menu), `url` et `opts` (`maxZoom`, `attribution` **obligatoire**). Puis
 compléter la table « Fonds de carte » du README. Vérifier la licence et
 les règles d'usage du fournisseur.
+
+**Ajouter une couche superposée** : ajouter une entrée à `GM_OVERLAYS`
+avec `key`, `label`, `hint`, `swatch` et `make` (fonction qui crée la
+couche Leaflet, avec `zIndex` pour l'ordre d'empilement et
+`attribution`). Les couches à cocher sont mémorisées dans
+`localStorage` (`gm-overlays`).
 
 **Ajouter un fond de carte aux visuels** : ajouter une entrée à
 `TILE_PROVIDERS` (`brand.py`) avec `url`, `attribution` et `max_zoom` ;
@@ -705,6 +711,14 @@ qui suit) :
   la fois. La clé choisie est gardée dans `localStorage` (`gm-basemap`) et
   recopiée dans l'attribut `data-basemap` du conteneur, ce qui permet
   d'ajuster le style par fond en CSS.
+- **Couches superposées** (`GM_OVERLAYS`) : plusieurs peuvent être
+  cochées à la fois, sans fermer le menu. Elles sont mémorisées dans
+  `gm-overlays` (tableau JSON) et recopiées dans `data-overlays`. L'ordre
+  d'empilement vient de `zIndex` : fond 1, relief ombré 3,
+  itinéraires 5. Les traces restent au-dessus, car elles sont dans le
+  panneau des vecteurs de Leaflet. Le relief ombré IGN est fusionné avec
+  le fond en `mix-blend-mode: multiply` : il assombrit le relief sans
+  voiler la carte.
 - **Plein écran** (`gmInitFullscreen`) : utilise `requestFullscreen` si
   possible, sinon la classe `gm-map-fullscreen` (`position: fixed`) avec
   blocage du défilement de la page. À chaque changement, `invalidateSize`
