@@ -27,6 +27,8 @@ Usage :
     python3 tools/make_instagram_image.py rides/clapiers-corconne --format story
     python3 tools/make_instagram_image.py rides/clapiers-corconne --photo photos/sommet.jpg
     python3 tools/make_instagram_image.py rides/clapiers-corconne --out apercu.jpg
+    # toutes les sorties qui n'ont pas encore d'instagram.jpg (utilisé par la CI)
+    python3 tools/make_instagram_image.py --manquantes
 """
 
 import argparse
@@ -177,9 +179,46 @@ def render(ride, fmt, photo_path=None, basemap="ign", fetch=None):
     return canvas.convert("RGB")
 
 
+def generate(ride_dir, fmt="post", photo=None, out=None, site_url=B.DEFAULT_SITE_URL, fond="ign"):
+    """Génère le visuel d'une sortie et renvoie le chemin écrit.
+    Lève FileNotFoundError si le dossier n'est pas une sortie valide."""
+    ride = B.load_ride(ride_dir, site_url)
+    if not (photo or ride["photos"]):
+        print("⚠ aucune photo : fond aux couleurs du site")
+    if not ride["slope"] and ride["track"]:
+        print("⚠ slope.geojson absent : trace en couleur unie (python3 tools/slope_colors.py " + ride_dir + ")")
+    image = render(ride, fmt, photo, basemap=fond)
+    name = "instagram.jpg" if fmt == "post" else f"instagram-{fmt}.jpg"
+    out = out or os.path.join(ride_dir, name)
+    image.save(out, "JPEG", quality=92, optimize=True, progressive=True)
+    print(f"✓ Image générée : {out} ({image.width}×{image.height})")
+    return out
+
+
+def generate_missing(rides_dir, site_url, fond):
+    """Génère instagram.jpg (format post) pour chaque sortie de rides_dir qui
+    n'en a pas encore. Renvoie le nombre d'échecs (0 si tout va bien)."""
+    failures = 0
+    for slug in sorted(os.listdir(rides_dir)):
+        ride_dir = os.path.join(rides_dir, slug)
+        if slug.startswith(".") or not os.path.isfile(os.path.join(ride_dir, "description.md")):
+            continue
+        if os.path.exists(os.path.join(ride_dir, "instagram.jpg")):
+            continue
+        print(f"→ {slug} : pas d'instagram.jpg, génération")
+        try:
+            generate(ride_dir, site_url=site_url, fond=fond)
+        except Exception as e:  # une sortie en échec ne bloque pas les autres
+            print(f"✗ {slug} : {e}")
+            failures += 1
+    return failures
+
+
 def main():
     parser = argparse.ArgumentParser(description="Génère le visuel Instagram d'une sortie (charte Cyclo Explore).")
-    parser.add_argument("ride", help="Dossier de la sortie (ex: rides/clapiers-corconne)")
+    parser.add_argument("ride", nargs="?", help="Dossier de la sortie (ex: rides/clapiers-corconne)")
+    parser.add_argument("--manquantes", nargs="?", const="rides", metavar="DOSSIER",
+                        help="génère instagram.jpg pour chaque sortie de DOSSIER (défaut : rides) qui n'en a pas encore")
     parser.add_argument("--format", choices=sorted(FORMATS), default="post",
                         help="post (1080×1350, défaut), story (1080×1920) ou carre (1080×1080)")
     parser.add_argument("--photo", help="Photo à utiliser (chemin relatif au dossier de la sortie, ou absolu). Défaut : la première de photos/")
@@ -191,28 +230,28 @@ def main():
     parser.add_argument("--logo", help=argparse.SUPPRESS)  # ancienne option, l'emblème du site est utilisé
     args = parser.parse_args()
 
+    if args.manquantes:
+        if args.ride:
+            parser.error("--manquantes ne prend pas de dossier de sortie (seulement le dossier des sorties)")
+        if not os.path.isdir(args.manquantes):
+            sys.exit(f"✗ {args.manquantes} n'est pas un dossier")
+        failures = generate_missing(args.manquantes, args.site_url, args.fond)
+        sys.exit(1 if failures else 0)
+
+    if not args.ride:
+        parser.error("indiquez le dossier d'une sortie, ou --manquantes")
     if not os.path.isdir(args.ride):
         sys.exit(f"✗ {args.ride} n'est pas un dossier de sortie")
-    try:
-        ride = B.load_ride(args.ride, args.site_url)
-    except FileNotFoundError as e:
-        sys.exit(f"✗ {e}")
 
     photo = None
     if args.photo:
         photo = args.photo if os.path.isabs(args.photo) else os.path.join(args.ride, args.photo)
         if not os.path.exists(photo):
             sys.exit(f"✗ Photo introuvable : {photo}")
-    if not (photo or ride["photos"]):
-        print("⚠ aucune photo : fond aux couleurs du site")
-    if not ride["slope"] and ride["track"]:
-        print("⚠ slope.geojson absent : trace en couleur unie (python3 tools/slope_colors.py " + args.ride + ")")
-
-    image = render(ride, args.format, photo, basemap=args.fond)
-    name = "instagram.jpg" if args.format == "post" else f"instagram-{args.format}.jpg"
-    out = args.out or os.path.join(args.ride, name)
-    image.save(out, "JPEG", quality=92, optimize=True, progressive=True)
-    print(f"✓ Image générée : {out} ({image.width}×{image.height})")
+    try:
+        generate(args.ride, args.format, photo, args.out, args.site_url, args.fond)
+    except FileNotFoundError as e:
+        sys.exit(f"✗ {e}")
 
 
 if __name__ == "__main__":

@@ -82,6 +82,30 @@ class BrandTest(unittest.TestCase):
         self.assertEqual(M.render(ride, "post", fetch=offline).size, (1080, 1350))
         self.assertFalse(ride["basemap_ok"])
 
+    def test_generate_missing_only_creates_absent_images(self):
+        import shutil
+        import make_instagram_image as M
+        with tempfile.TemporaryDirectory() as d:
+            rides = os.path.join(d, "rides")
+            # sortie sans visuel : à générer
+            shutil.copytree(RIDE, os.path.join(rides, "sans-visuel"),
+                            ignore=shutil.ignore_patterns("instagram*.jpg", "qrcode.*"))
+            # sortie avec visuel : à laisser intact
+            os.makedirs(os.path.join(rides, "avec-visuel"))
+            shutil.copy(os.path.join(RIDE, "description.md"), os.path.join(rides, "avec-visuel"))
+            existing = os.path.join(rides, "avec-visuel", "instagram.jpg")
+            with open(existing, "wb") as f:
+                f.write(b"existant")
+            # dossier sans description.md : ignoré
+            os.makedirs(os.path.join(rides, "brouillon"))
+            self.assertEqual(M.generate_missing(rides, self.B.DEFAULT_SITE_URL, "aucun"), 0)
+            from PIL import Image
+            with Image.open(os.path.join(rides, "sans-visuel", "instagram.jpg")) as im:
+                self.assertEqual(im.size, (1080, 1350))
+            with open(existing, "rb") as f:
+                self.assertEqual(f.read(), b"existant")
+            self.assertFalse(os.path.exists(os.path.join(rides, "brouillon", "instagram.jpg")))
+
     def test_instagram_formats(self):
         import make_instagram_image as M
         ride = self.B.load_ride(RIDE)

@@ -339,6 +339,7 @@ python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup              
 python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --format story   # 1080×1920 -> instagram-story.jpg
 python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --format carre   # 1080×1080
 python3 tools/make_instagram_image.py rides/tour-du-pic-saint-loup --photo photos/sommet.jpg --out apercu.jpg
+python3 tools/make_instagram_image.py --manquantes   # toutes les sorties sans instagram.jpg
 ```
 
 La trace est posée sur un **fond de carte** atténué (Plan IGN par
@@ -354,6 +355,15 @@ visuel produit hérite de cette licence de partage), `--fond osm`, `--fond velo`
 copié avec la fiche, il fait apparaître un bouton **Instagram** dans le
 bloc de partage. Sans photo, un dégradé aux couleurs du site la remplace ;
 sans `slope.geojson`, la trace est en couleur unie.
+
+**Génération automatique au déploiement :** pour chaque sortie qui n'a
+pas d'`instagram.jpg` dans le dépôt, la CI crée le visuel (format post,
+fond IGN) juste avant de générer le site. Il est publié avec la fiche,
+bouton « Instagram » compris, mais **pas commité** : pour le récupérer,
+téléchargez-le depuis la fiche. Une sortie qui a déjà son
+`instagram.jpg` le garde tel quel ; pour en changer (autre photo, autre
+fond), générez-le en local et commitez-le. Si la génération échoue
+(réseau, sortie incomplète), le site est quand même déployé.
 
 **QR code** — `tools/generate_qrcode.py` : visuel avec photo, titre,
 chiffres clés et QR code stylé (modules arrondis vert forêt, repères
