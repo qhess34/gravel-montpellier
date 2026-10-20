@@ -88,7 +88,8 @@ casse donc directement le déploiement.
 | Durée et difficulté d'une sortie | `internal/site/meta.go` ↔ `tools/brand.py` (testé par `test_duration_same_rules_as_site`) |
 | Classes et couleurs de pente | `tools/slope_colors.py` (`SLOPE_CLASSES`) seulement. Le site les lit dans `slope.geojson` ; relancer `slope_colors.py --force` après un changement |
 | Types de POI | `points.go` (`poiKindOrder`, `poiKindSingular`) ↔ `style.css` (`.gm-marker--<type>`) ↔ `tools/find_supplies.py` |
-| Fonds de carte | `script.js` (`GM_BASEMAPS`) pour le site, `tools/brand.py` (`TILE_PROVIDERS`) pour les visuels |
+| Fonds de carte et couches | `script.js` (`GM_BASEMAPS`, `GM_OVERLAYS`) pour le site, `tools/brand.py` (`TILE_PROVIDERS`) pour les visuels |
+| Couleurs de pente | trace : `SLOPE_CLASSES` (`slope_colors.py`) ; terrain : `GM_TERRAIN_SLOPES` (`script.js`), mêmes teintes jaune → rouge |
 
 Quand vous modifiez un comportement visible, mettez aussi à jour la
 section correspondante du README et, si l'architecture change,

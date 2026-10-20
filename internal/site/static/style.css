@@ -349,12 +349,41 @@ body.gm-map-fullscreen-lock { overflow: hidden; }
 .gm-basemap-item.is-active { background: #f6eee2; }
 .gm-basemap-item.is-active .gm-basemap-check { visibility: visible; }
 .gm-basemap-list { max-height: calc(var(--gm-map-h, 400px) - 70px); overflow-y: auto; }
+.gm-basemap-group { display: flex; flex-direction: column; gap: 2px; }
+.gm-basemap-heading {
+  margin: 6px 8px 2px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.gm-basemap-heading:first-child { margin-top: 2px; }
+/* Couches superposées : case à cocher toujours visible */
+.gm-overlay-box {
+  visibility: visible;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1.5px rgba(43, 38, 32, 0.35);
+  color: #fff;
+}
+.gm-overlay-box svg { visibility: hidden; }
+.gm-overlay-item.is-active .gm-overlay-box { background: var(--terracotta); box-shadow: none; }
+.gm-overlay-item.is-active .gm-overlay-box svg { visibility: visible; }
+/* Estompage : multiplié avec le fond pour assombrir le relief sans le voiler */
+.gm-overlay-multiply { mix-blend-mode: multiply; }
 body .leaflet-top.leaflet-right { z-index: 1001; } /* menu des fonds au-dessus de l'attribution */
 @media (max-width: 700px) {
-  .gm-basemap-list { width: 200px; }
+  /* Menu compact : fonds et couches en grille, tout visible sans défiler */
+  .gm-basemap-list { width: 236px; }
+  .gm-basemap-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .gm-basemap-item { position: relative; flex-direction: column; gap: 3px; padding: 4px 2px; text-align: center; }
+  .gm-basemap-heading { margin: 4px 6px 1px; }
+  .gm-basemap-text strong { font-size: 0.72rem; line-height: 1.15; }
   .gm-basemap-text small { display: none; }
-  .gm-basemap-swatch { width: 30px; height: 30px; }
-  .gm-basemap-item { padding: 6px; }
+  .gm-basemap-swatch { width: 34px; height: 34px; }
+  .gm-basemap-check { position: absolute; top: 3px; right: 6px; width: 16px; height: 16px; }
+  .gm-basemap-check svg { width: 16px; height: 16px; }
+  .gm-overlay-box { background: var(--paper); }
 }
 /* Contrôles empilés à droite (fond de carte, visite 360°) */
 .leaflet-top.leaflet-right .leaflet-control { margin-top: 10px; margin-right: 10px; }

@@ -476,6 +476,21 @@ est mémorisé d'une page à l'autre dans le navigateur :
 | IGN             | Plan IGN (Géoplateforme, sans clé)        | cartographie française détaillée                 |
 | Photo aérienne  | Orthophotos IGN (Géoplateforme, sans clé) | repérer pistes et chemins vus du ciel            |
 
+Le même menu propose des **couches** à superposer au fond, à cocher
+librement (plusieurs à la fois, choix mémorisé lui aussi) :
+
+| Couche            | Source                                              | Intérêt                                                    |
+|-------------------|-----------------------------------------------------|------------------------------------------------------------|
+| Relief ombré      | Estompage IGN (Géoplateforme, licence Etalab)       | lire le relief sur n'importe quel fond (France)            |
+| Pentes du terrain | calculée dans le navigateur à partir des altitudes [Mapterhorn](https://mapterhorn.com/) | repérer les versants raides : jaune dès 8 %, orangé 15 %, orange 25 %, rouge 35 %, bordeaux 50 % et plus. Visible à partir du zoom 11 |
+| Itinéraires vélo  | [Waymarked Trails](https://cycling.waymarkedtrails.org/) (données OSM, CC-BY-SA) | véloroutes et boucles balisées autour des traces          |
+
+« Pentes du terrain » montre la raideur du **terrain** (versant), pas
+celle du chemin : une piste en lacets peut traverser une zone rouge à
+pente douce. Les couleurs de la trace, elles, donnent la pente du
+parcours. La précision dépend des données d'altitude disponibles dans la
+région (de 1 m à 30 m selon les sources de Mapterhorn).
+
 Les boutons de zoom, « Me localiser » et « Fond de carte » partagent le
 même style (pastilles claires, icônes, survol terracotta).
 

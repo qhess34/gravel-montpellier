@@ -644,7 +644,8 @@
   };
   window.GM_ICONS = GM_ICONS;
 
-  var IGN_WMTS = "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+  var IGN_WMTS_BASE = "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+  var IGN_WMTS = IGN_WMTS_BASE + "&STYLE=normal";
   var OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
   var IGN_ATTR = '&copy; <a href="https://www.ign.fr/">IGN</a> – <a href="https://geoservices.ign.fr/">Géoplateforme</a>';
 
@@ -665,6 +666,174 @@
       url: IGN_WMTS + "&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&FORMAT=image/jpeg",
       opts: { maxZoom: 19, attribution: IGN_ATTR } },
   ];
+
+  // --- Couche « pentes du terrain », calculée dans le navigateur -------------
+  // Les tuiles d'altitude Mapterhorn (encodage Terrarium : altitude =
+  // R × 256 + V + B / 256 − 32768, en mètres) sont décodées sur un canvas ;
+  // la pente de chaque pixel est calculée par différences centrées, puis
+  // coloriée (jaune → rouge, comme les montées des traces). Une tuile
+  // source de 512 px au zoom z sert l'affichage au zoom z + 1 et au-delà ;
+  // si elle n'existe pas (données plus grossières dans la région), on
+  // remonte au zoom inférieur.
+  var GM_TERRAIN_URL = "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp";
+  var GM_TERRAIN_MAX_ZOOM = 14;  // au-delà, gain de détail inutile pour l'affichage
+  var GM_TERRAIN_MIN_ZOOM = 8;   // dernier niveau tenté en cas de tuile absente
+  var GM_TERRAIN_ATTR = 'Altitudes <a href="https://mapterhorn.com/attribution">Mapterhorn</a>';
+  // Seuils de pente du terrain (%) et couleurs ; en dessous du premier : transparent.
+  var GM_TERRAIN_SLOPES = [[8, "#f2c418"], [15, "#f59e0b"], [25, "#ea580c"], [35, "#dc2626"], [50, "#7f1d1d"]];
+
+  // Table pente entière (0 à 255 %) → couleur RGBA.
+  var gmSlopeLUT = (function () {
+    var lut = new Uint8ClampedArray(256 * 4);
+    for (var v = 0; v < 256; v++) {
+      var color = null;
+      GM_TERRAIN_SLOPES.forEach(function (t) { if (v >= t[0]) color = t[1]; });
+      if (!color) continue;
+      lut[v * 4] = parseInt(color.slice(1, 3), 16);
+      lut[v * 4 + 1] = parseInt(color.slice(3, 5), 16);
+      lut[v * 4 + 2] = parseInt(color.slice(5, 7), 16);
+      lut[v * 4 + 3] = 255;
+    }
+    return lut;
+  })();
+
+  // Pente (%) de chaque pixel d'une tuile d'altitude, plafonnée à 255.
+  function gmSlopeGrid(img, z, ty) {
+    var n = img.naturalWidth;
+    var canvas = document.createElement("canvas");
+    canvas.width = canvas.height = n;
+    var ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0);
+    var px = ctx.getImageData(0, 0, n, n).data;
+    var ele = new Float32Array(n * n);
+    for (var i = 0; i < n * n; i++) {
+      ele[i] = px[i * 4] * 256 + px[i * 4 + 1] + px[i * 4 + 2] / 256 - 32768;
+    }
+    var slope = new Uint8Array(n * n);
+    var worlds = Math.pow(2, z);
+    for (var r = 0; r < n; r++) {
+      // taille d'un pixel (m) à la latitude de la ligne (projection Web Mercator)
+      var lat = Math.atan(Math.sinh(Math.PI * (1 - (2 * (ty + (r + 0.5) / n)) / worlds)));
+      var m = (40075016.686 * Math.cos(lat)) / (n * worlds);
+      var ru = Math.max(r - 1, 0), rd = Math.min(r + 1, n - 1);
+      for (var c = 0; c < n; c++) {
+        var cl = Math.max(c - 1, 0), cr = Math.min(c + 1, n - 1);
+        var gx = (ele[r * n + cr] - ele[r * n + cl]) / ((cr - cl) * m);
+        var gy = (ele[rd * n + c] - ele[ru * n + c]) / ((rd - ru) * m);
+        slope[r * n + c] = Math.min(255, Math.round(Math.sqrt(gx * gx + gy * gy) * 100));
+      }
+    }
+    return { n: n, slope: slope };
+  }
+
+  // Tuiles d'altitude déjà décodées (promesses), en nombre limité.
+  var gmTerrainCache = {};
+  var gmTerrainKeys = [];
+  function gmLoadTerrain(z, x, y) {
+    var key = z + "/" + x + "/" + y;
+    if (gmTerrainCache[key]) return gmTerrainCache[key];
+    var promise = new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function () {
+        try { resolve(gmSlopeGrid(img, z, y)); } catch (e) { reject(e); }
+      };
+      img.onerror = function () { reject(new Error("tuile d'altitude " + key + " indisponible")); };
+      img.src = GM_TERRAIN_URL.replace("{z}", z).replace("{x}", x).replace("{y}", y);
+    });
+    gmTerrainCache[key] = promise;
+    gmTerrainKeys.push(key);
+    if (gmTerrainKeys.length > 64) delete gmTerrainCache[gmTerrainKeys.shift()];
+    return promise;
+  }
+
+  // Dessine sur le canvas d'une tuile d'affichage (256 px, zoom z) la portion
+  // correspondante de la grille de pentes (tuile source au zoom z − d),
+  // ré-échantillonnée en bilinéaire pour des contours lisses.
+  function gmPaintSlope(canvas, grid, coords, d) {
+    var size = canvas.width;
+    var scale = Math.pow(2, d);
+    var span = grid.n / scale;
+    var ox = (coords.x - Math.floor(coords.x / scale) * scale) * span;
+    var oy = (coords.y - Math.floor(coords.y / scale) * scale) * span;
+    var ctx = canvas.getContext("2d");
+    var out = ctx.createImageData(size, size);
+    var n = grid.n, s = grid.slope, data = out.data;
+    for (var j = 0; j < size; j++) {
+      var v = Math.min(n - 1, Math.max(0, oy + ((j + 0.5) * span) / size - 0.5));
+      var v0 = Math.floor(v), v1 = Math.min(v0 + 1, n - 1), fv = v - v0;
+      for (var i = 0; i < size; i++) {
+        var u = Math.min(n - 1, Math.max(0, ox + ((i + 0.5) * span) / size - 0.5));
+        var u0 = Math.floor(u), u1 = Math.min(u0 + 1, n - 1), fu = u - u0;
+        var val = (s[v0 * n + u0] * (1 - fu) + s[v0 * n + u1] * fu) * (1 - fv) +
+                  (s[v1 * n + u0] * (1 - fu) + s[v1 * n + u1] * fu) * fv;
+        var k = Math.round(val) * 4, o = (j * size + i) * 4;
+        data[o] = gmSlopeLUT[k];
+        data[o + 1] = gmSlopeLUT[k + 1];
+        data[o + 2] = gmSlopeLUT[k + 2];
+        data[o + 3] = gmSlopeLUT[k + 3];
+      }
+    }
+    ctx.putImageData(out, 0, 0);
+  }
+
+  // Classe créée au premier usage : script.js est chargé avant Leaflet.
+  var GmSlopeLayer = null;
+  function gmCreateSlopeLayer() {
+    GmSlopeLayer = GmSlopeLayer || L.GridLayer.extend({
+      options: { minZoom: 11, maxZoom: 20, opacity: 0.55, zIndex: 4, attribution: GM_TERRAIN_ATTR, className: "gm-overlay-slope" },
+      createTile: function (coords, done) {
+        var tile = document.createElement("canvas");
+        var size = this.getTileSize();
+        tile.width = size.x;
+        tile.height = size.y;
+        function attempt(zs) {
+          var d = coords.z - zs, scale = Math.pow(2, d);
+          gmLoadTerrain(zs, Math.floor(coords.x / scale), Math.floor(coords.y / scale))
+            .then(function (grid) {
+              gmPaintSlope(tile, grid, coords, d);
+              done(null, tile);
+            })
+            .catch(function () {
+              if (zs > GM_TERRAIN_MIN_ZOOM) attempt(zs - 1);
+              else done(null, tile); // pas de données : tuile transparente
+            });
+        }
+        attempt(Math.min(coords.z - 1, GM_TERRAIN_MAX_ZOOM));
+        return tile;
+      },
+    });
+    return new GmSlopeLayer();
+  }
+
+  // Couches à superposer au fond de carte (cases à cocher du menu).
+  var GM_OVERLAYS = [
+    { key: "ombrage", label: "Relief ombré", hint: "Estompage IGN (France)",
+      swatch: "linear-gradient(135deg,#fdfbf7 35%,#c9c3b8 50%,#8d867b 70%)",
+      make: function () {
+        return L.tileLayer(IGN_WMTS_BASE + "&LAYER=ELEVATION.ELEVATIONGRIDCOVERAGE.SHADOW&STYLE=estompage_grayscale&FORMAT=image/png", {
+          maxZoom: 20, maxNativeZoom: 15, opacity: 0.5, zIndex: 3, className: "gm-overlay-multiply", attribution: IGN_ATTR,
+        });
+      } },
+    { key: "pentes", label: "Pentes du terrain", hint: "Jaune 8 % → rouge 35 % et plus, en zoomant",
+      swatch: "linear-gradient(90deg,#f2c418,#f59e0b,#ea580c,#dc2626,#7f1d1d)",
+      make: gmCreateSlopeLayer },
+    { key: "itineraires", label: "Itinéraires vélo", hint: "Balisés (Waymarked Trails)",
+      swatch: "linear-gradient(135deg,#f6f2ea 40%,#a3329c 40% 52%,#f6f2ea 52%)",
+      make: function () {
+        return L.tileLayer("https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png", {
+          maxZoom: 20, maxNativeZoom: 17, zIndex: 5,
+          attribution: 'Itinéraires &copy; <a href="https://cycling.waymarkedtrails.org/">Waymarked Trails</a> (CC-BY-SA)',
+        });
+      } },
+  ];
+
+  function gmStoredOverlays() {
+    try {
+      var v = JSON.parse(localStorage.getItem("gm-overlays") || "[]");
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return []; }
+  }
 
   function gmStoredBasemap() {
     try { return localStorage.getItem("gm-basemap"); } catch (e) { return null; }
@@ -702,6 +871,28 @@
       map.getContainer().setAttribute("data-basemap", b.key);
     }
 
+    // Couches superposées (plusieurs à la fois), mémorisées comme le fond.
+    var overlays = {};
+    function setOverlay(o, on, list) {
+      if (on) {
+        overlays[o.key] = overlays[o.key] || o.make();
+        overlays[o.key].addTo(map);
+      } else if (overlays[o.key]) {
+        map.removeLayer(overlays[o.key]);
+      }
+      var active = GM_OVERLAYS.filter(function (x) { return overlays[x.key] && map.hasLayer(overlays[x.key]); })
+        .map(function (x) { return x.key; });
+      try { localStorage.setItem("gm-overlays", JSON.stringify(active)); } catch (e) { /* stockage indisponible */ }
+      if (list) {
+        var el = list.querySelector('[data-overlay="' + o.key + '"]');
+        if (el) {
+          el.classList.toggle("is-active", on);
+          el.setAttribute("aria-checked", on ? "true" : "false");
+        }
+      }
+      map.getContainer().setAttribute("data-overlays", active.join(" "));
+    }
+
     var Ctl = L.Control.extend({
       options: { position: position || "topright" },
       onAdd: function () {
@@ -713,11 +904,13 @@
         btn.setAttribute("aria-label", "Changer de fond de carte");
         btn.setAttribute("aria-expanded", "false");
         var list = L.DomUtil.create("div", "gm-basemap-list", box);
-        list.setAttribute("role", "radiogroup");
-        list.setAttribute("aria-label", "Fond de carte");
         list.hidden = true;
+        L.DomUtil.create("p", "gm-basemap-heading", list).textContent = "Fond de carte";
+        var bases = L.DomUtil.create("div", "gm-basemap-group", list);
+        bases.setAttribute("role", "radiogroup");
+        bases.setAttribute("aria-label", "Fond de carte");
         GM_BASEMAPS.forEach(function (b) {
-          var item = L.DomUtil.create("button", "gm-basemap-item", list);
+          var item = L.DomUtil.create("button", "gm-basemap-item", bases);
           item.type = "button";
           item.setAttribute("role", "radio");
           item.setAttribute("data-basemap", b.key);
@@ -725,6 +918,24 @@
             '<span class="gm-basemap-text"><strong>' + b.label + "</strong><small>" + b.hint + "</small></span>" +
             '<span class="gm-basemap-check">' + GM_ICONS.check + "</span>";
           L.DomEvent.on(item, "click", function () { select(b.key, list); close(); });
+        });
+        L.DomUtil.create("p", "gm-basemap-heading", list).textContent = "Couches";
+        var extras = L.DomUtil.create("div", "gm-basemap-group", list);
+        extras.setAttribute("role", "group");
+        extras.setAttribute("aria-label", "Couches superposées");
+        GM_OVERLAYS.forEach(function (o) {
+          var item = L.DomUtil.create("button", "gm-basemap-item gm-overlay-item", extras);
+          item.type = "button";
+          item.setAttribute("role", "checkbox");
+          item.setAttribute("aria-checked", "false");
+          item.setAttribute("data-overlay", o.key);
+          item.innerHTML = '<span class="gm-basemap-swatch" style="background:' + o.swatch + '"></span>' +
+            '<span class="gm-basemap-text"><strong>' + o.label + "</strong><small>" + o.hint + "</small></span>" +
+            '<span class="gm-basemap-check gm-overlay-box">' + GM_ICONS.check + "</span>";
+          // le menu reste ouvert : on peut cocher plusieurs couches
+          L.DomEvent.on(item, "click", function () {
+            setOverlay(o, item.getAttribute("aria-checked") !== "true", list);
+          });
         });
         function open() {
           // hauteur disponible : le menu défile s'il est plus haut que la carte
@@ -740,6 +951,8 @@
         L.DomEvent.disableClickPropagation(box);
         L.DomEvent.disableScrollPropagation(box);
         select(initial, list);
+        var storedOverlays = gmStoredOverlays();
+        GM_OVERLAYS.forEach(function (o) { if (storedOverlays.indexOf(o.key) !== -1) setOverlay(o, true, list); });
         return box;
       },
     });
