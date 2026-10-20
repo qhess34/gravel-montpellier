@@ -119,8 +119,6 @@ Il n'y a pas de tests navigateur dans le dépôt. Après une modification de
 ## Pièges connus
 
 Voir la section 10 de `docs/DEVELOPPEMENT.md`. En résumé :
-- `waytype.go` n'est pas appelé ;
-- `public/static/style.css` est versionné par erreur ;
 - le Markdown et le lecteur EXIF sont faits maison et limités ;
 - le plein écran sur iPhone passe par un repli CSS ;
 - n'appelez `map.getCenter()` qu'après `map._loaded`.

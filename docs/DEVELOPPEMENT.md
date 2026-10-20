@@ -98,7 +98,6 @@ internal/site/
   profile.go                 profil altimétrique en SVG, généré au build
   homemap.go                 JSON des traces simplifiées pour la carte d'accueil
   seo.go                     sitemap.xml, robots.txt, données structurées JSON-LD
-  waytype.go                 classification OSM des voies (non appelé, voir § 9)
   assets.go                  go:embed des gabarits et du dossier static/
   templates/                 gabarits html/template (base, index, ride, legal, 404, partials)
   static/                    script.js, style.css, logos
@@ -347,15 +346,11 @@ si besoin, `head`), la rendre dans `Build` avec `parsePage` puis
 
 ## 10. Pièges et dette connue
 
-- **`waytype.go` n'est pas appelé** par le générateur. Le revêtement est
-  calculé hors build par `tools/surface_stats.py`, qui écrit
-  `surface_paved_km` et `surface_unpaved_km` dans `description.md`. Ce
-  fichier reste comme base si l'on veut un jour déplacer ce calcul dans le
-  build ; sinon il peut être supprimé.
-- **`public/` est ignoré par git**, mais `public/static/style.css` a été
-  commité par le passé. C'est un fichier généré : ne pas le modifier, il
-  est écrasé à chaque build. Il peut être retiré avec
-  `git rm --cached public/static/style.css`.
+- **Revêtement calculé hors build** : `tools/surface_stats.py` écrit
+  `surface_paved_km` et `surface_unpaved_km` dans `description.md` ; le
+  générateur ne fait que lire ces valeurs, sans appel réseau.
+- **`public/` est ignoré par git** : c'est la sortie du générateur, à ne
+  jamais commiter ni modifier à la main.
 - **Markdown maison** (`markdown.go`) : seuls les titres `#` à `###`, les
   listes `-`, le gras, l'italique, les liens et les paragraphes sont pris
   en charge. Tableaux, images et code ne le sont pas. Étendre ce fichier

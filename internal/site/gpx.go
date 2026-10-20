@@ -7,9 +7,9 @@ import (
 )
 
 type gpxFile struct {
-	XMLName xml.Name  `xml:"gpx"`
-	Tracks  []gpxTrk  `xml:"trk"`
-	Routes  []gpxRte  `xml:"rte"`
+	XMLName xml.Name `xml:"gpx"`
+	Tracks  []gpxTrk `xml:"trk"`
+	Routes  []gpxRte `xml:"rte"`
 }
 
 type gpxTrk struct {
