@@ -407,11 +407,16 @@
   // signaler une erreur à cet endroit sur OpenStreetMap est ajouté. km
   // (point kilométrique, ou null) et kindLabel (type de point) sont
   // optionnels aussi.
-  window.gmPoiPopup = function (label, note, lat, lon, km, kindLabel) {
+  // alsoKms (optionnel) : PK des passages suivants (aller-retour).
+  window.gmPoiPopup = function (label, note, lat, lon, km, kindLabel, alsoKms) {
     var div = document.createElement("div");
     div.className = "gm-poi-popup";
     var meta = [];
-    if (typeof km === "number" && isFinite(km)) meta.push("PK " + km.toFixed(1).replace(".", ",") + " km");
+    var fmtKm = function (k) { return k.toFixed(1).replace(".", ","); };
+    if (typeof km === "number" && isFinite(km)) {
+      var again = (alsoKms || []).filter(function (k) { return typeof k === "number" && isFinite(k); });
+      meta.push("PK " + [km].concat(again).map(fmtKm).join(" et ") + " km");
+    }
     if (kindLabel) meta.push(kindLabel);
     if (meta.length) {
       var m = document.createElement("span");

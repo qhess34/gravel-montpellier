@@ -154,11 +154,14 @@ func renderElevationProfileSVG(profile []profilePoint, pois []Point, segments []
 	b.WriteString(`</svg>`)
 
 	// POI : icône cliquable (centre la carte sur le point et ouvre sa popup).
+	// Un point longé plusieurs fois (aller-retour) a une icône par passage.
 	for _, s := range pois {
-		label := html.EscapeString(fmt.Sprintf("%s — PK %s km", s.Label, formatKmFR(s.KmMark)))
 		icon := html.EscapeString(s.Icon)
-		fmt.Fprintf(&b, `<button type="button" class="elevation-poi poi-icon poi-icon--%s elevation-marker--%s" data-poi-id="%d" style="left:%.2f%%;top:%.2f%%" title="%s" aria-label="%s"></button>`,
-			icon, icon, s.ID, x(s.KmMark)/profileWidth*100, y(elevationAt(profile, s.KmMark))/profileHeight*100, label, label)
+		for _, km := range append([]float64{s.KmMark}, s.OtherKmMarks...) {
+			label := html.EscapeString(fmt.Sprintf("%s — PK %s km", s.Label, formatKmFR(km)))
+			fmt.Fprintf(&b, `<button type="button" class="elevation-poi poi-icon poi-icon--%s elevation-marker--%s" data-poi-id="%d" style="left:%.2f%%;top:%.2f%%" title="%s" aria-label="%s"></button>`,
+				icon, icon, s.ID, x(km)/profileWidth*100, y(elevationAt(profile, km))/profileHeight*100, label, label)
+		}
 	}
 	b.WriteString(`<div class="elevation-tooltip" aria-hidden="true" hidden></div>`)
 	b.WriteString(`</div>`)

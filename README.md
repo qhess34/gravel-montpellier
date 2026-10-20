@@ -229,7 +229,10 @@ sur la trace pour en déduire son point kilométrique (PK), et listé sous la
 description dans l'ordre du parcours : PK, icône, label, type et note.
 Cliquer sur un point de la liste centre la carte dessus et ouvre sa popup.
 Un point à plus de 3 km de la trace n'a pas de PK : il est listé à part
-(« À l'écart du parcours »).
+(« À l'écart du parcours »). Quand la trace repasse près d'un point
+(aller-retour, départ et arrivée au même endroit), la liste et la popup
+donnent chaque passage (« Repassage au km 62,7 ») et le profil montre une
+icône par passage.
 
 Une sortie sans trace GPX peut quand même afficher une carte si elle
 contient des points dans `points.md` — la carte se cadre alors

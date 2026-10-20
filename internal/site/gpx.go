@@ -90,32 +90,96 @@ func PointDistanceKm(a, b GPXPoint) float64 {
 	return earthRadiusKm * c
 }
 
-// NearestKm cherche, le long de track, le point le plus proche de target,
-// et renvoie la distance cumulée (km) depuis le départ jusqu'à ce point
-// (le "point kilométrique" de target sur la trace), ainsi que l'écart
-// (km) entre target et la trace — utile pour ignorer un point trop
-// éloigné du parcours pour qu'un PK ait du sens.
+// passToleranceKm : un passage de la trace compte s'il approche le point
+// à moins de cette distance de plus que le passage le plus proche.
+const passToleranceKm = 0.05
+
+// minPassageGapKm : deux passages séparés de moins de cette distance le long
+// de la trace sont confondus (zigzags GPS, lacets serrés).
+const minPassageGapKm = 0.5
+
+// NearestKm renvoie le "point kilométrique" de target sur track (premier
+// passage, voir NearestPassagesKm) et l'écart (km) entre target et la trace.
 func NearestKm(track []GPXPoint, target GPXPoint) (km float64, distanceToTrack float64) {
+	kms, dist := NearestPassagesKm(track, target)
+	if len(kms) == 0 {
+		return 0, dist
+	}
+	return kms[0], dist
+}
+
+// NearestPassagesKm renvoie les points kilométriques (km depuis le départ,
+// croissants) de chaque passage de la trace près de target, et l'écart (km)
+// entre target et la trace — utile pour ignorer un point trop éloigné du
+// parcours. Écart -1 si la trace est vide.
+//
+// target est projeté sur chaque segment de la trace (et pas seulement sur
+// ses points), ce qui donne un PK précis même entre deux points espacés.
+// Une trace peut passer plusieurs fois près d'un point : aller-retour,
+// départ et arrivée au même endroit, tronçon emprunté deux fois. Chaque
+// suite de segments dont l'écart reste à moins de passToleranceKm du plus
+// petit écart forme un passage ; on en retient la position la plus proche.
+func NearestPassagesKm(track []GPXPoint, target GPXPoint) (kms []float64, distanceToTrack float64) {
 	if len(track) == 0 {
-		return 0, -1
+		return nil, -1
+	}
+	if len(track) == 1 {
+		return []float64{0}, PointDistanceKm(track[0], target)
 	}
 
-	bestIdx := 0
-	bestDist := PointDistanceKm(track[0], target)
-	for i := 1; i < len(track); i++ {
-		d := PointDistanceKm(track[i], target)
-		if d < bestDist {
-			bestDist = d
-			bestIdx = i
+	// Projection locale équirectangulaire centrée sur target (km) : assez
+	// précise aux distances qui comptent ici (quelques kilomètres).
+	const earthRadiusKm = 6371.0
+	cosLat := math.Cos(degToRad(target.Lat))
+	xy := func(p GPXPoint) (float64, float64) {
+		return degToRad(p.Lon-target.Lon) * cosLat * earthRadiusKm, degToRad(p.Lat-target.Lat) * earthRadiusKm
+	}
+
+	n := len(track) - 1
+	dists := make([]float64, n)  // écart de target à chaque segment
+	alongs := make([]float64, n) // PK de la projection sur chaque segment
+	cum, minDist := 0.0, math.Inf(1)
+	for i := 1; i <= n; i++ {
+		ax, ay := xy(track[i-1])
+		bx, by := xy(track[i])
+		dx, dy := bx-ax, by-ay
+		t := 0.0
+		if l2 := dx*dx + dy*dy; l2 > 0 {
+			t = math.Max(0, math.Min(1, -(ax*dx+ay*dy)/l2))
+		}
+		segKm := PointDistanceKm(track[i-1], track[i])
+		dists[i-1] = math.Hypot(ax+t*dx, ay+t*dy)
+		alongs[i-1] = cum + t*segKm
+		cum += segKm
+		minDist = math.Min(minDist, dists[i-1])
+	}
+
+	// Passages : suites de segments sous le seuil ; pour chacun, la
+	// position la plus proche.
+	limit := minDist + passToleranceKm
+	best := -1
+	flush := func() {
+		if best < 0 {
+			return
+		}
+		if k := len(kms); k > 0 && alongs[best]-kms[k-1] < minPassageGapKm {
+			best = -1 // trop près du passage précédent : le même passage
+			return
+		}
+		kms = append(kms, alongs[best])
+		best = -1
+	}
+	for i := 0; i < n; i++ {
+		if dists[i] > limit {
+			flush()
+			continue
+		}
+		if best < 0 || dists[i] < dists[best] {
+			best = i
 		}
 	}
-
-	cum := 0.0
-	for i := 1; i <= bestIdx; i++ {
-		cum += PointDistanceKm(track[i-1], track[i])
-	}
-
-	return cum, bestDist
+	flush()
+	return kms, minDist
 }
 
 // ElevationGainM additionne les montées positives entre points consécutifs (mètres).

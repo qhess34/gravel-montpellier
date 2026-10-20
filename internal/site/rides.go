@@ -247,9 +247,10 @@ func loadOneRide(slug, dir, descPath string) (*Ride, error) {
 	// point de trace le plus proche.
 	if len(trackPoints) > 0 {
 		for i := range points {
-			km, dist := NearestKm(trackPoints, GPXPoint{Lat: points[i].Lat, Lon: points[i].Lon})
-			if dist >= 0 && dist <= maxPointToTrackKm {
-				points[i].KmMark = km
+			kms, dist := NearestPassagesKm(trackPoints, GPXPoint{Lat: points[i].Lat, Lon: points[i].Lon})
+			if dist >= 0 && dist <= maxPointToTrackKm && len(kms) > 0 {
+				points[i].KmMark = kms[0]
+				points[i].OtherKmMarks = kms[1:]
 				points[i].HasKmMark = true
 			}
 		}

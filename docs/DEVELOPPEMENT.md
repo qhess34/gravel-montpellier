@@ -128,7 +128,7 @@ Dockerfile, docker-compose.yml
    - `photos/` : liste triée, publiée par `publishPhoto` (redimensionnement
      et rotation EXIF) ;
    - `points.md` : `LoadPoints`, puis calcul du PK de chaque point par
-     rapport à la trace (`NearestKm`). Au-delà de 3 km de la trace
+     rapport à la trace (`NearestPassagesKm`). Au-delà de 3 km de la trace
      (`maxPointToTrackKm`), un point est classé « hors parcours » ;
    - `slope.geojson` : `loadSlopeData` vérifie l'empreinte SHA-256 du GPX.
      Si le fichier est périmé, il est ignoré et la trace est affichée en
@@ -423,14 +423,23 @@ fonction fait foi.
 10. **Points** : `LoadPoints` lit `points.md` (voir 11.3). Ensuite, toute
     photo JPEG **non citée** dans `points.md` et dont les EXIF contiennent
     une position GPS devient automatiquement un point « photo ».
-11. **PK** : pour chaque point, `NearestKm` cherche le **sommet de la trace
-    le plus proche**, en distance à vol d'oiseau, sans projection sur le
-    segment. Il renvoie la distance cumulée jusqu'à ce sommet et l'écart
-    au point. Si l'écart est de 3 km au plus (`maxPointToTrackKm`), le
-    point reçoit un PK (`HasKmMark`). Les POI avec PK vont dans
-    `RoutePOIs`, triés par PK ; les autres vont dans `OffRoutePOIs`.
-    Limite connue : sur une trace qui repasse au même endroit (aller-retour,
-    boucle en 8), le PK retenu est celui du premier passage le plus proche.
+11. **PK** (`NearestPassagesKm`, `gpx.go`) :
+    - chaque point est **projeté sur chaque segment** de la trace, dans une
+      projection locale équirectangulaire en km. Le PK est la distance
+      cumulée jusqu'à la projection, donc précis même entre deux points
+      GPX espacés ;
+    - une trace peut passer plusieurs fois près d'un point. Toute suite de
+      segments dont l'écart reste à moins de 50 m (`passToleranceKm`) du
+      plus petit écart forme un **passage**, dont on garde la position la
+      plus proche. Deux passages à moins de 500 m l'un de l'autre le long
+      de la trace (`minPassageGapKm`) sont confondus ;
+    - si l'écart minimal est de 3 km au plus (`maxPointToTrackKm`), le
+      point reçoit un PK (`HasKmMark`) : `KmMark` est le premier passage,
+      `OtherKmMarks` les suivants. Ces derniers sont affichés comme
+      « Repassage au km … » dans la liste et la popup, avec une icône de
+      plus sur le profil ;
+    - les POI avec PK vont dans `RoutePOIs`, triés par premier passage ;
+      les autres vont dans `OffRoutePOIs`.
 12. **Profil** : `buildElevationProfile(track, 1000)` puis
     `renderElevationProfileSVG` (voir 11.5).
 

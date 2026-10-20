@@ -246,7 +246,7 @@
   {{if eq .Type "poi"}}
   gmTrackMarker('{{.Icon}}',
     L.marker([{{.Lat}}, {{.Lon}}], { icon: window.gmIcon('{{.Icon}}'), title: '{{.Label}}' })
-      .bindPopup(window.gmPoiPopup('{{.Label}}', '{{.Note}}', {{.Lat}}, {{.Lon}}, {{if .HasKmMark}}{{.KmMark}}{{else}}null{{end}}, '{{poiKindLabel .Icon}}'))
+      .bindPopup(window.gmPoiPopup('{{.Label}}', '{{.Note}}', {{.Lat}}, {{.Lon}}, {{if .HasKmMark}}{{.KmMark}}{{else}}null{{end}}, '{{poiKindLabel .Icon}}', [{{range $i, $k := .OtherKmMarks}}{{if $i}}, {{end}}{{$k}}{{end}}]))
       .addTo(map),
     {{.ID}}
   );
@@ -297,6 +297,7 @@
     <span class="poi-text">
       <span class="poi-label">{{.Label}}</span>
       <span class="poi-kind">{{poiKindLabel .Icon}}{{if .Note}} · {{.Note}}{{end}}</span>
+      {{if .OtherKmMarks}}<span class="poi-again">Repassage au km {{range $i, $k := .OtherKmMarks}}{{if $i}}, {{end}}{{printf "%.1f" $k}}{{end}}</span>{{end}}
     </span>
   </button>
 </li>
