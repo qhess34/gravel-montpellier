@@ -104,6 +104,7 @@ internal/site/
   *_test.go                  tests Go
 content/                     footer.md et mentions-legales.md (Markdown)
 rides/                       les sorties
+tests/e2e/                   tests navigateur (Playwright pour Python)
 tools/                       scripts Python (pentes, POI, revêtement, visuels, new_ride)
 .github/workflows/deploy.yml CI : tests, pentes, build, déploiement Pages
 Dockerfile, docker-compose.yml
@@ -274,15 +275,28 @@ node --check internal/site/static/script.js             # syntaxe JS (si Node es
   vérifie les métadonnées (titres, Open Graph, JSON-LD, sitemap).
 - `tools/test_*.py` : pentes, charte et visuels. Les tests des visuels sont
   ignorés si Pillow ou segno ne sont pas installés.
-- **Pas de tests navigateur dans le dépôt.** Pour une modification du
-  front, générer le site et le vérifier à la main dans un navigateur
-  (ordinateur et mobile), en particulier :
-  - carte d'accueil : filtres, popups, défilement des cartouches ;
-  - fiche : carte, profil et survol, POI, plein écran, fonds de carte,
-    carrousel, Panoramax.
+- **`tests/e2e/test_site.py`** : tests navigateur, avec Playwright pour
+  Python et Chromium :
+  - **préparation** : génère le site dans un dossier temporaire et le sert
+    en local ;
+  - **réseau simulé** : les tuiles sont des images unies ; les tuiles
+    d'altitude sont synthétiques (moitié plate, moitié à 20 %, et 404
+    au-delà du zoom 12 pour tester le repli) ; les API externes sont
+    neutralisées ;
+  - **couverture** : accueil (carte, cartouches, filtres), survol du
+    profil, liste des POI et popup, mémorisation du fond de carte,
+    couches et couleurs de la couche des pentes, plein écran, menu
+    mobile sans défilement, absence d'erreur JavaScript.
 
-  Playwright fonctionne bien pour automatiser ces vérifications au
-  besoin.
+  Installation : `pip install playwright` puis
+  `python3 -m playwright install chromium`. Lancement :
+  `python3 -m unittest discover -s tests/e2e -v`. Sans réseau,
+  `CHROMIUM_PATH` désigne un Chromium déjà installé et `LEAFLET_DIR` un
+  dossier contenant `leaflet.js` et `leaflet.css`. Les tests sont ignorés
+  si Playwright ou Go manquent.
+
+  Ces tests ne remplacent pas un coup d'œil dans un vrai navigateur pour
+  ce qui est visuel (carrousel, Panoramax, rendu des vraies tuiles).
 
 ---
 
@@ -297,7 +311,8 @@ Deux workflows :
     tournent aussi ;
   - `node --check` sur `script.js` ;
   - `slope_colors.py --check`, en simple avertissement ;
-  - génération complète du site.
+  - génération complète du site ;
+  - dans un second job, les tests navigateur (`tests/e2e`).
 
   Une PR ne se merge qu'au vert.
 - **`deploy.yml`, sur un push sur `main`** (donc au merge) ou à la main.

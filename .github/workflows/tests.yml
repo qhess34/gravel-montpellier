@@ -60,3 +60,28 @@ jobs:
 
       - name: Générer le site
         run: go run ./cmd/generator -umami-id "" -out "$RUNNER_TEMP/public"
+
+  navigateur:
+    name: Tests navigateur (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Playwright et Chromium
+        run: |
+          pip install playwright
+          python3 -m playwright install --with-deps chromium
+
+      - name: Tests navigateur
+        run: python3 -m unittest discover -s tests/e2e -v

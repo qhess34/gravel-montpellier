@@ -722,12 +722,14 @@ Aucun token à configurer : le workflow utilise les permissions
 
 ```bash
 go vet ./... && go test ./...                          # générateur Go
-python3 -m unittest discover -s tools -p "test_*.py"   # script des pentes
+python3 -m unittest discover -s tools -p "test_*.py"   # scripts Python
+python3 -m unittest discover -s tests/e2e -v           # navigateur (pip install playwright)
 ```
 
 Ils sont exécutés par la CI sur chaque pull request
 (`.github/workflows/tests.yml`, avec aussi `gofmt`, la syntaxe JS et la
-génération du site), puis avant chaque déploiement.
+génération du site), puis, sauf les tests navigateur, avant chaque
+déploiement.
 
 ## Architecture
 
