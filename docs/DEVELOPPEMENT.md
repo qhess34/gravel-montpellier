@@ -317,7 +317,9 @@ Deux workflows :
   Une PR ne se merge qu'au vert.
 - **`deploy.yml`, sur un push sur `main`** (donc au merge) ou à la main.
   Étapes : `go vet`, `go test`, tests Python, `slope_colors.py`
-  (régénère les pentes), génération du site avec les variables de dépôt
+  (régénère les pentes), `make_instagram_image.py --manquantes` (crée
+  `instagram.jpg` pour les sorties qui n'en ont pas, sans le commiter ;
+  étape non bloquante), génération du site avec les variables de dépôt
   `SITE_URL` et `UMAMI_ID`, puis publication sur GitHub Pages. Le SHA
   court du commit est affiché en pied de page (`-version`).
 
