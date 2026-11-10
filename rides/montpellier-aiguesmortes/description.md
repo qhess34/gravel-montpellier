@@ -8,19 +8,19 @@ surface_paved_km: 31.4
 surface_unpaved_km: 37.1
 ---
 
-Une boucle idéale pour découvrir le littoral méditerranéen, de Carnon jusqu'au Grau-du-Roi, tout en empruntant des itinéraires adaptés au vélo. C'est également une excellente occasion de visiter Aigues-Mortes sans voiture.
+Une boucle le long du littoral méditerranéen, de Carnon jusqu'au Grau-du-Roi, sur des itinéraires adaptés au vélo. Elle permet aussi de visiter Aigues-Mortes sans voiture.
 
-Le parcours peut être réalisé en une journée, y compris en famille pour les plus habitués, ou sur deux jours afin de profiter pleinement des plages, des villages et des nombreuses possibilités de baignade qui jalonnent l'itinéraire.
+Le parcours peut être réalisé en une journée, y compris en famille pour les plus habitués, ou sur deux jours pour profiter des plages, des villages et des nombreuses possibilités de baignade le long de l'itinéraire.
 
 ## Le parcours
 
 Le départ se fait de Montpellier en empruntant la Véloligne 4A, qui longe la ligne 3 du tramway jusqu'à Carnon.
 
-Les premières plages et le port de Carnon offrent une belle mise en bouche, idéale pour une pause baignade ou simplement pour profiter de l'ambiance du bord de mer. L'itinéraire rejoint ensuite les longues plages sauvages du Petit Travers puis du Grand Travers.
+Les premières plages et le port de Carnon se prêtent à une pause baignade ou à une halte en bord de mer. L'itinéraire rejoint ensuite les longues plages sauvages du Petit Travers puis du Grand Travers.
 
-La trace traverse ensuite La Grande-Motte, célèbre pour son architecture en pyramides, avant de rejoindre Le Grau-du-Roi et son port de pêche typiquement méditerranéen.
+La trace traverse ensuite La Grande-Motte, célèbre pour son architecture en pyramides, avant de rejoindre Le Grau-du-Roi et son port de pêche.
 
-À seulement quelques kilomètres, il serait dommage de ne pas prolonger la balade jusqu'à Aigues-Mortes. Sa cité médiévale parfaitement préservée, entourée de remparts, constitue l'un des incontournables de la région.
+À quelques kilomètres de là, Aigues-Mortes mérite qu'on prolonge la balade : sa cité médiévale est entourée de remparts.
 
 Pour le retour, l'itinéraire le plus direct emprunte le chemin de halage du canal du Rhône à Sète jusqu'à Palavas-les-Flots, puis la voie verte en direction de Montpellier. Un court détour permet de traverser Lattes avant de retrouver la voie verte.
 

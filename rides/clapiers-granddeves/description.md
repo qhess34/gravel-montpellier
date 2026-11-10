@@ -8,12 +8,12 @@ surface_paved_km: 12.7
 surface_unpaved_km: 29.9
 ---
 
-Un grand classique du nord de Montpellier. Le Grand Dévès est un massif emblématique dont les pistes de crête offrent des panoramas remarquables, donnant parfois l'impression de marquer la frontière entre la Méditerranée et les premiers reliefs des Cévennes.
+Un grand classique du nord de Montpellier. Les pistes de crête du Grand Dévès offrent des panoramas qui donnent parfois l'impression de marquer la frontière entre la Méditerranée et les premiers reliefs des Cévennes.
 
 ## Le parcours
 
 Le départ se fait en direction de Teyran avant de rejoindre le domaine de l'Arbousier, à Castries, qui permet d'accéder rapidement aux premières pentes du massif.
 
-S'ensuivent une succession de montées et de descentes sur de larges pistes roulantes, ponctuées de superbes points de vue sur la plaine montpelliéraine, la mer et les reliefs environnants.
+S'ensuivent une succession de montées et de descentes sur de larges pistes roulantes, ponctuées de points de vue sur la plaine montpelliéraine, la mer et les reliefs environnants.
 
-Le retour s'effectue par Assas puis le bois de Clapiers. Avant de terminer la boucle, un dernier arrêt au château d'eau offre un magnifique panorama sur Montpellier et la Méditerranée, une belle récompense pour conclure la sortie.
+Le retour s'effectue par Assas puis le bois de Clapiers. Avant de terminer la boucle, un dernier arrêt au château d'eau offre un panorama sur Montpellier et la Méditerranée.
