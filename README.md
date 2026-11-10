@@ -26,8 +26,8 @@ rides/tour-du-pic-saint-loup/
 
 1. Créer `rides/<slug>/` et y déposer le `.gpx` (export Komoot, Strava…).
 2. Écrire `description.md` : frontmatter (`title`, `date`, `difficulty`,
-   `departure`, `tags`…), puis un court texte d'introduction — **la
-   synthèse** — suivi d'un titre `## Le parcours` et du détail (voir
+   `departure`, `tags`…), puis un court texte d'introduction (**la
+   synthèse**), suivi d'un titre `## Le parcours` et du détail (voir
    ci-dessous).
 3. Ajouter les photos dans `photos/` (préfixez la photo de couverture par
    `0` pour qu'elle passe en premier, ex : `0.jpg`).
@@ -92,9 +92,9 @@ liste des tags est repliée derrière le bouton « Tags ».
 ### track.gpx
 
 Un seul fichier `.gpx` par dossier de sortie. S'il est présent :
-- sa trace (simplifiée) apparaît sur la **carte d'accueil**, avec une couleur propre à la sortie ; cliquer dessus ouvre une popup (photo, synthèse, difficulté, durée, D+, bouton « Voir la sortie ») et amène son cartouche dans la ligne de cartouches sous la carte. Ces cartouches (photo, titre, difficulté, durée, D+, distance, date, synthèse — sans les tags, qui servent au filtre) sont alignés sur une seule ligne qui défile avec les flèches ‹ › (ou au doigt / à la molette) ; survoler un cartouche met sa trace en évidence,
+- sa trace (simplifiée) apparaît sur la **carte d'accueil**, avec une couleur propre à la sortie ; cliquer dessus ouvre une popup (photo, synthèse, difficulté, durée, D+, bouton « Voir la sortie ») et amène son cartouche dans la ligne de cartouches sous la carte. Ces cartouches (photo, titre, difficulté, durée, D+, distance, date, synthèse ; pas les tags, qui servent au filtre) sont alignés sur une seule ligne qui défile avec les flèches ‹ › (ou au doigt / à la molette) ; survoler un cartouche met sa trace en évidence,
 - il est affiché sur une carte (OpenStreetMap + Leaflet) sur la page de la sortie, **colorisé selon la pente** (voir « Colorisation des traces selon la pente »), avec un bouton **« Me localiser »** intégré à la carte à côté du zoom (géolocalisation du navigateur, avec son autorisation) pour voir sa propre position dessus,
-- une **estimation du revêtement** (route/piste cyclable vs chemin/sentier) peut être affichée sous forme de barre + pourcentages sous la carte, si `description.md` contient les champs `surface_paved_km`/`surface_unpaved_km` — voir `tools/surface_stats.py` ci-dessous pour les calculer automatiquement,
+- une **estimation du revêtement** (route/piste cyclable vs chemin/sentier) peut être affichée sous forme de barre + pourcentages sous la carte, si `description.md` contient les champs `surface_paved_km`/`surface_unpaved_km` (voir `tools/surface_stats.py` ci-dessous pour les calculer automatiquement),
 - un **profil altimétrique** est généré automatiquement (SVG) sous la carte, coloré selon la pente, avec l'icône de chaque POI au bon endroit (cliquer sur une icône centre la carte sur le point et ouvre sa popup) ; survoler la trace ou le profil affiche, sur les deux, la position, le point kilométrique et la pente du tronçon (ex : « PK 12,3 km · ↗ +5,2 % »). La légende des pentes et la barre de revêtement suivent le profil,
 - il est proposé au téléchargement (fichier original, non modifié),
 - la distance et le dénivelé sont calculés automatiquement si vous ne les
@@ -110,7 +110,7 @@ défilement s'interrompt dès qu'on interagit et reprend après 10 s
 d'inactivité ; un bouton permet de le mettre en pause, et il ne démarre
 pas si le système demande de réduire les animations. Cliquer sur une
 photo l'ouvre en grand (lightbox). La première photo (ordre alphabétique)
-sert de vignette sur l'accueil et dans la popup de la carte — et s'il y a
+sert de vignette sur l'accueil et dans la popup de la carte ; s'il y a
 plusieurs photos, elles défilent au survol du cartouche.
 
 **Miniatures :** au build, une miniature (640 px) de chaque photo est
@@ -119,7 +119,7 @@ générée dans `photos/thumbs/` du site publié, pour alléger l'accueil.
 **Allègement automatique :** au moment du build, les photos `.jpg`/`.jpeg`
 et `.png` dont le plus grand côté dépasse **1024 px** sont réduites à
 cette taille (proportions conservées, JPEG ré-encodé en qualité 85) dans
-le site généré — vos fichiers d'origine, dans `rides/`, ne sont jamais
+le site généré. Vos fichiers d'origine, dans `rides/`, ne sont jamais
 modifiés (et restent donc disponibles en pleine résolution pour
 `tools/make_instagram_image.py`). L'orientation EXIF des JPEG (photos
 prises en portrait au smartphone, par exemple) est corrigée dans les
@@ -130,7 +130,7 @@ cette fonctionnalité n'utilise volontairement aucune dépendance
 externe).
 
 > Effet de bord : le ré-encodage supprime les métadonnées EXIF (dont les
-> coordonnées GPS et les infos d'appareil) des photos réduites — un petit
+> coordonnées GPS et les infos d'appareil) des photos réduites : un petit
 > plus pour la vie privée côté site public. Mais ça ne vaut **pas** pour
 > les photos copiées telles quelles (déjà petites, `.webp`, `.gif`), qui
 > gardent leurs métadonnées d'origine : à garder en tête si certaines
@@ -139,7 +139,7 @@ externe).
 **Géolocalisation automatique :** si une photo `.jpg`/`.jpeg` contient des
 coordonnées GPS dans ses métadonnées EXIF (cas courant pour une photo prise
 au smartphone ou avec un appareil GPS activé), un marqueur est
-automatiquement ajouté sur la carte — sans rien à faire dans `points.md`.
+automatiquement ajouté sur la carte, sans rien à faire dans `points.md`.
 Une photo recadrée/exportée depuis un réseau social a souvent perdu ses
 EXIF ; dans ce cas, ajoutez-la manuellement dans `points.md` (voir
 ci-dessous) avec ses coordonnées.
@@ -148,7 +148,7 @@ ci-dessous) avec ses coordonnées.
 
 Si la sortie a une trace GPX, les marqueurs de départ et d'arrivée sont
 ajoutés automatiquement sur la carte, à partir du premier et du dernier
-point de la trace — rien à configurer. Si départ et arrivée sont au même
+point de la trace : rien à configurer. Si départ et arrivée sont au même
 endroit (à 50 m près), un seul marqueur « Départ / Arrivée » est affiché.
 
 ### points.md — POI, photos géolocalisées et points Panoramax
@@ -206,12 +206,12 @@ profil altimétrique** affiche un aperçu de la photo la plus proche
 photos qui « voient » le point, à moins de 50 m.
 
 Cliquer n'importe où sur la carte d'une sortie propose aussi un bouton
-« Voir en 360° » quand une vue panoramax existe à proximité — pas besoin
+« Voir en 360° » quand une vue panoramax existe à proximité : pas besoin
 de viser précisément un marqueur. Il vérifie d'abord vos points
 panoramax catalogués dans `points.md` (à moins de 60 m du clic), et à
 défaut interroge l'API Panoramax en direct pour trouver n'importe quelle
 photo existante à proximité (moins de 50 m), même si vous ne l'avez pas
-ajoutée vous-même — pratique pour explorer la couverture Panoramax le
+ajoutée vous-même. C'est pratique pour explorer la couverture Panoramax le
 long de tout le parcours plutôt que seulement aux points que vous avez
 choisis. Nécessite un accès réseau côté visiteur pour ce second cas.
 
@@ -220,8 +220,8 @@ a son propre pictogramme sur la carte pour rester reconnaissable en un
 coup d'œil. Dès qu'une sortie a au moins deux types de points différents,
 une barre de filtre apparaît au-dessus de la carte : cliquer sur un type
 le masque à la fois sur la carte et sur le profil altimétrique (et
-inversement pour le réafficher) — pratique pour isoler par exemple
-seulement les points d'eau sur une longue sortie chargée en POI.
+inversement pour le réafficher), par exemple pour isoler
+les points d'eau sur une longue sortie chargée en POI.
 
 **Liste des points d'intérêt :** pour une sortie avec trace GPX, tout
 point `type: poi` (quel que soit son `icon`) est automatiquement projeté
@@ -235,7 +235,7 @@ donnent chaque passage (« Repassage au km 62,7 ») et le profil montre une
 icône par passage.
 
 Une sortie sans trace GPX peut quand même afficher une carte si elle
-contient des points dans `points.md` — la carte se cadre alors
+contient des points dans `points.md` : la carte se cadre alors
 automatiquement sur ces points.
 
 ### Trouver automatiquement des points d'intérêt utiles
@@ -243,7 +243,7 @@ automatiquement sur ces points.
 `tools/find_supplies.py` interroge OpenStreetMap (API Overpass) le long
 de la trace GPX d'une sortie, vous propose un par un les points trouvés
 (commune, nom, distance à la trace, PK), et génère les blocs à coller
-dans `points.md` pour ceux que vous validez — plus besoin de chercher
+dans `points.md` pour ceux que vous validez : plus besoin de chercher
 les coordonnées à la main. La commune est déterminée par géocodage
 inverse (Nominatim) et préfixée au label par défaut (ex :
 « Saint-Mathieu-de-Tréviers — Fontaine du village »), modifiable avec `e`
@@ -253,7 +253,7 @@ l'autre.
 
 Types recherchés (tous par défaut, filtrables avec `--only`) : points
 d'eau (`water`), boulangeries (`bakery`), magasins alimentaires
-(`grocery` — supérettes, supermarchés, primeurs), campings (`camping`),
+(`grocery` : supérettes, supermarchés, primeurs), campings (`camping`),
 bars (`bar`), restaurants (`restaurant`), réparateurs de vélo
 (`bike_repair`).
 
@@ -292,8 +292,8 @@ OpenStreetMap (API Overpass) pour estimer la part de route/piste cyclable
 (revêtu) et de chemin/sentier (non revêtu), puis écrit le résultat dans
 `description.md` (`surface_paved_km` / `surface_unpaved_km`). Le
 générateur lit ensuite simplement ces deux champs pour afficher une barre
-de revêtement sur la page de la sortie — **aucun appel réseau au moment
-du build**, tout se joue quand vous lancez ce script.
+de revêtement sur la page de la sortie. **Aucun appel réseau au moment
+du build** : tout se joue quand vous lancez ce script.
 
 ```bash
 python3 tools/surface_stats.py rides/tour-du-pic-saint-loup
@@ -415,8 +415,8 @@ est signalée et sautée sans bloquer les suivantes. Le code de sortie vaut
 > Partage réel vers Instagram : il n'existe pas de lien web universel
 > pour poster directement sur Instagram (contrairement à
 > Facebook/WhatsApp/X). Le bouton **Instagram** utilise l'API de partage
-> native du navigateur (`navigator.share`) quand elle est disponible —
-> essentiellement sur mobile — ce qui ouvre le sélecteur de partage du
+> native du navigateur (`navigator.share`) quand elle est disponible
+> (essentiellement sur mobile), ce qui ouvre le sélecteur de partage du
 > téléphone avec Instagram parmi les options. Sur desktop, ou si cette
 > API n'est pas disponible, le bouton télécharge simplement l'image :
 > à vous de la partager depuis l'app Instagram.
@@ -534,7 +534,7 @@ est affiché sur toutes les pages du site. Modifiez ce fichier librement.
 
 Le contenu de `content/mentions-legales.md` (markdown simple) est publié
 sur une page dédiée (`mentions-legales.html`), reliée par un lien fixe en
-bas de chaque page — ce lien est toujours présent, indépendamment de ce
+bas de chaque page. Ce lien est toujours présent, indépendamment de ce
 que vous mettez dans `content/footer.md`.
 
 Un fichier de départ est fourni, couvrant l'absence de garantie sur
@@ -544,14 +544,14 @@ pas un avis juridique, faites-le relire par un professionnel si vous
 voulez une protection solide.
 
 Chaque page de sortie affiche en plus, automatiquement (ce bandeau n'est
-pas éditable par sortie, il vient du gabarit) un court rappel — terrain
+pas éditable par sortie, il vient du gabarit) un court rappel (terrain
 qui peut avoir changé, passage éventuel sur propriété privée, pratique
-sous sa propre responsabilité — avec un lien vers la page complète.
+sous sa propre responsabilité) avec un lien vers la page complète.
 
 ## Version en pied de page
 
 Chaque page affiche, tout en bas, une ligne discrète avec la date et
-l'heure de génération (UTC) — utile pour vérifier rapidement si un
+l'heure de génération (UTC), utile pour vérifier rapidement si un
 déploiement a bien pris en compte vos derniers changements :
 
 ```
@@ -571,7 +571,7 @@ go run ./cmd/generator -version "test-local"
 
 Le script [Umami](https://umami.is/) est inséré sur toutes les pages via
 `-umami-id`, déjà réglé par défaut sur l'identifiant du site
-(`9e97164b-65cd-4fef-82f2-f08b105783d3`) — rien à faire pour l'activer.
+(`9e97164b-65cd-4fef-82f2-f08b105783d3`) : rien à faire pour l'activer.
 
 ```bash
 # Utiliser un autre identifiant
@@ -587,7 +587,7 @@ selon le même principe que `SITE_URL`.
 
 Les builds locaux (`Dockerfile`, `docker-compose.yml`) désactivent déjà le
 tracking (`-umami-id ""`) pour ne pas polluer les statistiques avec des
-visites de test — seul le build via la CI (déploiement réel) l'active.
+visites de test ; seul le build via la CI (déploiement réel) l'active.
 
 ## Référencement (SEO)
 
@@ -602,9 +602,9 @@ saisir en plus :
   les liens internes pointent vers la même forme (`/rides/<slug>/`, sans
   `index.html`) pour éviter les doublons.
 - **Partage sur les réseaux** (Open Graph / Twitter) : titre, description,
-  langue (`fr_FR`), image avec dimensions et texte alternatif — la
+  langue (`fr_FR`), image avec dimensions et texte alternatif (la
   première photo de la sortie, ou pour l'accueil celle de la sortie la plus
-  récente —, date de publication et tags (`article:*`).
+  récente), date de publication et tags (`article:*`).
 - **Données structurées** (JSON-LD schema.org) : accueil = Organisation +
   Site web + liste des sorties ; fiche = Article (auteur, éditeur, date,
   mots-clés, jusqu'à 3 photos, point de départ géolocalisé) + fil d'Ariane.
@@ -624,9 +624,9 @@ Console et Bing Webmaster Tools.
 Chaque page de sortie affiche automatiquement des boutons de partage
 (Facebook, X, WhatsApp, e-mail, « Copier le lien » avec confirmation, et
 « Partager… » via le partage natif du navigateur quand il est disponible,
-essentiellement sur mobile) ainsi que le téléchargement du GPX — rien à
+essentiellement sur mobile) ainsi que le téléchargement du GPX, sans rien à
 faire dans `description.md`. Ça repose sur l'URL publique du
-site, connue via `-site-url` — par défaut déjà réglée sur
+site, connue via `-site-url` et déjà réglée par défaut sur
 `https://montpellier.cycloexplore.fr` (inutile d'y toucher sauf pour
 tester ailleurs) :
 
@@ -637,11 +637,11 @@ go run ./cmd/generator -site-url "https://montpellier.cycloexplore.fr"
 En CI, cette même valeur est utilisée par défaut ; pour la changer sans
 modifier le workflow (test, environnement de staging...), définissez une
 variable de dépôt **`SITE_URL`** dans *Settings → Secrets and variables →
-Actions → Variables* — elle prend le pas sur la valeur par défaut.
+Actions → Variables* ; elle prend le pas sur la valeur par défaut.
 
 Quand `-site-url` pointe vers un domaine personnalisé (comme ici, pas un
 sous-domaine `*.github.io`), un fichier `CNAME` contenant ce domaine est
-généré automatiquement dans `public/` — c'est ce dont GitHub Pages a
+généré automatiquement dans `public/` : c'est ce dont GitHub Pages a
 besoin pour servir le site sur `montpellier.cycloexplore.fr`. Il faut
 par ailleurs configurer une fois le DNS (enregistrement CNAME de
 `montpellier` vers `<compte>.github.io`) et déclarer le domaine dans
@@ -702,7 +702,7 @@ docker compose run --rm generate
 ```
 
 Il suffit ensuite de rafraîchir le navigateur après chaque
-`docker compose run --rm generate` pour voir vos changements — aucune
+`docker compose run --rm generate` pour voir vos changements : aucune
 reconstruction d'image nécessaire, `go run` télécharge l'image Go une
 seule fois puis réutilise le cache.
 
@@ -723,7 +723,7 @@ seule fois puis réutilise le cache.
    `montpellier.cycloexplore.fr` pointant vers `<compte>.github.io`.
 5. Poussez sur `main` (ou lancez le workflow manuellement depuis l'onglet
    **Actions**) : le site est construit (avec son fichier `CNAME`, généré
-   automatiquement — voir la section partage ci-dessus) puis publié.
+   automatiquement, voir la section partage ci-dessus) puis publié.
 
 Aucun token à configurer : le workflow utilise les permissions
 `pages`/`id-token` fournies automatiquement par GitHub Actions.
@@ -753,7 +753,7 @@ déploiement.
   et indexables (titres, meta description issue de la synthèse, Open
   Graph, JSON-LD, sitemap).
 - **Accueil** : la carte Leaflet reçoit les traces simplifiées (≤ 300
-  points) directement intégrées à la page en JSON — aucun GPX téléchargé ;
+  points) directement intégrées à la page en JSON, sans téléchargement de GPX ;
   les cartouches sont du HTML classique. `script.js` synchronise filtres,
   carte et cartouches.
 - **Fiche** : un seul fichier de trace téléchargé (`slope.geojson`, ou le
@@ -800,5 +800,5 @@ tools/slope_colors.py   colorisation des traces selon la pente (écrit slope.geo
 ```
 
 Vous n'avez normalement besoin de toucher qu'à `rides/`,
-`content/footer.md` et `content/mentions-legales.md` — le reste s'occupe
+`content/footer.md` et `content/mentions-legales.md` ; le reste s'occupe
 de la mise en forme.
