@@ -56,4 +56,4 @@ postérieur à la reconnaissance, ou de passage sur une propriété privée.
 Si vous constatez qu'une trace ne correspond plus à la réalité du terrain,
 qu'un passage traverse une propriété privée, ou qu'un danger mérite d'être
 signalé, merci de le faire savoir via les coordonnées indiquées en pied de
-page — cela aide à garder ce site utile et fiable pour tout le monde.
+page : cela aide à garder ce site utile et fiable pour tout le monde.
