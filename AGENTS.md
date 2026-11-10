@@ -123,6 +123,13 @@ fonctionner sans réseau. En complément, après une modification de
   sandbox. Dites-le explicitement si un rendu n'a pas pu être vérifié
   avec de vraies données.
 
+## Skills du dépôt
+
+- **`unslop`** (`.claude/skills/unslop/`) : relit un texte français
+  (description de sortie, README, doc, message de commit) pour repérer les
+  tics d'écriture IA, et le réécrit sur demande sans changer aucun fait.
+  Audit par défaut ; `/unslop réécrire …` pour réécrire.
+
 ## Pièges connus
 
 Voir la section 10 de `docs/DEVELOPPEMENT.md`. En résumé :
