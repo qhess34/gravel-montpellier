@@ -107,6 +107,7 @@ rides/                       les sorties
 tests/e2e/                   tests navigateur (Playwright pour Python)
 tools/                       scripts Python (pentes, POI, revêtement, visuels, new_ride)
 .github/workflows/deploy.yml CI : tests, pentes, build, déploiement Pages
+.claude/skills/unslop/       skill de relecture des tics d'écriture IA (français)
 Dockerfile, docker-compose.yml
 ```
 
